@@ -244,7 +244,7 @@
 </chunk>
   </data>
  </layer>
- <layer id="7" name="墙壁" width="30" height="20" opacity="0.5">
+ <layer id="7" name="solid" width="30" height="20" opacity="0.5">
   <properties>
    <property name="solid" type="bool" value="true"/>
   </properties>

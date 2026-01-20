@@ -6,17 +6,19 @@ import { AnimationSystem } from '../systems/animation-system';
 import { Asset } from '../asset';
 import { FactoryProps } from '@excaliburjs/plugin-tiled';
 import { Global } from '../global';
+import BaseScene from '../base-scene';
 
-export class Interior extends ex.Scene {
+export class Interior extends BaseScene {
+    constructor() {
+        super("interior");
+    }
     override onInitialize(engine: ex.Engine): void {
-        Asset.tileMapMap["interior"].addToScene(this);
+        super.onInitialize(engine);
         //获取门
-        const doors = Asset.tileMapMap["interior"].getObjectsByClassName("Door");
+        const doors = Asset.tileMapMap[this.sceneName].getObjectsByClassName("Door");
         for (const door of doors) {
             // 获取Tiled 中定义的自定义属性
             const targetScene = door.properties.get('target_scene') as string;
-            const spawnX = door.properties.get('target_spawn_x') as number;
-            const spawnY = door.properties.get('target_spawn_y') as number;
             console.log(door.properties);
             //创建触发器
             const doorTrigger = new ex.Trigger({

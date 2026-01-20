@@ -22,8 +22,8 @@
             "scale": 8,
             "selectedLayer": 4,
             "viewCenter": {
-                "x": 13.75,
-                "y": 61.6875
+                "x": -0.125,
+                "y": -0.0625
             }
         },
         "interior.tsx": {
@@ -38,10 +38,10 @@
                 3
             ],
             "scale": 8,
-            "selectedLayer": 0,
+            "selectedLayer": 6,
             "viewCenter": {
-                "x": 313.5,
-                "y": 116.1875
+                "x": 315,
+                "y": 122.1875
             }
         },
         "village.tmx#building": {

@@ -9,7 +9,7 @@ export class TestMap extends ex.Scene {
         //实体世界
         const world = engine.currentScene.world;
         //注册系统
-        world.add(new PlayerControlSystem(world, engine));
-        world.add(new AnimationSystem(world));
+        world.add(new PlayerControlSystem(engine));
+        world.add(new AnimationSystem());
     }
 }

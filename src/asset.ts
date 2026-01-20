@@ -39,8 +39,8 @@ export class Asset {
 
         //加载地图
         const mapList = [
-            { name: "village", path: "./map/village/village.tmx" },
-            { name: "interior", path: "./map/village/interior.tmx" }
+            { name: "village", path: "./maps/village/village.tmx" },
+            { name: "interior", path: "./maps/village/interior.tmx" }
         ]
 
         for (const map of mapList) {

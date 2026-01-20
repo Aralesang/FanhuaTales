@@ -6,18 +6,33 @@ import { Asset } from '../asset';
 import { FactoryProps } from '@excaliburjs/plugin-tiled';
 import { Global } from '../global';
 import { TileMapSystem } from '../systems/tile-map-system';
+import BaseScene from '../base-scene';
 
-export class Village extends ex.Scene {
+export class Village extends BaseScene {
+    constructor() {
+        super("village");
+        
+    }
     override onInitialize(engine: ex.Engine): void {
-        const tileMap = Asset.tileMapMap["village"];
+        //加载地图
+        Asset.tileMapMap[this.sceneName].registerEntityFactory(
+            "player-start", (props: FactoryProps) => {
+                const player = new Player(props.worldPos, true);
+                //相机跟随
+                this.camera.strategy.lockToActor(player);
+                //玩家记录到全局
+                Global.localPlayer = player;
+                return player;
+            }
+        );
+        super.onInitialize(engine);
+        const tileMap = Asset.tileMapMap[this.sceneName];
         //获取门
         const doors = tileMap.getObjectsByClassName("Door");
         for (const door of doors) {
             console.log("门:", door);
             // 获取Tiled 中定义的自定义属性
             const targetScene = door.properties.get('target_scene') as string;
-            const spawnX = door.properties.get('target_spawn_x') as number;
-            const spawnY = door.properties.get('target_spawn_y') as number;
             console.log(door.properties);
             //创建触发器
             const doorTrigger = new ex.Trigger({
@@ -42,27 +57,13 @@ export class Village extends ex.Scene {
             this.add(doorTrigger)
         }
 
-        //加载地图
-        Asset.tileMapMap["village"].registerEntityFactory(
-            "player-start", (props: FactoryProps) => {
-                const player = new Player(props.worldPos, true);
-                //相机跟随
-                this.camera.strategy.lockToActor(player);
-                //玩家记录到全局
-                Global.localPlayer = player;
-                return player;
-            }
-        );
-
-
-        Asset.tileMapMap["village"].addToScene(this);
 
         //实体世界
         const world = engine.currentScene.world;
         //注册系统
         world.add(new PlayerControlSystem(engine));
         world.add(new AnimationSystem());
-        world.add(new TileMapSystem());        
+        //world.add(new TileMapSystem());        
 
     }
 }
