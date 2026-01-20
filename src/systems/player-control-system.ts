@@ -4,9 +4,10 @@ import { ActorState, StateMachineComponent } from '../components/state-machine-c
 import { DirectionComponent } from '../components/direction-component';
 
 export class PlayerControlSystem extends ex.System {
+    private engine: ex.Engine;
     //定义这个系统感兴趣的组件
     public systemType = ex.SystemType.Update;
-    public query: ex.Query<
+    public query!: ex.Query<
         typeof ex.TransformComponent |
         typeof PlayerControlComponent |
         typeof StateMachineComponent |
@@ -16,15 +17,18 @@ export class PlayerControlSystem extends ex.System {
     private _horizontalKeys: ex.Keys[] = [];
     private _verticalKeys: ex.Keys[] = [];
 
-    constructor(world: ex.World, private engine: ex.Engine) {
+    constructor(engine: ex.Engine) {
         super();
+        this.engine = engine;
+    }
+
+    initialize(world: ex.World, scene: ex.Scene): void {
         this.query = world.query([
             ex.TransformComponent,
             PlayerControlComponent,
             StateMachineComponent,
             DirectionComponent
         ]);
-
         // 监听按键按下，维护按键栈，确保最后按下的按键优先级最高
         this.engine.input.keyboard.on('press', (evt) => {
             const key = evt.key;
@@ -53,7 +57,6 @@ export class PlayerControlSystem extends ex.System {
 
     update(delta: number): void {
         const kb = this.engine.input.keyboard;
-
         // 获取当前有效的按键（栈顶是最后按下的）
         // 增加一个额外的检查: kb.isHeld(key) 确保按键确实是按下的（防止状态不同步）
         const horizontalKey = this._horizontalKeys.slice().reverse().find(k => kb.isHeld(k));
@@ -84,7 +87,7 @@ export class PlayerControlSystem extends ex.System {
             }
 
             if (velX != 0 || velY != 0) {
-                stateMachine.changeState(ActorState.Run, entity);
+                stateMachine.changeState(ActorState.Walk, entity);
             } else {
                 stateMachine.changeState(ActorState.Idle, entity);
             }
@@ -98,7 +101,6 @@ export class PlayerControlSystem extends ex.System {
             const deltaSeconds = delta / 1000;
             transform.pos.x += velX * deltaSeconds;
             transform.pos.y += velY * deltaSeconds;
-
         }
     }
 }

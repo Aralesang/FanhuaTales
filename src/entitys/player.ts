@@ -2,21 +2,31 @@ import * as ex from 'excalibur';
 import { StateMachineComponent } from '../components/state-machine-component';
 import { AnimationComponent } from '../components/animation-component';
 import { DirectionComponent } from '../components/direction-component';
+import { PlayerControlComponent } from '../components/player-control-component';
 
 /** 玩家实体 */
 export class Player extends ex.Actor {
-    constructor() {
+    constructor(pos: ex.Vector, isControl: boolean) {
         super({
-            pos: new ex.Vector(0, 0),
-            width: 16,
-            height: 16
+            pos: pos,
+            width: 10,
+            height: 8,
+            anchor: new ex.Vector(0.5, 0.55),
+            z: 4
         });
+        console.log("玩家实体组装");
+
         //附加方向组件
         this.addComponent(new DirectionComponent(ex.Vector.Down));
         //附加状态机组件
         this.addComponent(new StateMachineComponent());
         //附加动画组件
         this.addComponent(new AnimationComponent("human", this));
+        this.body.collisionType = ex.CollisionType.Active;
         this.addTag("player");
+        //检查是否是需要被控制的玩家
+        if (isControl) {
+            this.addComponent(new PlayerControlComponent(50));
+        }
     }
 }

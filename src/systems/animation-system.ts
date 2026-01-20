@@ -6,13 +6,13 @@ import { DirectionComponent } from '../components/direction-component';
 
 export class AnimationSystem extends ex.System {
     systemType = ex.SystemType.Update;
-    public query: ex.Query<
+    public query!: ex.Query<
         typeof StateMachineComponent |
         typeof AnimationComponent |
         typeof DirectionComponent
     >;
-    constructor(world: ex.World) {
-        super();
+
+    initialize(world: ex.World, scene: ex.Scene): void {
         this.query = world.query([StateMachineComponent, AnimationComponent, DirectionComponent]);
         //监听状态事件
         for (const entity of this.query.entities) {

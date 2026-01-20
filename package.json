@@ -15,6 +15,7 @@
     "vite": "6.4.1"
   },
   "dependencies": {
+    "@excaliburjs/plugin-tiled": "0.31.0",
     "excalibur": "0.31.0"
   }
 }
