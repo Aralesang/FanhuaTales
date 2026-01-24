@@ -6,6 +6,7 @@ import { PlayerControlComponent } from '../components/player-control-component';
 
 /** 玩家实体 */
 export class Player extends ex.Actor {
+    private isControl: boolean;
     constructor(pos: ex.Vector, isControl: boolean) {
         super({
             pos: pos,
@@ -14,8 +15,11 @@ export class Player extends ex.Actor {
             anchor: new ex.Vector(0.5, 0.55),
             z: 4
         });
-        console.log("玩家实体组装");
+        this.isControl = isControl;
+    }   
 
+    onInitialize(engine: ex.Engine): void {
+        console.log("玩家实体组装");
         //附加方向组件
         this.addComponent(new DirectionComponent(ex.Vector.Down));
         //附加状态机组件
@@ -25,8 +29,10 @@ export class Player extends ex.Actor {
         this.body.collisionType = ex.CollisionType.Active;
         this.addTag("player");
         //检查是否是需要被控制的玩家
-        if (isControl) {
+        if (this.isControl) {
             this.addComponent(new PlayerControlComponent(50));
         }
+        //附加状态机组件
+        this.addComponent(new StateMachineComponent());
     }
 }

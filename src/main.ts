@@ -6,6 +6,7 @@ import { Village } from './scenes/village';
 import { TiledResource } from '@excaliburjs/plugin-tiled';
 import { Interior } from './scenes/interior';
 import { TileMapSystem } from './systems/tile-map-system';
+import { StateMachinTest } from './test/state-machine-test';
 
 const game = new ex.Engine({
     width: 800,

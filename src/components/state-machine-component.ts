@@ -1,33 +1,20 @@
-import * as ex from 'excalibur';
-import { StateMachineEvents } from '../events/state-machine-event';
-
-export enum ActorState {
-    /** 闲置 */
-    Idle,
-    /** 走路 */
-    Walk,
-    /** 跑步 */
-    Run
-}
+import { Actor, Component, StateMachine, StateMachineDescription } from "excalibur";
+import { IdleState } from "../states/idle-state";
+import { WalkState } from "../states/walk-state";
 
 /** 状态机组件 */
-export class StateMachineComponent extends ex.Component {
-    public currentState: ActorState = ActorState.Idle;
-    constructor() {
-        super()
-    }
-    changeState(newState: ActorState, entity: ex.Entity) {
-        if (newState === this.currentState) {
-            return;
-        }
-        const oldState = this.currentState;
-        this.currentState = newState;
-        entity.emit(
-            StateMachineEvents.StateChange,
-            {
-                oldState: oldState,
-                newState: newState
+export class StateMachineComponent extends Component {
+    public fsm: StateMachine<"Idle" | "Walk", Actor>;
+    constructor() { 
+        super();
+        const playerStateMachineDescription: StateMachineDescription<Actor> = {
+            start: "Idle",
+            states: {
+                Idle: new IdleState(),
+                Walk: new WalkState()
             }
-        );
+        };
+        //创建有限状态机
+        this.fsm = StateMachine.create(playerStateMachineDescription, this.owner as Actor);
     }
 }

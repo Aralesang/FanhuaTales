@@ -1,6 +1,6 @@
 import * as ex from 'excalibur';
 import { PlayerControlComponent } from '../components/player-control-component';
-import { ActorState, StateMachineComponent } from '../components/state-machine-component';
+import {StateMachineComponent } from '../components/state-machine-component';
 import { DirectionComponent } from '../components/direction-component';
 
 export class PlayerControlSystem extends ex.System {
@@ -87,9 +87,9 @@ export class PlayerControlSystem extends ex.System {
             }
 
             if (velX != 0 || velY != 0) {
-                stateMachine.changeState(ActorState.Walk, entity);
+                stateMachine.fsm.go("Walk");
             } else {
-                stateMachine.changeState(ActorState.Idle, entity);
+                stateMachine.fsm.go("Idle");
             }
             if (kb.isHeld(ex.Keys.Q)) {
                 //场景切换

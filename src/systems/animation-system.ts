@@ -1,5 +1,5 @@
 import * as ex from 'excalibur';
-import { ActorState, StateMachineComponent } from '../components/state-machine-component';
+import { StateMachineComponent } from '../components/state-machine-component';
 import { StateMachineEvents } from '../events/state-machine-event';
 import { AnimationComponent } from '../components/animation-component';
 import { DirectionComponent } from '../components/direction-component';
@@ -36,7 +36,7 @@ export class AnimationSystem extends ex.System {
 
     update(elapsed: number): void {
         for (const entity of this.query.entities) {
-            const currState = entity.get(StateMachineComponent).currentState;
+            const currState = entity.get(StateMachineComponent).fsm.currentState;
             const animation = entity.get(AnimationComponent);
             //获取方向
             let direction: ex.Vector = entity.get(DirectionComponent).direction;
