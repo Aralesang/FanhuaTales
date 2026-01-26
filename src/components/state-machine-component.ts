@@ -1,20 +1,30 @@
-import { Actor, Component, StateMachine, StateMachineDescription } from "excalibur";
+import { Actor, Component, Entity, InitializeEvent, StateMachine, StateMachineDescription } from "excalibur";
 import { IdleState } from "../states/idle-state";
 import { WalkState } from "../states/walk-state";
+import { RunState } from "../states/run-state";
+import { SwordState } from "../states/sword-state";
+
+/** 状态枚举 */
+type PlayerState = "Idle" | "Walk" | "Run" | "Sword";
 
 /** 状态机组件 */
 export class StateMachineComponent extends Component {
-    public fsm: StateMachine<"Idle" | "Walk", Actor>;
+    public fsm: StateMachine<PlayerState, Actor> | undefined;
     constructor() { 
         super();
+        
+    }
+
+    onAdd(owner: Entity): void {
         const playerStateMachineDescription: StateMachineDescription<Actor> = {
             start: "Idle",
             states: {
-                Idle: new IdleState(),
-                Walk: new WalkState()
+                Idle: IdleState,
+                Walk: WalkState,
+                Run: RunState,
+                Sword: SwordState
             }
-        };
-        //创建有限状态机
-        this.fsm = StateMachine.create(playerStateMachineDescription, this.owner as Actor);
+        } as const;
+        this.fsm = StateMachine.create(playerStateMachineDescription, owner as Actor);
     }
 }

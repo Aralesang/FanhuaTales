@@ -25,5 +25,14 @@
             "spriteWidth": 80,
             "spriteHeight": 80
         }
+    },
+    "human_sword": {
+        "path": "./images/human/sword.png",
+        "grid": {
+            "rows": 3,
+            "columns": 6,
+            "spriteWidth": 80,
+            "spriteHeight": 80
+        }
     }
 }

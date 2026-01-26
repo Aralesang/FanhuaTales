@@ -32,7 +32,5 @@ export class Player extends ex.Actor {
         if (this.isControl) {
             this.addComponent(new PlayerControlComponent(50));
         }
-        //附加状态机组件
-        this.addComponent(new StateMachineComponent());
     }
 }
