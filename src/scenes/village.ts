@@ -7,11 +7,11 @@ import { FactoryProps } from '@excaliburjs/plugin-tiled';
 import { Global } from '../global';
 import { TileMapSystem } from '../systems/tile-map-system';
 import BaseScene from '../base-scene';
+import { StateMachineSystem } from '../systems/state-machine-system';
 
 export class Village extends BaseScene {
     constructor() {
         super("village");
-        
     }
     override onInitialize(engine: ex.Engine): void {
         //加载地图
@@ -61,9 +61,9 @@ export class Village extends BaseScene {
         //实体世界
         const world = engine.currentScene.world;
         //注册系统
-        world.add(new PlayerControlSystem(engine));
+        world.add(new StateMachineSystem());
         world.add(new AnimationSystem());
-        //world.add(new TileMapSystem());        
+        world.add(new PlayerControlSystem(engine));
 
     }
 }

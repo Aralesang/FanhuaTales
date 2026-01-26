@@ -1,6 +1,6 @@
 import * as ex from 'excalibur';
 import { PlayerControlComponent } from '../components/player-control-component';
-import {StateMachineComponent } from '../components/state-machine-component';
+import { StateMachineComponent } from '../components/state-machine-component';
 import { DirectionComponent } from '../components/direction-component';
 
 export class PlayerControlSystem extends ex.System {
@@ -16,6 +16,7 @@ export class PlayerControlSystem extends ex.System {
 
     private _horizontalKeys: ex.Keys[] = [];
     private _verticalKeys: ex.Keys[] = [];
+    private _otherKeys: ex.Keys[] = [];
 
     constructor(engine: ex.Engine) {
         super();
@@ -23,6 +24,7 @@ export class PlayerControlSystem extends ex.System {
     }
 
     initialize(world: ex.World, scene: ex.Scene): void {
+        console.log("PlayerControlSystem");
         this.query = world.query([
             ex.TransformComponent,
             PlayerControlComponent,
@@ -36,10 +38,12 @@ export class PlayerControlSystem extends ex.System {
                 // 如果已经在栈中，先移除，再添加到末尾（表示最新）
                 this._horizontalKeys = this._horizontalKeys.filter(k => k !== key);
                 this._horizontalKeys.push(key);
-            }
-            if (key === ex.Keys.Up || key === ex.Keys.Down) {
+            } else if (key === ex.Keys.Up || key === ex.Keys.Down) {
                 this._verticalKeys = this._verticalKeys.filter(k => k !== key);
                 this._verticalKeys.push(key);
+            } else {
+                this._otherKeys = this._otherKeys.filter(k => k !== key);
+                this._otherKeys.push(key);
             }
         });
 
@@ -61,7 +65,7 @@ export class PlayerControlSystem extends ex.System {
         // 增加一个额外的检查: kb.isHeld(key) 确保按键确实是按下的（防止状态不同步）
         const horizontalKey = this._horizontalKeys.slice().reverse().find(k => kb.isHeld(k));
         const verticalKey = this._verticalKeys.slice().reverse().find(k => kb.isHeld(k));
-
+        const otherKey = this._otherKeys.shift();
         for (let entity of this.query.entities) {
             const transform = entity.get(ex.TransformComponent);
             const control = entity.get(PlayerControlComponent);
@@ -70,37 +74,55 @@ export class PlayerControlSystem extends ex.System {
             let velX = 0;
             let velY = 0;
 
-            if (verticalKey === ex.Keys.Up) {
-                velY = -control.speed;
-                direction.direction = ex.Vector.Up;
-            } else if (verticalKey === ex.Keys.Down) {
-                velY = control.speed;
-                direction.direction = ex.Vector.Down;
+            if (stateMachine.fsm == undefined) {
+                continue;
+            }
+            const currentState = stateMachine.fsm.currentState;
+
+            if (otherKey === ex.Keys.X) {
+                console.log("按下攻击");
+                //攻击每次按下只触发一次
+                stateMachine.fsm.go("Sword");
             }
 
-            if (horizontalKey === ex.Keys.Left) {
-                velX = -control.speed;
-                direction.direction = ex.Vector.Left;
-            } else if (horizontalKey === ex.Keys.Right) {
-                velX = control.speed;
-                direction.direction = ex.Vector.Right;
+            if (currentState.name === "Idle" || currentState.name == "Walk" || currentState.name == "Run") {
+                if (verticalKey === ex.Keys.Up) {
+                    velY = -control.speed;
+                    direction.direction = ex.Vector.Up;
+                } else if (verticalKey === ex.Keys.Down) {
+                    velY = control.speed;
+                    direction.direction = ex.Vector.Down;
+                }
+
+                if (horizontalKey === ex.Keys.Left) {
+                    velX = -control.speed;
+                    direction.direction = ex.Vector.Left;
+                } else if (horizontalKey === ex.Keys.Right) {
+                    velX = control.speed;
+                    direction.direction = ex.Vector.Right;
+                }
             }
 
-            if (velX != 0 || velY != 0) {
-                stateMachine.fsm.go("Walk");
-            } else {
-                stateMachine.fsm.go("Idle");
+            //只有处于闲置状态下才能切换到移动状态
+            if (currentState.name === "Idle") {
+                if (velX != 0 || velY != 0) {
+                    stateMachine.fsm.go("Walk");
+                }
             }
-            if (kb.isHeld(ex.Keys.Q)) {
-                //场景切换
-                this.engine.goToScene('TestMpa');
+
+            //只有处于移动状态下才应用移动
+            if (currentState.name == "Walk" || currentState.name == "Run") {
+                // 计算每一帧的位移 (速度 * 时间)
+                // 注意：如果你用了 Actor，也可以直接修改 entity.vel，
+                const deltaSeconds = delta / 1000;
+                transform.pos.x += velX * deltaSeconds;
+                transform.pos.y += velY * deltaSeconds;
+
+                if (velX == 0 && velY == 0) {
+                    stateMachine.fsm.go("Idle");
+                }
             }
-            // 计算每一帧的位移 (速度 * 时间)
-            // 注意：如果你用了 Actor，也可以直接修改 entity.vel，
-            // 但为了演示纯粹的 ECS，我们直接修改坐标
-            const deltaSeconds = delta / 1000;
-            transform.pos.x += velX * deltaSeconds;
-            transform.pos.y += velY * deltaSeconds;
+
         }
     }
 }

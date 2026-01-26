@@ -8,6 +8,7 @@ export class AnimationComponent extends Component {
     private animationMap: Map<string, Animation> = new Map();
     /** 当前动画 */
     private currentAnimationName: string = "";
+    private animation: Animation | undefined;
     constructor(entityType: string, actor: Actor) {
         super();
         this.entityType = entityType;
@@ -35,13 +36,13 @@ export class AnimationComponent extends Component {
         if (this.currentAnimationName == animName) {
             return;
         }
-        let anim = this.animationMap.get(animName);
+        this.animation = this.animationMap.get(animName);
         if (direction.equals(Vector.Left)) {
             actor.graphics.flipHorizontal = true;
         } else if (direction.equals(Vector.Right)) {
             actor.graphics.flipHorizontal = false;
         }
-        if (anim == undefined) {
+        if (this.animation == undefined) {
             //根据方向决定播放第几行的动画
             let row = 0;
             if (direction.equals(Vector.Down)) {
@@ -53,9 +54,13 @@ export class AnimationComponent extends Component {
             } else if (direction.equals(Vector.Right)) {
                 row = 0;
             }
-            anim = Animation.fromSpriteSheet(spriteSheet, range(row * imageData.grid.columns, (row + 1) * imageData.grid.columns - 1), 200);
-            this.animationMap.set(animName, anim);
+            this.animation = Animation.fromSpriteSheet(spriteSheet, range(row * imageData.grid.columns, (row + 1) * imageData.grid.columns - 1), 100);
+            this.animationMap.set(animName, this.animation);
         }
-        actor.graphics.use(anim);
+        actor.graphics.use(this.animation);
+    }
+
+    public getCurrentAnimation(){
+        return this.animation;
     }
 }
