@@ -8,6 +8,7 @@ import { Global } from '../global';
 import { TileMapSystem } from '../systems/tile-map-system';
 import BaseScene from '../base-scene';
 import { StateMachineSystem } from '../systems/state-machine-system';
+import { DirectionSystem } from '../systems/direction-machine-system';
 
 export class Village extends BaseScene {
     constructor() {
@@ -61,6 +62,7 @@ export class Village extends BaseScene {
         //实体世界
         const world = engine.currentScene.world;
         //注册系统
+        world.add(new DirectionSystem());
         world.add(new StateMachineSystem());
         world.add(new AnimationSystem());
         world.add(new PlayerControlSystem(engine));

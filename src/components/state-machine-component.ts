@@ -3,6 +3,7 @@ import { IdleState } from "../states/idle-state";
 import { WalkState } from "../states/walk-state";
 import { RunState } from "../states/run-state";
 import { SwordState } from "../states/sword-state";
+import { Initial } from "../states/initial-state";
 
 /** 状态枚举 */
 type PlayerState = "Idle" | "Walk" | "Run" | "Sword";
@@ -17,8 +18,9 @@ export class StateMachineComponent extends Component {
 
     onAdd(owner: Entity): void {
         const playerStateMachineDescription: StateMachineDescription<Actor> = {
-            start: "Idle",
+            start: "Initial",
             states: {
+                Initial: Initial,
                 Idle: IdleState,
                 Walk: WalkState,
                 Run: RunState,

@@ -1,4 +1,4 @@
-import { Component, Actor, Vector, SpriteSheet, range, Animation } from 'excalibur';
+import { Component, Actor, Vector, SpriteSheet, range, Animation, AnimationStrategy } from 'excalibur';
 import { Asset } from '../asset';
 
 export class AnimationComponent extends Component {
@@ -9,12 +9,18 @@ export class AnimationComponent extends Component {
     /** 当前动画 */
     private currentAnimationName: string = "";
     private animation: Animation | undefined;
+    /** 当前动画方向 */
+    public currentDirection: Vector = Vector.Down;
+    /** 当前动画类型 */
+    private currentAnimType: string = "idle";
     constructor(entityType: string, actor: Actor) {
         super();
         this.entityType = entityType;
         this.actor = actor;
     }
     public changeAnimation(actor: Actor, animType: string, direction: Vector) {
+        this.currentDirection = direction;
+        this.currentAnimType = animType;
         //拼接出图片全称
         const imageName = `${this.entityType}_${animType}`;
         const image = Asset.imageMap[imageName];
@@ -54,13 +60,20 @@ export class AnimationComponent extends Component {
             } else if (direction.equals(Vector.Right)) {
                 row = 0;
             }
-            this.animation = Animation.fromSpriteSheet(spriteSheet, range(row * imageData.grid.columns, (row + 1) * imageData.grid.columns - 1), 100);
+            this.animation = Animation.fromSpriteSheet(spriteSheet, range(row * imageData.grid.columns, (row + 1) * imageData.grid.columns - 1), 100, imageData.animationStrategy);
             this.animationMap.set(animName, this.animation);
         }
+        this.animation.reset();
         actor.graphics.use(this.animation);
+        
     }
 
     public getCurrentAnimation(){
         return this.animation;
+    }
+
+    public changeDirection(direction: Vector){
+        this.currentDirection = direction;
+        this.changeAnimation(this.actor, this.currentAnimType, direction);
     }
 }

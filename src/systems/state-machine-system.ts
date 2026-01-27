@@ -16,6 +16,9 @@ export class StateMachineSystem extends ex.System {
                 continue;
             }
             stateMachine.update(elapsed);
+            if(stateMachine.currentState.name === "Initial"){
+                stateMachine.go("Idle");
+            }
         }
     }
     

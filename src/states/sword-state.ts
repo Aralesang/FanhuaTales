@@ -1,32 +1,22 @@
 import { Actor, Entity, State } from "excalibur";
 import { AnimationComponent } from "../components/animation-component";
 import { StateMachineComponent } from "../components/state-machine-component";
+import { DirectionComponent } from "../components/direction-component";
 
 export const SwordState: State<Actor> = {
     name: "Sword",
     transitions: ["Idle"],
-    onEnter: (context: { from: string; eventData?: any; data: Actor; }) => {
+    onEnter(context: { from: string; eventData?: any; data: Actor; }) {
+        const {data} = context;
         console.log(context.data, "进入Sword状态");
-    },
-    onUpdate: (data: Actor, elapsed: number) => {
         const animationComponent = data.get(AnimationComponent);
-        const currentAnimation = animationComponent.getCurrentAnimation();
-        if (currentAnimation == undefined) {
-            return;
-        }
-        //console.log(currentAnimation.currentFrameIndex, currentAnimation.frames.length);
-        if (currentAnimation.currentFrameIndex == currentAnimation.frames.length - 1) {
-            {
-                //动画播放完毕，切换回Idle状态
-                const stateMachine = data.get(StateMachineComponent).fsm;
-                if(stateMachine == undefined){
-                    return;
-                }
-                currentAnimation.reset();
-                stateMachine.go("Idle");
-            }
-
-        }
+        const direction = data.get(DirectionComponent).direction;
+        const stateMachine = data.get(StateMachineComponent).fsm;
+        animationComponent.changeAnimation(data, "sword", direction);
+        const animation = animationComponent.getCurrentAnimation();
+        animation?.events.once('end', ()=>{
+            console.log("攻击结束");
+            stateMachine?.go("Idle");
+        });
     }
-
 }

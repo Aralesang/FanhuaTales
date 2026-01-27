@@ -27,21 +27,12 @@ export class AnimationSystem extends ex.System {
             if (stateMachine == undefined) {
                 continue;
             }
-            const currState = stateMachine.currentState;
+            // const currState = stateMachine.currentState;
             const animation = entity.get(AnimationComponent);
-            //获取方向
+            // //获取方向
             let direction: ex.Vector = entity.get(DirectionComponent).direction;
-            if (currState.name == "Idle") {
-            animation.changeAnimation(entity as ex.Actor, "idle", direction);
-            }
-            if (currState.name == "Walk") {
-                animation.changeAnimation(entity as ex.Actor, "walk", direction);
-            }
-            if (currState.name == "Run") {
-                animation.changeAnimation(entity as ex.Actor, "run", direction);
-            }
-            if (currState.name == "Sword") {
-                animation.changeAnimation(entity as ex.Actor, "sword", direction);
+            if(!direction.equals(animation.currentDirection)){
+                animation.changeDirection(direction);
             }
         }
     }

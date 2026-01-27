@@ -18,7 +18,8 @@ interface ImageData {
         spriteWidth: number,
         /** 精灵高度 */
         spriteHeight: number
-    }
+    },
+    animationStrategy: ex.AnimationStrategy
 }
 
 export class Asset {

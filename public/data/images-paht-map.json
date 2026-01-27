@@ -6,7 +6,8 @@
             "columns": 4,
             "spriteWidth": 80,
             "spriteHeight": 80
-        }
+        },
+        "animationStrategy": "loop"
     },
     "human_walk": {
         "path": "./images/human/walk.png",
@@ -15,7 +16,8 @@
             "columns": 8,
             "spriteWidth": 80,
             "spriteHeight": 80
-        }
+        },
+        "animationStrategy": "loop"
     },
     "human_run": {
         "path": "./images/human/run.png",
@@ -24,7 +26,8 @@
             "columns": 8,
             "spriteWidth": 80,
             "spriteHeight": 80
-        }
+        },
+        "animationStrategy": "loop"
     },
     "human_sword": {
         "path": "./images/human/sword.png",
@@ -33,6 +36,7 @@
             "columns": 6,
             "spriteWidth": 80,
             "spriteHeight": 80
-        }
+        },
+        "animationStrategy": "freeze"
     }
 }
