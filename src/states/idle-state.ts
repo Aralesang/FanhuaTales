@@ -6,7 +6,7 @@ export const IdleState: State<Actor> = {
     name: "Idle",
     transitions: ["Walk", "Run", "Sword"],
     onEnter(context: { from: string; eventData?: any; data: Actor; }) {
-        console.log(context.data, "进入Idle状态");
+        //console.log(context.data, "进入Idle状态");
         const {data} = context;
         const animationComponent = data.get(AnimationComponent);
         const direction = data.get(DirectionComponent).direction;

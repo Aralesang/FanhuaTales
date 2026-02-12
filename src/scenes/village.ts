@@ -1,5 +1,6 @@
 import * as ex from 'excalibur';
 import { Player } from '../entitys/player';
+import { Enemy } from '../entitys/enemy';
 import { PlayerControlSystem } from '../systems/player-control-system';
 import { AnimationSystem } from '../systems/animation-system';
 import { Asset } from '../asset';
@@ -66,6 +67,21 @@ export class Village extends BaseScene {
         world.add(new StateMachineSystem());
         world.add(new AnimationSystem());
         world.add(new PlayerControlSystem(engine));
+
+        // 注册 enemy 的 tiled factory（可在 Tiled map 中使用 object type: "enemy-start"）
+        Asset.tileMapMap[this.sceneName].registerEntityFactory(
+            "enemy-start", (props: FactoryProps) => {
+                const enemy = new Enemy(props.worldPos);
+                return enemy;
+            }
+        );
+
+        // 立即在玩家右侧生成一个测试敌人，便于立刻在场景中查看效果
+        if (Global.localPlayer) {
+            const spawnPos = ex.vec(Global.localPlayer.pos.x + 40, Global.localPlayer.pos.y);
+            const enemy = new Enemy(spawnPos);
+            this.add(enemy);
+        }
 
     }
 }

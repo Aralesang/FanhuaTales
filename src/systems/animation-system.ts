@@ -1,12 +1,7 @@
 import * as ex from 'excalibur';
 import { StateMachineComponent } from '../components/state-machine-component';
-import { StateMachineEvents } from '../events/state-machine-event';
 import { AnimationComponent } from '../components/animation-component';
 import { DirectionComponent } from '../components/direction-component';
-import { IdleState } from '../states/idle-state';
-import { WalkState } from '../states/walk-state';
-import { RunState } from '../states/run-state';
-
 export class AnimationSystem extends ex.System {
     systemType = ex.SystemType.Update;
     public query!: ex.Query<
