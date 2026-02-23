@@ -26,6 +26,8 @@ export class Asset {
     public static imageMap: Record<string, ex.ImageSource> = {};
     public static imageDataMap: Map<string, ImageData>;
     public static tileMapMap: Record<string, TiledResource> = {};
+    public static music: ex.Sound | undefined;
+    public static sounds: Record<string, ex.Sound> = {};
     public static async init() {
         const imagePathResource = new ex.Resource<ImageDataMap>("./data/images-paht-map.json", "json");
         this.imageDataMap = new Map();
@@ -51,5 +53,44 @@ export class Asset {
             this.tileMapMap[map.name] = tileMap;
         }
 
+        // 加载音频资源（public/music 下只有一首背景音乐，public/sounds 下为若干音效）
+        try {
+            this.music = new ex.Sound("./music/time_for_adventure.mp3");
+            this.sounds = {
+                coin: new ex.Sound("./sounds/coin.wav"),
+                explosion: new ex.Sound("./sounds/explosion.wav"),
+                hurt: new ex.Sound("./sounds/hurt.wav"),
+                jump: new ex.Sound("./sounds/jump.wav"),
+                power_up: new ex.Sound("./sounds/power_up.wav"),
+                tap: new ex.Sound("./sounds/tap.wav")
+            };
+        } catch (e) {
+            console.warn("音频资源加载初始化失败", e);
+        }
+
+    }
+    public static playMusic() {
+        if (!this.music) return;
+        try {
+            // 尝试以循环方式播放背景音乐；某些 Excalibur 版本可能不直接暴露 loop 属性
+            // @ts-ignore
+            this.music.loop = true;
+            this.music.play();
+        } catch (e) {
+            try {
+                this.music.play();
+            } catch (err) {
+                console.warn('播放背景音乐失败', err);
+            }
+        }
+    }
+    public static playSound(name: string) {
+        const s = this.sounds[name];
+        if (!s) return;
+        try {
+            s.play();
+        } catch (e) {
+            console.warn(`播放音效 ${name} 失败`, e);
+        }
     }
 };

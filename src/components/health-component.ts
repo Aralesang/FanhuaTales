@@ -1,4 +1,5 @@
 import { Component, Actor, GraphicsComponent } from 'excalibur';
+import { Asset } from '../asset';
 
 /** 简单生命组件：管理血量并提供受击接口（击杀时会调用 actor.kill()） */
 export class HealthComponent extends Component {
@@ -20,6 +21,15 @@ export class HealthComponent extends Component {
    */
   public takeDamage(amount: number, opts?: { source?: Actor | { x: number; y: number } | undefined, knockback?: number, stunMs?: number, flashMs?: number, flashTimes?: number }) {
     this.hp -= amount;
+
+    // 播放受击音效（如果已注册）
+    try {
+      if (amount > 0) {
+        Asset.playSound('hurt');
+      }
+    } catch (e) {
+      // 忽略播放失败
+    }
 
     const owner = this.owner as Actor | undefined;
 

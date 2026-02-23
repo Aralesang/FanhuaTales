@@ -29,11 +29,20 @@ const loaderList = [];
 
 loaderList.push(...Object.values(Asset.imageMap));
 loaderList.push(...Object.values(Asset.tileMapMap));
+// 将音频资源加入加载列表（若存在）
+if (Asset.music) {
+    loaderList.push(Asset.music);
+}
+if (Object.keys(Asset.sounds || {}).length > 0) {
+    loaderList.push(...Object.values(Asset.sounds));
+}
 
 const loader = new ex.Loader(loaderList);
 
 //跳过开始游戏界面
 loader.suppressPlayButton = true;
 game.start(loader).then(() => {
+    // 启动背景音乐（循环播放）
+    Asset.playMusic();
     game.goToScene('village');
 });
