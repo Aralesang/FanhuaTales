@@ -3,12 +3,13 @@ import { AnimationComponent } from "../components/animation-component";
 import { StateMachineComponent } from "../components/state-machine-component";
 import { DirectionComponent } from "../components/direction-component";
 import { HealthComponent } from "../components/health-component";
+import { Asset } from "../asset";
 
 export const SwordState: State<Actor> = {
     name: "Sword",
     transitions: ["Idle"],
     onEnter(context: { from: string; eventData?: any; data: Actor; }) {
-        const {data} = context;
+        const { data } = context;
         //console.log(context.data, "进入Sword状态");
         const animationComponent = data.get(AnimationComponent);
         const direction = data.get(DirectionComponent).direction;
@@ -25,6 +26,9 @@ export const SwordState: State<Actor> = {
         const offset = 12; // 相对于角色中心的偏移
         let enabled = false;
         const alreadyHit = new Set<Entity<any>>();
+
+        //发出音效
+        Asset.playSound("human_atk_sword_1");
 
         const attackPos = data.pos.clone().add(direction.normalize().scale(offset));
         const attackTrigger = new Trigger({
@@ -120,7 +124,7 @@ export const SwordState: State<Actor> = {
             scene.off('postupdate', postUpdateHandler);
         }, hitWindowStart + hitWindowDuration);
 
-        animation?.events.once('end', ()=>{
+        animation?.events.once('end', () => {
             // 清理定时器与触发器
             globalThis.clearTimeout(t1);
             globalThis.clearTimeout(t2);

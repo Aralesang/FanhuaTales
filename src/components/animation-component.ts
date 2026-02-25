@@ -1,4 +1,4 @@
-import { Component, Actor, Vector, SpriteSheet, range, Animation, AnimationStrategy } from 'excalibur';
+import { Component, Actor, Vector, SpriteSheet, range, Animation, AnimationStrategy, Color } from 'excalibur';
 import { Asset } from '../asset';
 
 export class AnimationComponent extends Component {
@@ -13,10 +13,13 @@ export class AnimationComponent extends Component {
     public currentDirection: Vector = Vector.Down;
     /** 当前动画类型 */
     private currentAnimType: string = "idle";
-    constructor(entityType: string, actor: Actor) {
+    /** 动画色调 */
+    private tint: Color | undefined;
+    constructor(entityType: string, actor: Actor, tint?: Color) {
         super();
         this.entityType = entityType;
         this.actor = actor;
+        this.tint = tint;
     }
     public changeAnimation(actor: Actor, animType: string, direction: Vector) {
         this.currentDirection = direction;
@@ -61,18 +64,21 @@ export class AnimationComponent extends Component {
                 row = 0;
             }
             this.animation = Animation.fromSpriteSheet(spriteSheet, range(row * imageData.grid.columns, (row + 1) * imageData.grid.columns - 1), 100, imageData.animationStrategy);
+            if (this.tint) {
+                this.animation.tint = this.tint;
+            }
             this.animationMap.set(animName, this.animation);
         }
         this.animation.reset();
         actor.graphics.use(this.animation);
-        
+
     }
 
-    public getCurrentAnimation(){
+    public getCurrentAnimation() {
         return this.animation;
     }
 
-    public changeDirection(direction: Vector){
+    public changeDirection(direction: Vector) {
         this.currentDirection = direction;
         this.changeAnimation(this.actor, this.currentAnimType, direction);
     }

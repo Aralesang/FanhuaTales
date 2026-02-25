@@ -7,7 +7,10 @@ import { HealthComponent } from '../components/health-component';
 
 /** 敌人（临时：使用与玩家相同的贴图和状态机） */
 export class Enemy extends ex.Actor {
+    private lastAttackTime: number = 0; // 上次攻击时间
+    private attackCooldown: number = 1000; // 攻击冷却时间（毫秒）
     private speed: number = 30; // 每秒像素速度（可调）
+
     constructor(pos: ex.Vector) {
         super({
             pos: pos,
@@ -22,11 +25,47 @@ export class Enemy extends ex.Actor {
         // 复用玩家的组件：方向、状态机、动画
         this.addComponent(new DirectionComponent(ex.Vector.Down));
         this.addComponent(new StateMachineComponent());
-        this.addComponent(new AnimationComponent('human', this));
+        this.addComponent(new AnimationComponent('human', this, ex.Color.Red));
         // 敌人有生命值，可被玩家攻击
         this.addComponent(new HealthComponent(3));
         this.body.collisionType = ex.CollisionType.Active;
         this.addTag('enemy');
+
+        // 监听碰撞开始事件，用于伤害玩家
+        this.on('collisionstart', (evt) => {
+            if (evt.other.owner) {
+                this.handleCollision(evt.other.owner);
+            }
+        });
+        // 监听碰撞保持事件，用于在持续接触时也能触发冷却后的攻击
+        this.on('precollision', (evt) => {
+            if (evt.other.owner) {
+                this.handleCollision(evt.other.owner);
+            }
+        });
+    }
+
+    /** 处理碰撞逻辑 */
+    private handleCollision(other: ex.Entity) {
+        // 检查碰撞对象是否是玩家
+        if (other.hasTag('player')) {
+            const now = Date.now();
+            if (now - this.lastAttackTime >= this.attackCooldown) {
+                const playerHealth = other.get(HealthComponent);
+                if (playerHealth) {
+                    // 对玩家造成 1 点伤害，并附加反馈效果
+                    playerHealth.takeDamage(1, {
+                        source: this,
+                        knockback: 100, // 击退速度
+                        stunMs: 300,    // 眩晕时间
+                        flashMs: 300,   // 闪烁时间
+                        flashTimes: 3   // 闪烁次数
+                    });
+                    this.lastAttackTime = now;
+                    console.log(`敌人攻击了玩家！玩家剩余 HP: ${playerHealth.hp}`);
+                }
+            }
+        }
     }
 
     onPreUpdate(engine: ex.Engine, delta: number): void {

@@ -29,56 +29,59 @@ export class Asset {
     public static music: ex.Sound | undefined;
     public static sounds: Record<string, ex.Sound> = {};
     public static async init() {
-        const imagePathResource = new ex.Resource<ImageDataMap>("./data/images-paht-map.json", "json");
+        // --- 加载图片配置 ---
+        const imagePathResource = new ex.Resource<ImageDataMap>("./data/images-map.json", "json");
         this.imageDataMap = new Map();
-        //加载json
         const imageDataJson = await imagePathResource.load();
         console.log("获取图片路径", imageDataJson);
-        //将json数据添加到属性
         for (const key in imageDataJson) {
             this.imageMap[key] = new ex.ImageSource(imageDataJson[key].path);
             this.imageDataMap.set(key, imageDataJson[key]);
         }
 
-        //加载地图
-        const mapList = [
-            { name: "village", path: "./maps/village/village.tmx" },
-            { name: "interior", path: "./maps/village/interior.tmx" }
-        ]
-
-        for (const map of mapList) {
-            let tileMap = new TiledResource(map.path, {
+        // --- 加载地图配置 ---
+        const mapsPathResource = new ex.Resource<Record<string, string>>("./data/maps-map.json", "json");
+        const mapsDataJson = await mapsPathResource.load();
+        console.log("获取地图路径", mapsDataJson);
+        for (const key in mapsDataJson) {
+            let tileMap = new TiledResource(mapsDataJson[key], {
                 useTilemapCameraStrategy: true
             });
-            this.tileMapMap[map.name] = tileMap;
+            this.tileMapMap[key] = tileMap;
         }
 
-        // 加载音频资源（public/music 下只有一首背景音乐，public/sounds 下为若干音效）
+        // --- 加载音频资源配置 ---
         try {
-            this.music = new ex.Sound("./music/time_for_adventure.mp3");
-            this.sounds = {
-                coin: new ex.Sound("./sounds/coin.wav"),
-                explosion: new ex.Sound("./sounds/explosion.wav"),
-                hurt: new ex.Sound("./sounds/hurt.wav"),
-                jump: new ex.Sound("./sounds/jump.wav"),
-                power_up: new ex.Sound("./sounds/power_up.wav"),
-                tap: new ex.Sound("./sounds/tap.wav")
-            };
+            const soundsPathResource = new ex.Resource<Record<string, string>>("./data/sounds-map.json", "json");
+            const soundsDataJson = await soundsPathResource.load();
+            console.log("获取音效路径", soundsDataJson);
+
+            // 加载背景音乐 (约定 key 为 'music')
+            if (soundsDataJson['music']) {
+                this.music = new ex.Sound(soundsDataJson['music']);
+            }
+
+            // 加载其他音效
+            for (const key in soundsDataJson) {
+                if (key !== 'music') {
+                    this.sounds[key] = new ex.Sound(soundsDataJson[key]);
+                }
+            }
         } catch (e) {
             console.warn("音频资源加载初始化失败", e);
         }
-
     }
-    public static playMusic() {
-        if (!this.music) return;
+    public static playMusic(name: string) {
+        const s = this.sounds[name];
+        if (!s) return;
         try {
             // 尝试以循环方式播放背景音乐；某些 Excalibur 版本可能不直接暴露 loop 属性
             // @ts-ignore
-            this.music.loop = true;
-            this.music.play();
+            s.loop = true;
+            s.play();
         } catch (e) {
             try {
-                this.music.play();
+                s.play();
             } catch (err) {
                 console.warn('播放背景音乐失败', err);
             }

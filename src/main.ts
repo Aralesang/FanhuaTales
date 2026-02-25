@@ -43,6 +43,6 @@ const loader = new ex.Loader(loaderList);
 loader.suppressPlayButton = true;
 game.start(loader).then(() => {
     // 启动背景音乐（循环播放）
-    Asset.playMusic();
+    Asset.playMusic("time_for_adventure");
     game.goToScene('village');
 });

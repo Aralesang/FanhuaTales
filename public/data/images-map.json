@@ -1,0 +1,42 @@
+{
+    "human_idle": {
+        "path": "./images/human/idle.png",
+        "grid": {
+            "rows": 3,
+            "columns": 4,
+            "spriteWidth": 80,
+            "spriteHeight": 80
+        },
+        "animationStrategy": "loop"
+    },
+    "human_walk": {
+        "path": "./images/human/walk.png",
+        "grid": {
+            "rows": 3,
+            "columns": 8,
+            "spriteWidth": 80,
+            "spriteHeight": 80
+        },
+        "animationStrategy": "loop"
+    },
+    "human_run": {
+        "path": "./images/human/run.png",
+        "grid": {
+            "rows": 3,
+            "columns": 8,
+            "spriteWidth": 80,
+            "spriteHeight": 80
+        },
+        "animationStrategy": "loop"
+    },
+    "human_sword": {
+        "path": "./images/human/sword.png",
+        "grid": {
+            "rows": 3,
+            "columns": 6,
+            "spriteWidth": 80,
+            "spriteHeight": 80
+        },
+        "animationStrategy": "freeze"
+    }
+}
