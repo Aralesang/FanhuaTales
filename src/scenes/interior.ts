@@ -5,8 +5,8 @@ import { PlayerControlSystem } from '../systems/player-control-system';
 import { AnimationSystem } from '../systems/animation-system';
 import { Asset } from '../asset';
 import { FactoryProps } from '@excaliburjs/plugin-tiled';
-import { Global } from '../global';
 import BaseScene from '../base-scene';
+import { PlayerComponent } from '../components/player-component';
 
 export class Interior extends BaseScene {
     constructor() {
@@ -32,10 +32,22 @@ export class Interior extends BaseScene {
                     }
                     return false;
                 },
-                action: () => {
-                    console.log("传送到:", targetScene);
-                    engine.goToScene(targetScene);
-                    Global.localPlayer.pos = ex.vec(312, 155);
+                action: async () => {
+                    console.log("从", this.sceneName, "传送到:", targetScene);
+                    await engine.goToScene(targetScene);
+                    const newScene = engine.currentScene;
+                    // 查找玩家实体
+                    const playerEntities = newScene.world.query([PlayerComponent]).entities.filter(e => e.hasTag('player'));
+                    console.log("找到的玩家实体", playerEntities);
+                    
+                    if (playerEntities.length > 0) {
+                        const player = playerEntities[0] as ex.Actor;
+                        newScene.add(player);
+                        player.pos = ex.vec(312, 155);
+                        console.log("坐标移动", player.pos);
+                        
+                        (newScene as any).camera?.strategy?.lockToActor(player);
+                    }
                 }
             });
             const box = ex.Shape.Box(doorTrigger.width, doorTrigger.height);
@@ -48,12 +60,6 @@ export class Interior extends BaseScene {
         //注册系统
         world.add(new PlayerControlSystem(engine));
         world.add(new AnimationSystem());
-
-        //接收玩家
-        const player = Global.localPlayer;
-        this.add(player);
-
-        this.camera.strategy.lockToActor(player);
 
     }
 }

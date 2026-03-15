@@ -4,6 +4,7 @@ import { AnimationComponent } from '../components/animation-component';
 import { DirectionComponent } from '../components/direction-component';
 import { PlayerControlComponent } from '../components/player-control-component';
 import { HealthComponent } from '../components/health-component';
+import { PlayerComponent } from '../components/player-component';
 
 /** 玩家实体 */
 export class Player extends ex.Actor {
@@ -21,6 +22,8 @@ export class Player extends ex.Actor {
 
     onInitialize(engine: ex.Engine): void {
         console.log("玩家实体组装");
+        //附加玩家组件
+        this.addComponent(new PlayerComponent());
         //附加方向组件
         this.addComponent(new DirectionComponent(ex.Vector.Down));
         //附加状态机组件

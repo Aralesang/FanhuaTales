@@ -5,25 +5,29 @@ import { PlayerControlSystem } from '../systems/player-control-system';
 import { AnimationSystem } from '../systems/animation-system';
 import { Asset } from '../asset';
 import { FactoryProps } from '@excaliburjs/plugin-tiled';
-import { Global } from '../global';
 import { TileMapSystem } from '../systems/tile-map-system';
 import BaseScene from '../base-scene';
 import { StateMachineSystem } from '../systems/state-machine-system';
 import { DirectionSystem } from '../systems/direction-machine-system';
+import { AISystem } from '../systems/ai-system';
+import { DamageSystem } from '../systems/damage-system';
+import { AIComponent } from '../components/ai-component';
+import { HealthComponent } from '../components/health-component';
 
 export class Village extends BaseScene {
+    public damageSystem!: DamageSystem;
+
     constructor() {
         super("village");
     }
     override onInitialize(engine: ex.Engine): void {
         //加载地图
+        let player: Player | undefined;
         Asset.tileMapMap[this.sceneName].registerEntityFactory(
             "player-start", (props: FactoryProps) => {
-                const player = new Player(props.worldPos, true);
+                player = new Player(props.worldPos, true);
                 //相机跟随
                 this.camera.strategy.lockToActor(player);
-                //玩家记录到全局
-                Global.localPlayer = player;
                 return player;
             }
         );
@@ -48,10 +52,17 @@ export class Village extends BaseScene {
                     }
                     return false;
                 },
-                action: () => {
-                    console.log("传送到:", targetScene);
-                    engine.goToScene(targetScene);
-                    Global.localPlayer.pos = ex.vec(7, 84);
+                action: async () => {
+                    console.log("从", this.sceneName, "传送到:", targetScene);
+                    await engine.goToScene(targetScene);
+                    const newScene = engine.currentScene;
+                    if (player) {
+                        newScene.add(player);
+                        if (targetScene === 'interior') {
+                            player.pos = ex.vec(7, 84);
+                        }
+                        (newScene as any).camera?.strategy?.lockToActor(player);
+                    }
                 }
             });
             const box = ex.Shape.Box(doorTrigger.width, doorTrigger.height);
@@ -67,6 +78,9 @@ export class Village extends BaseScene {
         world.add(new StateMachineSystem());
         world.add(new AnimationSystem());
         world.add(new PlayerControlSystem(engine));
+        world.add(new AISystem());
+        this.damageSystem = new DamageSystem();
+        world.add(this.damageSystem);
 
         // 注册 enemy 的 tiled factory（可在 Tiled map 中使用 object type: "enemy-start"）
         Asset.tileMapMap[this.sceneName].registerEntityFactory(
@@ -76,12 +90,11 @@ export class Village extends BaseScene {
             }
         );
 
-        // 立即在玩家右侧生成一个测试敌人，便于立刻在场景中查看效果
-        if (Global.localPlayer) {
-            const spawnPos = ex.vec(Global.localPlayer.pos.x + 40, Global.localPlayer.pos.y);
+        //立即在玩家右侧生成一个测试敌人，便于立刻在场景中查看效果
+        if (player) {
+            const spawnPos = ex.vec(player.pos.x + 40, player.pos.y);
             const enemy = new Enemy(spawnPos);
             this.add(enemy);
         }
-
     }
 }

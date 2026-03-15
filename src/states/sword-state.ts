@@ -4,6 +4,8 @@ import { StateMachineComponent } from "../components/state-machine-component";
 import { DirectionComponent } from "../components/direction-component";
 import { HealthComponent } from "../components/health-component";
 import { Asset } from "../asset";
+import { Village } from "../scenes/village";
+import { DamageSystem } from "../systems/damage-system";
 
 export const SwordState: State<Actor> = {
     name: "Sword",
@@ -48,10 +50,10 @@ export const SwordState: State<Actor> = {
                 console.log('[Attack] trigger.action ->', other?.tags?.toString?.());
                 if (alreadyHit.has(other)) return;
                 alreadyHit.add(other);
-                const hc = (other as Actor).get(HealthComponent);
-                if (hc) {
-                    hc.takeDamage(1, { source: data, knockback: 140, stunMs: 220, flashMs: 300, flashTimes: 3 });
-                    console.log('[Attack] hit:', other, 'hp->', hc.hp);
+                const damageSystem = (scene as Village).damageSystem;
+                if (damageSystem) {
+                    damageSystem.applyDamage(other, 1, { source: data, knockback: 140, stunMs: 220, flashMs: 300, flashTimes: 3 });
+                    console.log('[Attack] hit:', other, 'hp->', (other as Actor).get(HealthComponent).hp);
                 }
             }
         });
@@ -96,10 +98,10 @@ export const SwordState: State<Actor> = {
                     const intersect = !(aRight < rectLeft || aLeft > rectRight || aBottom < rectTop || aTop > rectBottom);
                     if (intersect && !alreadyHit.has(actor)) {
                         alreadyHit.add(actor);
-                        const hc = actor.get(HealthComponent);
-                        if (hc) {
-                            hc.takeDamage(1, { source: data, knockback: 140, stunMs: 220, flashMs: 300, flashTimes: 3 });
-                            console.log('[Attack] immediate-overlap hit:', actor, 'hp->', hc.hp);
+                        const damageSystem = (scene as Village).damageSystem;
+                        if (damageSystem) {
+                            damageSystem.applyDamage(actor, 1, { source: data, knockback: 140, stunMs: 220, flashMs: 300, flashTimes: 3 });
+                            console.log('[Attack] immediate-overlap hit:', actor, 'hp->', actor.get(HealthComponent).hp);
                         }
                     }
                 } catch (err) {

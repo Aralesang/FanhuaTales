@@ -19,11 +19,11 @@
             "expandedObjectLayers": [
                 6
             ],
-            "scale": 8,
-            "selectedLayer": 4,
+            "scale": 5.5,
+            "selectedLayer": 6,
             "viewCenter": {
-                "x": -0.0625,
-                "y": -0.0625
+                "x": 7.272727272727266,
+                "y": 84.27272727272727
             }
         },
         "interior.tsx": {
@@ -37,11 +37,11 @@
             "expandedObjectLayers": [
                 3
             ],
-            "scale": 3.0254,
+            "scale": 11,
             "selectedLayer": 6,
             "viewCenter": {
-                "x": 307.3973689429497,
-                "y": 195.5113373438223
+                "x": 294.72727272727275,
+                "y": 154.13636363636365
             }
         },
         "village.tmx#building": {

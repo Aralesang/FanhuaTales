@@ -1,0 +1,11 @@
+{
+    "definitely_our_town": "./music/DefinitelyOurTown.ogg",
+    "time_for_adventure": "./music/time_for_adventure.mp3",
+    "coin": "./sounds/coin.wav",
+    "explosion": "./sounds/explosion.wav",
+    "hurt": "./sounds/hurt.wav",
+    "jump": "./sounds/jump.wav",
+    "power_up": "./sounds/power_up.wav",
+    "tap": "./sounds/tap.wav",
+    "human_atk_sword_1": "./sounds/07_human_atk_sword_1.wav"
+}
