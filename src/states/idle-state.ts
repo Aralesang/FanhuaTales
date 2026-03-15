@@ -9,8 +9,7 @@ export const IdleState: State<Actor> = {
         //console.log(context.data, "进入Idle状态");
         const {data} = context;
         const animationComponent = data.get(AnimationComponent);
-        const direction = data.get(DirectionComponent).direction;
-        animationComponent.changeAnimation(data, "idle", direction);
+        animationComponent.animType = "idle";
     },
     onUpdate(data: Actor, elapsed: number) {
         

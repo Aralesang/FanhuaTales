@@ -5,6 +5,7 @@ import { DirectionComponent } from '../components/direction-component';
 import { PlayerControlComponent } from '../components/player-control-component';
 import { HealthComponent } from '../components/health-component';
 import { PlayerComponent } from '../components/player-component';
+import { SkillComponent } from '../components/skill-component';
 
 /** 玩家实体 */
 export class Player extends ex.Actor {
@@ -38,5 +39,7 @@ export class Player extends ex.Actor {
         if (this.isControl) {
             this.addComponent(new PlayerControlComponent(50));
         }
+        //附加技能组件
+        this.addComponent(new SkillComponent());
     }
 }

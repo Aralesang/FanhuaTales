@@ -2,84 +2,29 @@ import { Component, Actor, Vector, SpriteSheet, range, Animation, AnimationStrat
 import { Asset } from '../asset';
 
 export class AnimationComponent extends Component {
-    private entityType: string;
-    private actor: Actor;
+    public entityType: string;
+    public actor: Actor;
     /** 当前已经生成的动画 */
-    private animationMap: Map<string, Animation> = new Map();
+    public animationMap: Map<string, Animation> = new Map();
     /** 当前动画 */
-    private currentAnimationName: string = "";
-    private animation: Animation | undefined;
+    public currentAnimationName: string = "";
+    public animation: Animation | undefined;
     /** 当前动画方向 */
     public currentDirection: Vector = Vector.Down;
+    /** 动画类型 */
+    public animType: string = "idle";
     /** 当前动画类型 */
-    private currentAnimType: string = "idle";
+    public currentAnimType: string = "idle";
     /** 动画色调 */
-    private tint: Color | undefined;
+    public tint: Color | undefined;
+    /** 是否初始化完成 */
+    public initialized: boolean = false;
+
     constructor(entityType: string, actor: Actor, tint?: Color) {
         super();
         this.entityType = entityType;
         this.actor = actor;
         this.tint = tint;
     }
-    public changeAnimation(actor: Actor, animType: string, direction: Vector) {
-        this.currentDirection = direction;
-        this.currentAnimType = animType;
-        //拼接出图片全称
-        const imageName = `${this.entityType}_${animType}`;
-        const image = Asset.imageMap[imageName];
-        if (!image) {
-            console.error(`图片${imageName}不存在`);
-            return;
-        }
-        const imageData = Asset.imageDataMap.get(imageName);
-        if (imageData?.grid == undefined) {
-            console.error(`图片${imageName}数据中缺失grid`);
-            return;
-        }
-        const spriteSheet = SpriteSheet.fromImageSource({
-            image: image,
-            grid: imageData.grid
-        });
-        //拼接出动画全称
-        const animName = `${imageName}_${direction.toString()}`;
-        if (this.currentAnimationName == animName) {
-            return;
-        }
-        this.animation = this.animationMap.get(animName);
-        if (direction.equals(Vector.Left)) {
-            actor.graphics.flipHorizontal = true;
-        } else if (direction.equals(Vector.Right)) {
-            actor.graphics.flipHorizontal = false;
-        }
-        if (this.animation == undefined) {
-            //根据方向决定播放第几行的动画
-            let row = 0;
-            if (direction.equals(Vector.Down)) {
-                row = 1;
-            } else if (direction.equals(Vector.Up)) {
-                row = 2;
-            } else if (direction.equals(Vector.Left)) {
-                row = 0;
-            } else if (direction.equals(Vector.Right)) {
-                row = 0;
-            }
-            this.animation = Animation.fromSpriteSheet(spriteSheet, range(row * imageData.grid.columns, (row + 1) * imageData.grid.columns - 1), 100, imageData.animationStrategy);
-            if (this.tint) {
-                this.animation.tint = this.tint;
-            }
-            this.animationMap.set(animName, this.animation);
-        }
-        this.animation.reset();
-        actor.graphics.use(this.animation);
-
-    }
-
-    public getCurrentAnimation() {
-        return this.animation;
-    }
-
-    public changeDirection(direction: Vector) {
-        this.currentDirection = direction;
-        this.changeAnimation(this.actor, this.currentAnimType, direction);
-    }
+   
 }

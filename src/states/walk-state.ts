@@ -9,8 +9,7 @@ export const WalkState: State<Actor> = {
         //console.log(context.data, "进入Walk状态");
         const { data } = context;
         const animationComponent = data.get(AnimationComponent);
-        const direction = data.get(DirectionComponent).direction;
-        animationComponent.changeAnimation(data, "walk", direction);
+        animationComponent.animType = "walk";
     },
     onUpdate(data: Actor, elapsed: number) {
 

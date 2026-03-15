@@ -94,6 +94,7 @@ export class Village extends BaseScene {
         if (player) {
             const spawnPos = ex.vec(player.pos.x + 40, player.pos.y);
             const enemy = new Enemy(spawnPos);
+            enemy.name = "Test Enemy";
             this.add(enemy);
         }
     }
