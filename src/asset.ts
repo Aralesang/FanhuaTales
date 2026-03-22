@@ -26,6 +26,7 @@ export class Asset {
     public static imageMap: Record<string, ex.ImageSource> = {};
     public static imageDataMap: Map<string, ImageData>;
     public static tileMapMap: Record<string, TiledResource> = {};
+    public static itemDataMap: Map<string, Record<string, any>>;
     public static music: ex.Sound | undefined;
     public static sounds: Record<string, ex.Sound> = {};
     public static async init() {
@@ -69,6 +70,20 @@ export class Asset {
             }
         } catch (e) {
             console.warn("音频资源加载初始化失败", e);
+        }
+
+        // --- 加载物品配置 ---
+        try {
+            const itemPathResource = new ex.Resource<Record<string, any>>("./data/items-map.json", "json");
+            const itemDataJson = await itemPathResource.load();
+            console.log("获取物品配置", itemDataJson);
+            this.itemDataMap = new Map();
+            for (const key in itemDataJson) {
+                this.itemDataMap.set(key, itemDataJson[key]);
+            }
+        } catch (e) {
+            console.warn("物品配置加载初始化失败", e);
+            this.itemDataMap = new Map();
         }
     }
     public static playMusic(name: string, volume: number = 1) {

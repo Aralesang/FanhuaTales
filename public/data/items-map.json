@@ -1,0 +1,41 @@
+{
+  "health_potion": {
+    "id": "health_potion",
+    "name": "生命药水",
+    "description": "恢复50点生命值",
+    "type": "consumable",
+    "stackable": true,
+    "maxStack": 99,
+    "quantity": 1,
+    "width": 1,
+    "height": 1,
+    "usable": true,
+    "useEffect": {
+      "type": "heal",
+      "value": 50,
+      "target": "self"
+    }
+  },
+  "iron_sword": {
+    "id": "iron_sword",
+    "name": "铁剑",
+    "description": "一把锋利的铁剑",
+    "type": "equipment",
+    "stackable": false,
+    "maxStack": 1,
+    "quantity": 1,
+    "width": 1,
+    "height": 3
+  },
+  "gold_coin": {
+    "id": "gold_coin",
+    "name": "金币",
+    "description": "闪闪发光的金币",
+    "type": "material",
+    "stackable": true,
+    "maxStack": 999,
+    "quantity": 1,
+    "width": 1,
+    "height": 1
+  }
+}

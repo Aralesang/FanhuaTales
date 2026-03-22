@@ -3,6 +3,8 @@ import { PlayerControlComponent } from '../components/player-control-component';
 import { StateMachineComponent } from '../components/state-machine-component';
 import { DirectionComponent } from '../components/direction-component';
 import { SkillComponent } from '../components/skill-component';
+import { InventoryUI } from '../ui/inventory-ui';
+import { InventoryComponent } from '../components/inventory-component';
 
 export class PlayerControlSystem extends ex.System {
     private engine: ex.Engine;
@@ -19,13 +21,19 @@ export class PlayerControlSystem extends ex.System {
     private _horizontalKeys: ex.Keys[] = [];
     private _verticalKeys: ex.Keys[] = [];
     private _otherKeys: ex.Keys[] = [];
+    private inventoryUI: InventoryUI;
+    private world!: ex.World;
+    private currentInventory: InventoryComponent | null = null;
 
     constructor(engine: ex.Engine) {
         super();
         this.engine = engine;
+        this.inventoryUI = new InventoryUI();
+        this.engine.add(this.inventoryUI);
     }
 
     initialize(world: ex.World, scene: ex.Scene): void {
+        this.world = world;
         console.log("PlayerControlSystem");
         this.query = world.query([
             ex.TransformComponent,
@@ -59,10 +67,28 @@ export class PlayerControlSystem extends ex.System {
             if (key === ex.Keys.Up || key === ex.Keys.Down) {
                 this._verticalKeys = this._verticalKeys.filter(k => k !== key);
             }
+            if (key === ex.Keys.I) {
+                console.log("打开库存界面");
+                
+                // 切换库存界面
+                this.inventoryUI.toggle();
+            }
         });
     }
 
     update(delta: number): void {
+        // 设置库存UI的库存组件（变更时才更新，避免每帧强制重绘）
+        const playerEntities = this.world.query([InventoryComponent]).entities;
+        if (playerEntities.length > 0) {
+            const player = playerEntities[0];
+            const inventory = player.get(InventoryComponent);
+            if (inventory && inventory !== this.currentInventory) {
+                this.currentInventory = inventory;
+                this.inventoryUI.setInventory(inventory);
+                this.inventoryUI.setOwner(player);
+            }
+        }
+
         const kb = this.engine.input.keyboard;
         // 获取当前有效的按键（栈顶是最后按下的）
         // 增加一个额外的检查: kb.isHeld(key) 确保按键确实是按下的（防止状态不同步）

@@ -12,6 +12,11 @@ import { DirectionSystem } from '../systems/direction-machine-system';
 import { AISystem } from '../systems/ai-system';
 import { DamageSystem } from '../systems/damage-system';
 import { SkillSystem } from '../systems/skill-system';
+import { InventorySystem } from '../systems/inventory-system';
+import { PickupSystem } from '../systems/pickup-system';
+import { ItemUseSystem } from '../systems/item-use-system';
+import { ItemFactory, ItemType } from '../item-base';
+import { Item } from '../entitys/item';
 
 export class Village extends BaseScene {
     public damageSystem!: DamageSystem;
@@ -81,6 +86,9 @@ export class Village extends BaseScene {
         world.add(new AISystem());
         this.damageSystem = new DamageSystem();
         world.add(this.damageSystem);
+        world.add(new InventorySystem());
+        world.add(new PickupSystem());
+        world.add(new ItemUseSystem());
 
         // 注册 enemy 的 tiled factory（可在 Tiled map 中使用 object type: "enemy-start"）
         Asset.tileMapMap[this.sceneName].registerEntityFactory(
@@ -96,6 +104,35 @@ export class Village extends BaseScene {
             const enemy = new Enemy(spawnPos);
             enemy.name = "Test Enemy";
             this.add(enemy);
+        }
+
+        // 添加测试物品
+        if (player) {
+            // 从配置文件加载测试物品
+            const createConfigItem = (itemId: string) => {
+                const itemConfig = Asset.itemDataMap?.get(itemId);
+                if (itemConfig) {
+                    return ItemFactory.fromConfig(itemConfig);
+                }
+                return null;
+            };
+
+            const healthPotion = createConfigItem('health_potion');
+            const sword = createConfigItem('iron_sword');
+            const goldCoin = createConfigItem('gold_coin');
+
+            if (healthPotion) {
+                const item1 = new Item(ex.vec(player.pos.x + 20, player.pos.y), healthPotion);
+                this.add(item1);
+            }
+            if (sword) {
+                const item2 = new Item(ex.vec(player.pos.x - 20, player.pos.y), sword);
+                this.add(item2);
+            }
+            if (goldCoin) {
+                const item3 = new Item(ex.vec(player.pos.x, player.pos.y + 20), goldCoin);
+                this.add(item3);
+            }
         }
     }
 }

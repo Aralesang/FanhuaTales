@@ -7,6 +7,8 @@ import { HealthComponent } from '../components/health-component';
 import { PlayerComponent } from '../components/player-component';
 import { SkillComponent } from '../components/skill-component';
 import { SwordSkill } from '../skills/sword-skill';
+import { InventoryComponent } from '../components/inventory-component';
+import { ItemUseRequestComponent } from '../components/item-use-request-component';
 
 /** 玩家实体 */
 export class Player extends ex.Actor {
@@ -45,5 +47,7 @@ export class Player extends ex.Actor {
         this.addComponent(skillComponent);
         // 添加剑击技能
         skillComponent.addSkill(new SwordSkill());
-    }
+        // 附加库存组件
+        this.addComponent(new InventoryComponent());        // 附加物品使用请求组件
+        this.addComponent(new ItemUseRequestComponent());    }
 }

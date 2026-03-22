@@ -30,7 +30,7 @@ export class AnimationSystem extends ex.System {
             //     animation.currentDirection = direction;
             // }
             if(!animation.initialized || animation.animType !== animation.currentAnimType || !direction.equals(animation.currentDirection)){
-                console.log("切换动画:", animation.animType);
+                //console.log("切换动画:", animation.animType);
                 animation.currentAnimType = animation.animType;
                 animation.initialized = true;
                 this.changeAnimation(entity as ex.Actor, animation, animation.currentAnimType, direction);
