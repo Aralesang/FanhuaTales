@@ -3,6 +3,7 @@ import { AIComponent } from '../components/ai-component';
 import { StateMachineComponent } from '../components/state-machine-component';
 import { DirectionComponent } from '../components/direction-component';
 import { HealthComponent } from '../components/health-component';
+import { SkillComponent } from '../components/skill-component';
 
 export class AISystem extends ex.System {
     systemType = ex.SystemType.Update;
@@ -52,6 +53,23 @@ export class AISystem extends ex.System {
             const toPlayer = player.pos.clone().sub(transform.pos);
             const dist = toPlayer.distance();
             const deltaSeconds = elapsed / 1000;
+
+            const skillComponent = entity.get(SkillComponent);
+            const attackRange = 20; // 近战触发距离
+            const canAttack = Date.now() - ai.lastAttackTime >= ai.attackCooldown;
+
+            if (dist <= attackRange && skillComponent && canAttack && skillComponent.isSkillReady("Sword")) {
+                // 进入Skill状态并执行当前技能（当前只支持SwordSkill）
+                const swordSkill = skillComponent.getSkill("Sword");
+                if (swordSkill) {
+                    skillComponent.setCurrentSkill(swordSkill);
+                    try { stateComp.fsm.go('Skill'); } catch (e) { /* ignore */ }
+                    ai.lastAttackTime = Date.now();
+                    swordSkill.currentCooldown = swordSkill.cooldown;
+                    // 进入攻击后不再移动
+                    continue;
+                }
+            }
 
             if (dist <= ai.chaseRadius) {
                 const dir = toPlayer.normalize();

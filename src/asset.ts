@@ -71,27 +71,27 @@ export class Asset {
             console.warn("音频资源加载初始化失败", e);
         }
     }
-    public static playMusic(name: string) {
+    public static playMusic(name: string, volume: number = 1) {
         const s = this.sounds[name];
         if (!s) return;
         try {
             // 尝试以循环方式播放背景音乐；某些 Excalibur 版本可能不直接暴露 loop 属性
             // @ts-ignore
             s.loop = true;
-            s.play();
+            s.play(volume);
         } catch (e) {
             try {
-                s.play();
+                s.play(volume);
             } catch (err) {
                 console.warn('播放背景音乐失败', err);
             }
         }
     }
-    public static playSound(name: string) {
+    public static playSound(name: string, volume: number = 1) {
         const s = this.sounds[name];
         if (!s) return;
         try {
-            s.play();
+            s.play(volume);
         } catch (e) {
             console.warn(`播放音效 ${name} 失败`, e);
         }

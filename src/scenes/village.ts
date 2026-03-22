@@ -11,8 +11,7 @@ import { StateMachineSystem } from '../systems/state-machine-system';
 import { DirectionSystem } from '../systems/direction-machine-system';
 import { AISystem } from '../systems/ai-system';
 import { DamageSystem } from '../systems/damage-system';
-import { AIComponent } from '../components/ai-component';
-import { HealthComponent } from '../components/health-component';
+import { SkillSystem } from '../systems/skill-system';
 
 export class Village extends BaseScene {
     public damageSystem!: DamageSystem;
@@ -72,10 +71,11 @@ export class Village extends BaseScene {
 
 
         //实体世界
-        const world = engine.currentScene.world;
+        const world = this.world;
         //注册系统
         world.add(new DirectionSystem());
         world.add(new StateMachineSystem());
+        world.add(new SkillSystem());
         world.add(new AnimationSystem());
         world.add(new PlayerControlSystem(engine));
         world.add(new AISystem());

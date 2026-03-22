@@ -2,11 +2,11 @@ import { Actor, Component, Entity, InitializeEvent, StateMachine, StateMachineDe
 import { IdleState } from "../states/idle-state";
 import { WalkState } from "../states/walk-state";
 import { RunState } from "../states/run-state";
-import { SwordState } from "../states/sword-state";
+import { SkillState } from "../states/skill-state";
 import { Initial } from "../states/initial-state";
 
 /** 状态枚举 */
-type PlayerState = "Idle" | "Walk" | "Run" | "Sword";
+type PlayerState = "Idle" | "Walk" | "Run" | "Skill";
 
 /** 状态机组件 */
 export class StateMachineComponent extends Component {
@@ -24,7 +24,7 @@ export class StateMachineComponent extends Component {
                 Idle: IdleState,
                 Walk: WalkState,
                 Run: RunState,
-                Sword: SwordState
+                Skill: SkillState
             }
         } as const;
         this.fsm = StateMachine.create(playerStateMachineDescription, owner as Actor);

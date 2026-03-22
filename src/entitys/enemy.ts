@@ -4,6 +4,8 @@ import { AnimationComponent } from '../components/animation-component';
 import { DirectionComponent } from '../components/direction-component';
 import { HealthComponent } from '../components/health-component';
 import { AIComponent } from '../components/ai-component';
+import { SkillComponent } from '../components/skill-component';
+import { SwordSkill } from '../skills/sword-skill';
 
 /** 敌人实体 */
 export class Enemy extends ex.Actor {
@@ -24,6 +26,11 @@ export class Enemy extends ex.Actor {
         this.addComponent(new AnimationComponent('human', this, ex.Color.Red));
         this.addComponent(new HealthComponent(3));
         this.addComponent(new AIComponent(30, 120, 1000));
+
+        // 敌人技能组件（默认剑击）
+        const skillComponent = new SkillComponent();
+        skillComponent.addSkill(new SwordSkill());
+        this.addComponent(skillComponent);
         this.body.collisionType = ex.CollisionType.Active;
         this.addTag('enemy');
     }

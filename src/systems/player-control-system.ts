@@ -2,6 +2,7 @@ import * as ex from 'excalibur';
 import { PlayerControlComponent } from '../components/player-control-component';
 import { StateMachineComponent } from '../components/state-machine-component';
 import { DirectionComponent } from '../components/direction-component';
+import { SkillComponent } from '../components/skill-component';
 
 export class PlayerControlSystem extends ex.System {
     private engine: ex.Engine;
@@ -11,7 +12,8 @@ export class PlayerControlSystem extends ex.System {
         typeof ex.TransformComponent |
         typeof PlayerControlComponent |
         typeof StateMachineComponent |
-        typeof DirectionComponent
+        typeof DirectionComponent |
+        typeof SkillComponent
     >;
 
     private _horizontalKeys: ex.Keys[] = [];
@@ -29,6 +31,7 @@ export class PlayerControlSystem extends ex.System {
             ex.TransformComponent,
             PlayerControlComponent,
             StateMachineComponent,
+            SkillComponent,
             DirectionComponent
         ]);
         // 监听按键按下，维护按键栈，确保最后按下的按键优先级最高
@@ -70,6 +73,7 @@ export class PlayerControlSystem extends ex.System {
             const transform = entity.get(ex.TransformComponent);
             const control = entity.get(PlayerControlComponent);
             const stateMachine = entity.get(StateMachineComponent);
+            const skillComponent = entity.get(SkillComponent);
             const direction = entity.get(DirectionComponent);
             let velX = 0;
             let velY = 0;
@@ -81,8 +85,15 @@ export class PlayerControlSystem extends ex.System {
 
             if (otherKey === ex.Keys.X) {
                 console.log("按下攻击");
-                //攻击每次按下只触发一次
-                stateMachine.fsm.go("Sword");
+                // 检查剑击技能是否可用
+                if (skillComponent.isSkillReady("Sword")) {
+                    const swordSkill = skillComponent.getSkill("Sword");
+                    if (swordSkill) {
+                        skillComponent.setCurrentSkill(swordSkill);
+                        // 触发技能：设置当前技能，然后进入Skill状态
+                        stateMachine.fsm.go("Skill");
+                    }
+                }
             }
 
             if (currentState.name === "Idle" || currentState.name == "Walk" || currentState.name == "Run") {
