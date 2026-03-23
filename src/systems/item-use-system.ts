@@ -19,7 +19,22 @@ export class ItemUseSystem extends ex.System {
         // 处理所有待处理的物品使用请求（完全数据驱动）
         for (const entity of this.query.entities) {
             const request = entity.get(ItemUseRequestComponent);
-            if (request && request.hasPendingRequest()) {
+            if (!request) continue;
+
+            // 轮询清除标记
+            if (request.clearFlag) {
+                request.itemToUse = null;
+                request.user = null;
+                request.target = null;
+                request.requestTime = 0;
+                request.processed = false;
+                request.success = false;
+                request.clearFlag = false;
+                continue;
+            }
+
+            // 轮询待处理请求
+            if (request.itemToUse !== null && !request.processed) {
                 this.processItemUseRequest(entity, request);
             }
         }
@@ -141,7 +156,7 @@ export class ItemUseSystem extends ex.System {
             console.log(`物品使用失败`);
         }
 
-        // 清除已处理的请求
-        request.clearRequest();
+        // 标记清除，下一轮 update 由系统统一清除数据
+        request.clearFlag = true;
     }
 }

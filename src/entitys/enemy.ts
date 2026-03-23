@@ -8,6 +8,7 @@ import { InventoryComponent } from '../components/inventory-component';
 import { ItemUseRequestComponent } from '../components/item-use-request-component';
 import { SkillComponent } from '../components/skill-component';
 import { SwordSkill } from '../skills/sword-skill';
+import { HealthBar } from '../ui/health-bar-ui';
 
 /** 敌人实体 */
 export class Enemy extends ex.Actor {
@@ -26,7 +27,9 @@ export class Enemy extends ex.Actor {
         this.addComponent(new DirectionComponent(ex.Vector.Down));
         this.addComponent(new StateMachineComponent());
         this.addComponent(new AnimationComponent('human', this, ex.Color.Red));
-        this.addComponent(new HealthComponent(3));
+        const healthComp = new HealthComponent(3);
+        this.addComponent(healthComp);
+        this.addChild(new HealthBar(healthComp));
         //this.addComponent(new AIComponent(30, 120, 1000));
 
         // 敌人技能组件（默认剑击）

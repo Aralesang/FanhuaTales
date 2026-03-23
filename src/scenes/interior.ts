@@ -5,10 +5,12 @@ import { PlayerControlSystem } from '../systems/player-control-system';
 import { AnimationSystem } from '../systems/animation-system';
 import { Asset } from '../asset';
 import { FactoryProps } from '@excaliburjs/plugin-tiled';
-import BaseScene from '../base-scene';
+import SceneBase from './scene-base';
 import { PlayerComponent } from '../components/player-component';
 
-export class Interior extends BaseScene {
+
+
+export class Interior extends SceneBase {
     constructor() {
         super("interior");
     }
@@ -47,6 +49,8 @@ export class Interior extends BaseScene {
                         console.log("坐标移动", player.pos);
                         
                         (newScene as any).camera?.strategy?.lockToActor(player);
+
+
                     }
                 }
             });

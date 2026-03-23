@@ -51,14 +51,20 @@ export class InventorySystem extends ex.System {
                 entity.addComponent(requestComponent);
             }
 
-            // 如果已有待处理请求，跳过
-            if (requestComponent.hasPendingRequest()) {
+            // 如果已有待处理请求（直接检查数据标记），跳过
+            if (requestComponent.itemToUse !== null && !requestComponent.processed) {
                 console.log(`已有待处理的物品使用请求，跳过: ${item.name}`);
                 continue;
             }
 
-            // 设置请求状态
-            requestComponent.setRequest(item, entity, request.target);
+            // 直接设置数据字段，由 ItemUseSystem 轮询处理
+            requestComponent.itemToUse = item;
+            requestComponent.user = entity;
+            requestComponent.target = request.target || null;
+            requestComponent.requestTime = Date.now();
+            requestComponent.processed = false;
+            requestComponent.success = false;
+            requestComponent.clearFlag = false;
             console.log(`设置物品使用请求状态: ${item.name}`);
 
             // 移除待处理请求（已转换为ItemUseRequestComponent状态）

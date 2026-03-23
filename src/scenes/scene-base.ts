@@ -1,8 +1,8 @@
 import * as ex from 'excalibur';
-import { TileMapSystem } from './systems/tile-map-system';
-import { Asset } from './asset';
+import { TileMapSystem } from '../systems/tile-map-system';
+import { Asset } from '../asset';
 
-export default class BaseScene extends ex.Scene {
+export default class SceneBase extends ex.Scene {
     public sceneName: string;
     constructor(_sceneName: string) {
         super();

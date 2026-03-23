@@ -6,7 +6,7 @@ import { AnimationSystem } from '../systems/animation-system';
 import { Asset } from '../asset';
 import { FactoryProps } from '@excaliburjs/plugin-tiled';
 import { TileMapSystem } from '../systems/tile-map-system';
-import BaseScene from '../base-scene';
+import SceneBase from './scene-base';
 import { StateMachineSystem } from '../systems/state-machine-system';
 import { DirectionSystem } from '../systems/direction-machine-system';
 import { AISystem } from '../systems/ai-system';
@@ -17,8 +17,11 @@ import { PickupSystem } from '../systems/pickup-system';
 import { ItemUseSystem } from '../systems/item-use-system';
 import { ItemFactory, ItemType } from '../item-base';
 import { Item } from '../entitys/item';
+import { PlayerHUD } from '../ui/player-hud';
 
-export class Village extends BaseScene {
+
+
+export class Village extends SceneBase {
     public damageSystem!: DamageSystem;
 
     constructor() {
@@ -106,6 +109,11 @@ export class Village extends BaseScene {
             this.add(enemy);
         }
 
+        // 添加左上角玩家 HUD 血条
+        if (player) {
+            this.add(new PlayerHUD(player));
+        }
+
         // 添加测试物品
         if (player) {
             // 从配置文件加载测试物品
@@ -134,5 +142,6 @@ export class Village extends BaseScene {
                 this.add(item3);
             }
         }
+
     }
 }
