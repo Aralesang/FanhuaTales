@@ -25,7 +25,7 @@ export class InventoryUI extends ex.ScreenElement {
     private readonly SLOT_MARGIN = 4;
     private readonly GRID_WIDTH = 8;
     private readonly GRID_HEIGHT = 5;
-    private readonly GRID_START_X = -180;
+    private readonly GRID_START_X = -205;
     private readonly GRID_START_Y = -120;
 
     constructor() {
@@ -332,7 +332,7 @@ export class InventoryUI extends ex.ScreenElement {
                 size: 24,
                 color: ex.Color.White
             }),
-            pos: ex.vec(0, -160),
+            pos: ex.vec(-20, -155),
             z: 1001
         });
         this.addChild(titleLabel);
