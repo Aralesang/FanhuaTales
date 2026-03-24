@@ -18,6 +18,9 @@ import { ItemUseSystem } from '../systems/item-use-system';
 import { ItemFactory, ItemType } from '../item-base';
 import { Item } from '../entitys/item';
 import { PlayerHUD } from '../ui/player-hud';
+import { Chest } from '../entitys/chest';
+import { InventoryComponent } from '../components/inventory-component';
+import { ChestSystem } from '../systems/chest-system';
 
 
 
@@ -92,6 +95,7 @@ export class Village extends SceneBase {
         world.add(new InventorySystem());
         world.add(new PickupSystem());
         world.add(new ItemUseSystem());
+        world.add(new ChestSystem(engine));
 
         // 注册 enemy 的 tiled factory（可在 Tiled map 中使用 object type: "enemy-start"）
         Asset.tileMapMap[this.sceneName].registerEntityFactory(
@@ -117,10 +121,12 @@ export class Village extends SceneBase {
         // 添加测试物品
         if (player) {
             // 从配置文件加载测试物品
-            const createConfigItem = (itemId: string) => {
+            const createConfigItem = (itemId: string, quantity: number = 1) => {
                 const itemConfig = Asset.itemDataMap?.get(itemId);
                 if (itemConfig) {
-                    return ItemFactory.fromConfig(itemConfig);
+                    const item = ItemFactory.fromConfig(itemConfig);
+                    item.quantity = quantity;
+                    return item;
                 }
                 return null;
             };
@@ -141,6 +147,25 @@ export class Village extends SceneBase {
                 const item3 = new Item(ex.vec(player.pos.x, player.pos.y + 20), goldCoin);
                 this.add(item3);
             }
+
+            const chest = new Chest(ex.vec(player.pos.x + 60, player.pos.y + 10), '旅行木箱');
+            const chestInventory = chest.get(InventoryComponent);
+            if (chestInventory) {
+                const chestPotion = createConfigItem('health_potion', 3);
+                const chestCoin = createConfigItem('gold_coin', 15);
+                const chestSword = createConfigItem('iron_sword');
+
+                if (chestPotion) {
+                    InventorySystem.addItem(chestInventory, chestPotion);
+                }
+                if (chestCoin) {
+                    InventorySystem.addItem(chestInventory, chestCoin);
+                }
+                if (chestSword) {
+                    InventorySystem.addItem(chestInventory, chestSword);
+                }
+            }
+            this.add(chest);
         }
 
     }

@@ -110,6 +110,27 @@ export class InventorySystem extends ex.System {
         }
     }
 
+    /** 在两个库存之间转移物品 */
+    static transferItem(sourceInventory: InventoryComponent, targetInventory: InventoryComponent, itemId: string, quantity?: number): boolean {
+        const item = sourceInventory.items.get(itemId);
+        if (!item) {
+            return false;
+        }
+
+        const transferQuantity = Math.min(quantity ?? item.quantity, item.quantity);
+        const movedItem = InventorySystem.cloneItem(item, {
+            quantity: transferQuantity,
+            inventoryX: undefined,
+            inventoryY: undefined
+        });
+
+        if (!InventorySystem.addItem(targetInventory, movedItem)) {
+            return false;
+        }
+
+        return InventorySystem.removeItem(sourceInventory, itemId, transferQuantity);
+    }
+
     /** 在指定位置放置物品 */
     static placeItem(inventory: InventoryComponent, itemId: string, x: number, y: number): boolean {
         const item = inventory.items.get(itemId);
@@ -228,6 +249,16 @@ export class InventorySystem extends ex.System {
     /** 获取物品 */
     public static getItem(inventory: InventoryComponent, itemId: string): ItemBase | undefined {
         return inventory.items.get(itemId);
+    }
+
+    /** 克隆物品数据，避免库存之间共享引用 */
+    public static cloneItem(item: ItemBase, overrides: Partial<ItemBase> = {}): ItemBase {
+        return {
+            ...item,
+            inventoryX: item.inventoryX,
+            inventoryY: item.inventoryY,
+            ...overrides
+        };
     }
 
     /** 获取所有物品 */
