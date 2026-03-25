@@ -20,6 +20,9 @@ export class StorageUI extends ex.ScreenElement {
     private dragSourcePane: StoragePane | null = null;
     private isDragging: boolean = false;
 
+    // 脏标记：仅当库存数据发生变化时才重建 UI，避免每帧重建导致卡顿。
+    private dirty: boolean = false;
+
     private hoverPanel: ex.Actor | null = null;
     private hoverLabel: ex.Label | null = null;
 
@@ -90,6 +93,7 @@ export class StorageUI extends ex.ScreenElement {
         this.storageInventory = storageInventory;
         this.storageTitle = storageTitle;
         this.isVisible = true;
+        this.dirty = true;
         this.graphics.use(this.background);
         this.updateDisplay();
     }
@@ -108,9 +112,15 @@ export class StorageUI extends ex.ScreenElement {
     }
 
     public refresh() {
-        if (this.isVisible) {
+        if (this.isVisible && this.dirty) {
+            this.dirty = false;
             this.updateDisplay();
         }
+    }
+
+    // 外部在修改库存数据后调用，标记 UI 需要刷新。
+    public markDirty() {
+        this.dirty = true;
     }
 
     public isOpen(): boolean {
@@ -130,7 +140,8 @@ export class StorageUI extends ex.ScreenElement {
 
         const isRightClick = (evt.button as any) === ex.PointerButton.Right || (evt.button as any) === 'Right';
         if (isRightClick && hit.pane === 'player' && this.playerOwner) {
-            InventorySystem.addUseRequest(this.playerInventory, hit.item.id, this.playerOwner);
+            InventorySystem.addUseRequest(this.playerInventory, hit.item.uid, this.playerOwner);
+            this.dirty = true;
             (evt as any).preventDefault?.();
             return;
         }
@@ -205,10 +216,10 @@ export class StorageUI extends ex.ScreenElement {
                     const gridX = this.getGridX(targetPane, mousePos);
                     const gridY = this.getGridY(mousePos);
                     if (InventorySystem.isGridPositionFree(targetInventory, gridX, gridY, this.draggedItem.width, this.draggedItem.height)) {
-                        InventorySystem.placeItem(targetInventory, this.draggedItem.id, gridX, gridY);
+                        InventorySystem.placeItem(targetInventory, this.draggedItem.uid, gridX, gridY);
                         handled = true;
                     }
-                } else if (InventorySystem.transferItem(sourceInventory, targetInventory, this.draggedItem.id)) {
+                } else if (InventorySystem.transferItem(sourceInventory, targetInventory, this.draggedItem.uid)) {
                     handled = true;
                 }
             }
@@ -219,6 +230,7 @@ export class StorageUI extends ex.ScreenElement {
         }
 
         this.clearDragState(true);
+        this.dirty = true;
         this.updateDisplay();
     }
 

@@ -148,7 +148,7 @@ export class ItemUseSystem extends ex.System {
             // 消耗物品（通过数据驱动的方式）
             const inventory = request.user.get(InventoryComponent);
             if (inventory) {
-                InventorySystem.consumeItemAfterUse(inventory, request.itemToUse.id, 1);
+                InventorySystem.consumeItemAfterUse(inventory, request.itemToUse.uid, 1);
             }
 
             // 可以在这里触发事件、播放音效、显示特效等

@@ -146,7 +146,7 @@ export class InventoryUI extends ex.ScreenElement {
                         localPos.y >= itemTop && localPos.y <= itemBottom) {
                         if (this.owner) {
                             // 设置数据标记，系统会在update中检测并处理
-                            InventorySystem.addUseRequest(this.inventory, item.id, this.owner);
+                            InventorySystem.addUseRequest(this.inventory, item.uid, this.owner);
                             console.log(`标记道具使用请求：${item.name}`);
                             // 注意：实际的物品消耗将在系统处理完成后进行
                         }
@@ -297,7 +297,7 @@ export class InventoryUI extends ex.ScreenElement {
 
         // 尝试放置物品
         if (this.inventory && InventorySystem.isGridPositionFree(this.inventory, gridX, gridY, this.draggedItem.width, this.draggedItem.height)) {
-            InventorySystem.placeItem(this.inventory, this.draggedItem.id, gridX, gridY);
+            InventorySystem.placeItem(this.inventory, this.draggedItem.uid, gridX, gridY);
         } else {
             // 如果无法放置，放回原位置
             if (this.draggedItem.inventoryX !== undefined && this.draggedItem.inventoryY !== undefined) {

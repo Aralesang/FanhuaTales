@@ -77,8 +77,8 @@ export class PlayerControlSystem extends ex.System {
     }
 
     update(delta: number): void {
-        // 设置库存UI的库存组件（变更时才更新，避免每帧强制重绘）
-        const playerEntities = this.world.query([InventoryComponent]).entities;
+        // 仅查询同时拥有 PlayerControlComponent 和 InventoryComponent 的实体，避免误取敌人或箱子
+        const playerEntities = this.world.query([PlayerControlComponent, InventoryComponent]).entities;
         if (playerEntities.length > 0) {
             const player = playerEntities[0];
             const inventory = player.get(InventoryComponent);

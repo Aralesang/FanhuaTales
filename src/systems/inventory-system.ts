@@ -2,7 +2,7 @@ import * as ex from "excalibur";
 import { InventoryComponent } from "../components/inventory-component";
 import { ItemComponent } from "../components/item-component";
 import { ItemUseRequestComponent } from "../components/item-use-request-component";
-import { ItemBase } from "../item-base";
+import { ItemBase, generateItemUid } from "../item-base";
 import { ItemUseSystem } from "./item-use-system";
 
 /** 库存系统 */
@@ -89,28 +89,30 @@ export class InventorySystem extends ex.System {
 
     /** 添加物品到库存（自动寻找合适位置） */
     static addItem(inventory: InventoryComponent, item: ItemBase): boolean {
-        if (inventory.items.has(item.id) && item.stackable) {
-            const existing = inventory.items.get(item.id)!;
-            if (existing.quantity + item.quantity <= existing.maxStack) {
-                existing.quantity += item.quantity;
-                return true;
-            } else {
-                return false; // 无法堆叠更多
+        // 可堆叠物品：按类型 id 查找已有实例并合并数量
+        if (item.stackable) {
+            const existing = InventorySystem.findItemByTypeId(inventory, item.id);
+            if (existing) {
+                if (existing.quantity + item.quantity <= existing.maxStack) {
+                    existing.quantity += item.quantity;
+                    return true;
+                } else {
+                    return false; // 无法堆叠更多
+                }
             }
-        } else {
-            // 尝试找到合适的位置放置物品
-            const position = InventorySystem.findFreeSpace(inventory, item);
-            if (position) {
-                const newItem = { ...item, inventoryX: position.x, inventoryY: position.y };
-                InventorySystem.placeItemOnGrid(inventory, newItem);
-                inventory.items.set(item.id, newItem);
-                return true;
-            }
-            return false; // 没有足够空间
         }
+        // 不可堆叠或库存中无同类型物品，尝试放置新实例
+        const position = InventorySystem.findFreeSpace(inventory, item);
+        if (position) {
+            const newItem = { ...item, uid: item.uid || generateItemUid(), inventoryX: position.x, inventoryY: position.y };
+            InventorySystem.placeItemOnGrid(inventory, newItem);
+            inventory.items.set(newItem.uid, newItem);
+            return true;
+        }
+        return false; // 没有足够空间
     }
 
-    /** 在两个库存之间转移物品 */
+    /** 在两个库存之间转移物品，参数 itemId 为物品实例 uid */
     static transferItem(sourceInventory: InventoryComponent, targetInventory: InventoryComponent, itemId: string, quantity?: number): boolean {
         const item = sourceInventory.items.get(itemId);
         if (!item) {
@@ -246,15 +248,26 @@ export class InventorySystem extends ex.System {
 
     // ===== 纯数据访问方法 =====
 
-    /** 获取物品 */
+    /** 按类型 id 查找库存中的第一个匹配物品（用于可堆叠物品合并） */
+    public static findItemByTypeId(inventory: InventoryComponent, typeId: string): ItemBase | undefined {
+        for (const item of inventory.items.values()) {
+            if (item.id === typeId) {
+                return item;
+            }
+        }
+        return undefined;
+    }
+
+    /** 获取物品（按实例 uid 查找） */
     public static getItem(inventory: InventoryComponent, itemId: string): ItemBase | undefined {
         return inventory.items.get(itemId);
     }
 
-    /** 克隆物品数据，避免库存之间共享引用 */
+    /** 克隆物品数据，生成新的 uid，避免库存之间共享引用 */
     public static cloneItem(item: ItemBase, overrides: Partial<ItemBase> = {}): ItemBase {
         return {
             ...item,
+            uid: generateItemUid(),
             inventoryX: item.inventoryX,
             inventoryY: item.inventoryY,
             ...overrides

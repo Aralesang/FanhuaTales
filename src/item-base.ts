@@ -1,6 +1,16 @@
+/** 全局自增 uid 计数器，用于为每个物品实例生成唯一标识 */
+let _nextUid = 1;
+/** 生成全局唯一的物品实例 ID */
+export function generateItemUid(): string {
+    return `item_${_nextUid++}`;
+}
+
 /** 物品接口 */
 export interface ItemBase {
+    /** 物品类型 ID（如 'iron_sword'），同类型物品共享此值 */
     id: string;
+    /** 物品实例唯一 ID，用作库存 Map 的 key，区分同类型的不同实例 */
+    uid: string;
     name: string;
     description: string;
     type: ItemType;
@@ -44,6 +54,7 @@ export class ItemFactory {
     static createItem(id: string, name: string, description: string, type: ItemType, stackable: boolean = true, maxStack: number = 99, width: number = 1, height: number = 1, useEffect?: ItemUseEffect): ItemBase {
         return {
             id,
+            uid: generateItemUid(),
             name,
             description,
             type,
@@ -62,6 +73,7 @@ export class ItemFactory {
         const type = (config.type || 'material') as ItemType;
         return {
             id: config.id,
+            uid: generateItemUid(),
             name: config.name,
             description: config.description,
             type,

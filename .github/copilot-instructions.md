@@ -25,3 +25,4 @@
 ## Working Style
 - For medium/large tasks, update [SESSION_CONTEXT.md](../SESSION_CONTEXT.md) in the same change set if any significant behavior or architecture changed.
 - Keep updates concise and factual; avoid stale TODOs in the context document.
+- When generating or modifying code for this project, add detailed Chinese comments where they improve readability, especially around non-trivial logic, data flow, and system interactions.
