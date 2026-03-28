@@ -21,6 +21,7 @@ import { PlayerHUD } from '../ui/player-hud';
 import { Chest } from '../entitys/chest';
 import { InventoryComponent } from '../components/inventory-component';
 import { ChestSystem } from '../systems/chest-system';
+import { HotbarUI } from '../ui/hotbar-ui';
 
 
 
@@ -116,6 +117,7 @@ export class Village extends SceneBase {
         // 添加左上角玩家 HUD 血条
         if (player) {
             this.add(new PlayerHUD(player));
+            this.add(new HotbarUI(player));
         }
 
         // 添加测试物品

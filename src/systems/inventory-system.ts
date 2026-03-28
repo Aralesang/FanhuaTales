@@ -2,8 +2,9 @@ import * as ex from "excalibur";
 import { InventoryComponent } from "../components/inventory-component";
 import { ItemComponent } from "../components/item-component";
 import { ItemUseRequestComponent } from "../components/item-use-request-component";
-import { ItemBase, generateItemUid } from "../item-base";
+import { ItemBase } from "../item-base";
 import { ItemUseSystem } from "./item-use-system";
+import { GridContainerSystem } from "./grid-container-system";
 
 /** 库存系统 */
 export class InventorySystem extends ex.System {
@@ -89,234 +90,81 @@ export class InventorySystem extends ex.System {
 
     /** 添加物品到库存（自动寻找合适位置） */
     static addItem(inventory: InventoryComponent, item: ItemBase): boolean {
-        // 可堆叠物品：按类型 id 查找已有实例并合并数量
-        if (item.stackable) {
-            const existing = InventorySystem.findItemByTypeId(inventory, item.id);
-            if (existing) {
-                if (existing.quantity + item.quantity <= existing.maxStack) {
-                    existing.quantity += item.quantity;
-                    return true;
-                } else {
-                    return false; // 无法堆叠更多
-                }
-            }
-        }
-        // 不可堆叠或库存中无同类型物品，尝试放置新实例
-        const position = InventorySystem.findFreeSpace(inventory, item);
-        if (position) {
-            const newItem = { ...item, uid: item.uid || generateItemUid(), inventoryX: position.x, inventoryY: position.y };
-            InventorySystem.placeItemOnGrid(inventory, newItem);
-            inventory.items.set(newItem.uid, newItem);
-            return true;
-        }
-        return false; // 没有足够空间
+        return GridContainerSystem.addItem(inventory, item);
     }
 
     /** 在两个库存之间转移物品，参数 itemId 为物品实例 uid */
     static transferItem(sourceInventory: InventoryComponent, targetInventory: InventoryComponent, itemId: string, quantity?: number): boolean {
-        const item = sourceInventory.items.get(itemId);
-        if (!item) {
-            return false;
-        }
-
-        const transferQuantity = Math.min(quantity ?? item.quantity, item.quantity);
-        const movedItem = InventorySystem.cloneItem(item, {
-            quantity: transferQuantity,
-            inventoryX: undefined,
-            inventoryY: undefined
-        });
-
-        if (!InventorySystem.addItem(targetInventory, movedItem)) {
-            return false;
-        }
-
-        return InventorySystem.removeItem(sourceInventory, itemId, transferQuantity);
+        return GridContainerSystem.transferItem(sourceInventory, targetInventory, itemId, quantity);
     }
 
     /** 在指定位置放置物品 */
     static placeItem(inventory: InventoryComponent, itemId: string, x: number, y: number): boolean {
-        const item = inventory.items.get(itemId);
-        if (!item) return false;
-
-        // 先移除旧位置
-        InventorySystem.removeItemFromGrid(inventory, item);
-
-        // 检查新位置是否可用
-        if (InventorySystem.isGridPositionFree(inventory, x, y, item.width, item.height)) {
-            item.inventoryX = x;
-            item.inventoryY = y;
-            InventorySystem.placeItemOnGrid(inventory, item);
-            return true;
-        }
-
-        // 如果新位置不可用，放回原位置
-        if (item.inventoryX !== undefined && item.inventoryY !== undefined) {
-            InventorySystem.placeItemOnGrid(inventory, item);
-        }
-
-        return false;
+        return GridContainerSystem.placeItem(inventory, itemId, x, y);
     }
 
     /** 旋转物品 */
     static rotateItem(inventory: InventoryComponent, itemId: string): boolean {
-        const item = inventory.items.get(itemId);
-        if (!item) return false;
-
-        // 移除当前占用
-        InventorySystem.removeItemFromGrid(inventory, item);
-
-        // 旋转物品
-        item.rotated = !item.rotated;
-        const temp = item.width;
-        item.width = item.height;
-        item.height = temp;
-
-        // 尝试在新尺寸下重新放置
-        if (item.inventoryX !== undefined && item.inventoryY !== undefined) {
-            if (InventorySystem.isGridPositionFree(inventory, item.inventoryX, item.inventoryY, item.width, item.height)) {
-                InventorySystem.placeItemOnGrid(inventory, item);
-                return true;
-            } else {
-                // 旋转后无法放置，撤销旋转
-                item.rotated = !item.rotated;
-                const temp2 = item.width;
-                item.width = item.height;
-                item.height = temp2;
-                InventorySystem.placeItemOnGrid(inventory, item);
-                return false;
-            }
-        }
-
-        return true;
+        return GridContainerSystem.rotateItem(inventory, itemId);
     }
 
     /** 移除物品 */
     static removeItem(inventory: InventoryComponent, itemId: string, quantity: number = 1): boolean {
-        if (inventory.items.has(itemId)) {
-            const item = inventory.items.get(itemId)!;
-            if (item.quantity >= quantity) {
-                item.quantity -= quantity;
-                if (item.quantity <= 0) {
-                    InventorySystem.removeItemFromGrid(inventory, item);
-                    inventory.items.delete(itemId);
-                }
-                return true;
-            }
-        }
-        return false;
+        return GridContainerSystem.removeItem(inventory, itemId, quantity);
     }
 
     /** 确认消耗物品（由系统调用） */
     static consumeItemAfterUse(inventory: InventoryComponent, itemId: string, quantity: number = 1): boolean {
-        if (inventory.items.has(itemId)) {
-            const item = inventory.items.get(itemId)!;
-            if (item.quantity >= quantity) {
-                item.quantity -= quantity;
-                if (item.quantity <= 0) {
-                    InventorySystem.removeItemFromGrid(inventory, item);
-                    inventory.items.delete(itemId);
-                }
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /** 寻找物品的空闲位置 */
-    private static findFreeSpace(inventory: InventoryComponent, item: ItemBase): { x: number, y: number } | null {
-        for (let y = 0; y <= inventory.GRID_HEIGHT - item.height; y++) {
-            for (let x = 0; x <= inventory.GRID_WIDTH - item.width; x++) {
-                if (InventorySystem.isGridPositionFree(inventory, x, y, item.width, item.height)) {
-                    return { x, y };
-                }
-            }
-        }
-        return null;
+        return GridContainerSystem.removeItem(inventory, itemId, quantity);
     }
 
     /** 在网格上放置物品 */
     public static placeItemOnGrid(inventory: InventoryComponent, item: ItemBase) {
-        if (item.inventoryX === undefined || item.inventoryY === undefined) return;
-        InventorySystem.occupyGridSpace(inventory, item.inventoryX, item.inventoryY, item.width, item.height);
+        GridContainerSystem.placeItemOnGrid(inventory, item);
     }
 
     /** 从网格上移除物品 */
     public static removeItemFromGrid(inventory: InventoryComponent, item: ItemBase) {
-        if (item.inventoryX === undefined || item.inventoryY === undefined) return;
-        InventorySystem.freeGridSpace(inventory, item.inventoryX, item.inventoryY, item.width, item.height);
+        GridContainerSystem.removeItemFromGrid(inventory, item);
     }
 
     // ===== 纯数据访问方法 =====
 
     /** 按类型 id 查找库存中的第一个匹配物品（用于可堆叠物品合并） */
     public static findItemByTypeId(inventory: InventoryComponent, typeId: string): ItemBase | undefined {
-        for (const item of inventory.items.values()) {
-            if (item.id === typeId) {
-                return item;
-            }
-        }
-        return undefined;
+        return GridContainerSystem.findItemByTypeId(inventory, typeId);
     }
 
     /** 获取物品（按实例 uid 查找） */
     public static getItem(inventory: InventoryComponent, itemId: string): ItemBase | undefined {
-        return inventory.items.get(itemId);
+        return GridContainerSystem.getItem(inventory, itemId);
     }
 
     /** 克隆物品数据，生成新的 uid，避免库存之间共享引用 */
     public static cloneItem(item: ItemBase, overrides: Partial<ItemBase> = {}): ItemBase {
-        return {
-            ...item,
-            uid: generateItemUid(),
-            inventoryX: item.inventoryX,
-            inventoryY: item.inventoryY,
-            ...overrides
-        };
+        return GridContainerSystem.cloneItem(item, overrides);
     }
 
     /** 获取所有物品 */
     public static getAllItems(inventory: InventoryComponent): ItemBase[] {
-        const items: ItemBase[] = [];
-        for (const item of inventory.items.values()) {
-            items.push(item);
-        }
-        return items;
+        return GridContainerSystem.getAllItems(inventory);
     }
 
     // ===== 网格操作方法 =====
 
     /** 检查网格位置是否可用 */
     public static isGridPositionFree(inventory: InventoryComponent, x: number, y: number, width: number, height: number): boolean {
-        if (x < 0 || y < 0 || x + width > inventory.GRID_WIDTH || y + height > inventory.GRID_HEIGHT) {
-            return false;
-        }
-
-        for (let dy = 0; dy < height; dy++) {
-            for (let dx = 0; dx < width; dx++) {
-                if (inventory.grid[y + dy][x + dx]) {
-                    return false;
-                }
-            }
-        }
-        return true;
+        return GridContainerSystem.isGridPositionFree(inventory, x, y, width, height);
     }
 
     /** 在网格上放置物品占用 */
     public static occupyGridSpace(inventory: InventoryComponent, x: number, y: number, width: number, height: number): void {
-        for (let dy = 0; dy < height; dy++) {
-            for (let dx = 0; dx < width; dx++) {
-                inventory.grid[y + dy][x + dx] = true;
-            }
-        }
+        GridContainerSystem.occupyGridSpace(inventory, x, y, width, height);
     }
 
     /** 从网格上移除物品占用 */
     public static freeGridSpace(inventory: InventoryComponent, x: number, y: number, width: number, height: number): void {
-        for (let dy = 0; dy < height; dy++) {
-            for (let dx = 0; dx < width; dx++) {
-                inventory.grid[y + dy][x + dx] = false;
-            }
-        }
+        GridContainerSystem.freeGridSpace(inventory, x, y, width, height);
     }
 
     // ===== 使用请求管理方法 =====

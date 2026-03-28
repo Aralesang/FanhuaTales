@@ -10,6 +10,8 @@ import { SwordSkill } from '../skills/sword-skill';
 import { InventoryComponent } from '../components/inventory-component';
 import { ItemUseRequestComponent } from '../components/item-use-request-component';
 import { HealthBar } from '../ui/health-bar-ui';
+import { HotbarComponent } from '../components/hotbar-component';
+import { SkillbarComponent } from '../components/skillbar-component';
 
 /** 玩家实体 */
 export class Player extends ex.Actor {
@@ -50,7 +52,13 @@ export class Player extends ex.Actor {
         this.addComponent(skillComponent);
         // 添加剑击技能
         skillComponent.addSkill(new SwordSkill());
-        // 附加库存组件
-        this.addComponent(new InventoryComponent());        // 附加物品使用请求组件
-        this.addComponent(new ItemUseRequestComponent());    }
+        // 附加库存组件（主背包容器）
+        this.addComponent(new InventoryComponent());
+        // 附加快捷栏容器：当前仅建立数据层结构，后续再接入键位与 UI
+        this.addComponent(new HotbarComponent());
+        // 附加技能栏容器：当前仅建立数据层结构，后续再接入技能快捷释放
+        this.addComponent(new SkillbarComponent());
+        // 附加物品使用请求组件
+        this.addComponent(new ItemUseRequestComponent());
+    }
 }
