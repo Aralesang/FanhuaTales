@@ -17,7 +17,7 @@ type HoverTooltipOptions = {
 const DEFAULT_OPTIONS: HoverTooltipOptions = {
     width: 220,
     height: 70,
-    z: 1100,
+    z: 3100,
     backgroundColor: ex.Color.fromHex('#111111dd'),
     borderColor: ex.Color.White,
     borderWidth: 1,

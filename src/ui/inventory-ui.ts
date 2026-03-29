@@ -56,7 +56,7 @@ export class InventoryUI extends ex.ScreenElement {
             slotMargin: this.SLOT_MARGIN,
             gridWidth: this.GRID_WIDTH,
             gridHeight: this.GRID_HEIGHT,
-            zBase: 1000,
+            zBase: 1001,
             style: InventoryPane.createStyle({})
         });
         this.pane.attachTo(this);
@@ -66,7 +66,6 @@ export class InventoryUI extends ex.ScreenElement {
         this.hoverTooltip = new HoverTooltip({
             width: 220,
             height: 70,
-            z: 1100,
             textOffsetX: 10,
             textOffsetY: 10
         });

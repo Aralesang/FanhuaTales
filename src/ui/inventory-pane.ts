@@ -67,7 +67,7 @@ export class InventoryPane {
 
         this.root = new ex.Actor({
             pos: ex.vec(0, 0),
-            z: this.zBase
+            z: 1000
         });
     }
 

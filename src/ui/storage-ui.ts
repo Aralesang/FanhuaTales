@@ -82,7 +82,7 @@ export class StorageUI extends ex.ScreenElement {
             slotMargin: this.SLOT_MARGIN,
             gridWidth: this.GRID_WIDTH,
             gridHeight: this.GRID_HEIGHT,
-            zBase: 1200,
+            zBase: 1000,
             style: paneStyle
         });
         this.storagePane.attachTo(this);
@@ -92,7 +92,6 @@ export class StorageUI extends ex.ScreenElement {
         this.hoverTooltip = new HoverTooltip({
             width: 240,
             height: 74,
-            z: 1300,
             textOffsetX: 12,
             textOffsetY: 11
         });

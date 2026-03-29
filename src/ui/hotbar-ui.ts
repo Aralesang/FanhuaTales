@@ -1,16 +1,23 @@
 import * as ex from 'excalibur';
 import { HotbarComponent } from '../components/hotbar-component';
 import { InventoryPane } from './inventory-pane';
+import { getSharedInventoryDragManager } from './inventory-drag-manager';
+import { HoverTooltip } from './hover-tooltip';
+import { ItemBase } from '../item-base';
 
 /**
- * 底部快捷栏 UI（只读展示版）：
- * - 当前阶段仅负责显示玩家 Hotbar 容器内容
- * - 交互（点击释放/拖拽交换）将在后续阶段接入统一拖拽控制器
+ * 底部快捷栏 UI
  */
 export class HotbarUI extends ex.ScreenElement {
     private readonly player: ex.Actor;
     private readonly pane: InventoryPane;
     private hotbar: HotbarComponent | null = null;
+
+    //共享拖拽管理器
+    private dragManager: ReturnType<typeof getSharedInventoryDragManager> | null = null;
+    //防止重复注册
+    private paneRegistered: boolean = false;
+    private readonly hoverTooltip: HoverTooltip;
 
     constructor(player: ex.Actor) {
         const slotSize = 40;
@@ -54,6 +61,13 @@ export class HotbarUI extends ex.ScreenElement {
             })
         });
         this.pane.attachTo(this);
+        this.hoverTooltip = new HoverTooltip({
+            width: 240,
+            height: 74,
+            textOffsetX: 12,
+            textOffsetY: 11,
+        });
+        this.hoverTooltip.attachTo(this);
     }
 
     override onPostUpdate(_engine: ex.Engine, _delta: number): void {
@@ -65,7 +79,65 @@ export class HotbarUI extends ex.ScreenElement {
             return;
         }
 
+        //注册拖拽管理器
+        if (!this.paneRegistered) {
+            this.registerPane(_engine);
+        }
         this.pane.setContainer(this.hotbar);
         this.pane.render();
+    }
+
+    private updateDispaly() {
+        if (!this.hotbar) {
+            return;
+        }
+
+        this.pane.setContainer(this.hotbar);
+        this.pane.render();
+    }
+
+    private registerPane(engine: ex.Engine) {
+        if (!this.hotbar) {
+            return;
+        }
+
+        this.dragManager = getSharedInventoryDragManager(engine);
+
+        this.dragManager.registerPane({
+            id: "hotbar-main",
+            pane: this.pane,
+            getContainer: () => this.hotbar,
+            //与InventoryUI之类的一致：ScreenElement 坐标系转换
+            screenToLocal: (screenPos) => screenPos.sub(this.pos),
+            localToScreen: (localPos) => this.pos.add(localPos),
+            onChanged: () => {
+                //拖拽后刷新显示
+                this.updateDispaly();
+            },
+            // 快捷栏常驻显示，直接返回
+            isActive: () => true,
+             onHover: (ctx) => {
+                if (!ctx.item) {
+                    this.hideHover();
+                    return;
+                }
+
+                this.showHover(ctx.item, ctx.localPos);
+            },
+        });
+
+        this.paneRegistered = true;
+    }
+
+    private showHover(item: ItemBase, localPos: ex.Vector) {
+        this.hoverTooltip.show(
+            `${item.name}\n${item.description}\n数量: ${item.quantity}`,
+            localPos,
+            ex.vec(128, 64)
+        );
+    }
+
+    private hideHover() {
+        this.hoverTooltip.hide();
     }
 }

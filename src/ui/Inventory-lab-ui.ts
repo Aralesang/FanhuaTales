@@ -29,7 +29,7 @@ export class InventoryLabUI extends ex.ScreenElement {
             width: 560,
             height: 360,
             anchor: ex.Vector.Half,
-            z: 3000
+            z: 1000
         });
 
         this.dragManager = getSharedInventoryDragManager(engine);
@@ -51,7 +51,7 @@ export class InventoryLabUI extends ex.ScreenElement {
         this.hint = new ex.Label({
             text: '可从任意已打开库存拖入这里',
             pos: ex.vec(0, 150),
-            z: 3001,
+            z: 1001,
             font: new ex.Font({
                 family: 'Arial',
                 size: 18,
@@ -69,7 +69,7 @@ export class InventoryLabUI extends ex.ScreenElement {
             slotMargin: this.SLOT_MARGIN,
             gridWidth: this.GRID_COLS,
             gridHeight: this.GRID_ROWS,
-            zBase: 3000,
+            zBase: 1000,
             style: InventoryPane.createStyle({
                 slotColor: ex.Color.fromHex('#2a3c4a'),
                 slotStrokeColor: ex.Color.fromHex('#9ed8ff')
@@ -80,9 +80,8 @@ export class InventoryLabUI extends ex.ScreenElement {
         this.hoverTooltip = new HoverTooltip({
             width: 240,
             height: 74,
-            z: 3100,
             textOffsetX: 12,
-            textOffsetY: 11
+            textOffsetY: 11,
         });
         this.hoverTooltip.attachTo(this);
 
