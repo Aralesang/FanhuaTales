@@ -61,6 +61,36 @@ export class GridContainerSystem {
         return this.removeItem(source, itemUid, transferQuantity);
     }
 
+    /**
+     * 在两个容器之间按指定格坐标转移物品。
+     * 该方法用于拖拽放置：只有目标落点可放置时才会真正完成转移。
+     */
+    public static transferItemToPosition(source: GridContainerComponent, target: GridContainerComponent, itemUid: string, x: number, y: number, quantity?: number): boolean {
+        const item = source.items.get(itemUid);
+        if (!item) {
+            return false;
+        }
+
+        const transferQuantity = Math.min(quantity ?? item.quantity, item.quantity);
+        const movedItem = this.cloneItem(item, {
+            quantity: transferQuantity,
+            inventoryX: x,
+            inventoryY: y
+        });
+
+        if (!this.canAcceptItem(target, movedItem)) {
+            return false;
+        }
+
+        if (!this.isGridPositionFree(target, x, y, movedItem.width, movedItem.height)) {
+            return false;
+        }
+
+        this.placeItemOnGrid(target, movedItem);
+        target.items.set(movedItem.uid, movedItem);
+        return this.removeItem(source, itemUid, transferQuantity);
+    }
+
     /** 将物品实例移动到指定网格位置。 */
     public static placeItem(container: GridContainerComponent, itemUid: string, x: number, y: number): boolean {
         const item = container.items.get(itemUid);

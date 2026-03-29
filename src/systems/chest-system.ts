@@ -29,7 +29,7 @@ export class ChestSystem extends ex.System {
     constructor(engine: ex.Engine) {
         super();
         this.engine = engine;
-        this.storageUI = new StorageUI();
+        this.storageUI = new StorageUI(engine);
         // 提示 UI 固定在屏幕底部中央，不跟随地图滚动。
         this.prompt = new ex.ScreenElement({
             x: 400,

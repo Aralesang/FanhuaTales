@@ -5,6 +5,7 @@ import { DirectionComponent } from '../components/direction-component';
 import { SkillComponent } from '../components/skill-component';
 import { InventoryUI } from '../ui/inventory-ui';
 import { InventoryComponent } from '../components/inventory-component';
+import { InventoryLabUI } from '../ui/Inventory-lab-ui';
 
 export class PlayerControlSystem extends ex.System {
     private engine: ex.Engine;
@@ -22,14 +23,17 @@ export class PlayerControlSystem extends ex.System {
     private _verticalKeys: ex.Keys[] = [];
     private _otherKeys: ex.Keys[] = [];
     private inventoryUI: InventoryUI;
+    private inventoryLabUI: InventoryLabUI;
     private world!: ex.World;
     private currentInventory: InventoryComponent | null = null;
 
     constructor(engine: ex.Engine) {
         super();
         this.engine = engine;
-        this.inventoryUI = new InventoryUI();
+        this.inventoryUI = new InventoryUI(engine);
+        this.inventoryLabUI = new InventoryLabUI(engine);
         this.engine.add(this.inventoryUI);
+        this.engine.add(this.inventoryLabUI);
     }
 
     initialize(world: ex.World, scene: ex.Scene): void {
@@ -69,9 +73,12 @@ export class PlayerControlSystem extends ex.System {
             }
             if (key === ex.Keys.I) {
                 console.log("打开库存界面");
-                
                 // 切换库存界面
                 this.inventoryUI.toggle();
+            }
+            if (key === ex.Keys.B) {
+                console.log("打开测试界面");
+                this.inventoryLabUI.toggle();
             }
         });
     }

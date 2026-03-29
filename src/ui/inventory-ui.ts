@@ -2,17 +2,16 @@ import * as ex from 'excalibur';
 import { InventoryComponent } from '../components/inventory-component';
 import { ItemBase } from '../item-base';
 import { InventorySystem } from '../systems/inventory-system';
-import { GridDragController } from './grid-drag-controller';
 import { InventoryPane } from './inventory-pane';
 import { HoverTooltip } from './hover-tooltip';
+import { getSharedInventoryDragManager } from './inventory-drag-manager';
 
 export class InventoryUI extends ex.ScreenElement {
     private inventory: InventoryComponent | null = null;
     private owner: ex.Entity | null = null;
     private background: ex.Rectangle;
     private readonly pane: InventoryPane;
-    private readonly overlayLayer: ex.Actor;
-    private readonly dragController: GridDragController<'inventory'>;
+    private readonly dragManager;
     private isVisible: boolean = false;
 
     private readonly hoverTooltip: HoverTooltip;
@@ -25,7 +24,7 @@ export class InventoryUI extends ex.ScreenElement {
     private readonly GRID_START_Y = -120;
     private readonly HEADER_Y = -155;
 
-    constructor() {
+    constructor(engine: ex.Engine) {
         const gridWidth = 8 * (48 + 4) - 4;
         const gridHeight = 5 * (48 + 4) - 4;
         const titleHeight = 40;
@@ -62,11 +61,7 @@ export class InventoryUI extends ex.ScreenElement {
         });
         this.pane.attachTo(this);
 
-        this.overlayLayer = new ex.Actor({
-            pos: ex.vec(0, 0),
-            z: 5000
-        });
-        this.addChild(this.overlayLayer);
+        this.dragManager = getSharedInventoryDragManager(engine);
 
         this.hoverTooltip = new HoverTooltip({
             width: 220,
@@ -75,39 +70,7 @@ export class InventoryUI extends ex.ScreenElement {
             textOffsetX: 10,
             textOffsetY: 10
         });
-        this.hoverTooltip.attachTo(this.overlayLayer);
-
-        this.dragController = new GridDragController<'inventory'>({
-            host: this.overlayLayer,
-            panes: [{
-                id: 'inventory',
-                pane: this.pane,
-                getContainer: () => this.inventory
-            }],
-            dragZ: 1004,
-            onHover: (ctx) => {
-                if (!ctx.item) {
-                    this.hideHover();
-                    return;
-                }
-                this.showHover(ctx.item, ctx.localPos);
-            },
-            onRightClick: (ctx) => {
-                if (!this.inventory || !this.owner) {
-                    return;
-                }
-                InventorySystem.addUseRequest(this.inventory, ctx.item.uid, this.owner);
-                console.log(`标记道具使用请求：${ctx.item.name}`);
-                (ctx.event as any).preventDefault?.();
-            },
-            onChanged: () => {
-                this.updateDisplay();
-            }
-        });
-
-        this.on('pointerdown', (evt) => this.onPointerDown(evt));
-        this.on('pointermove', (evt) => this.onPointerMove(evt));
-        this.on('pointerup', (evt) => this.onPointerUp(evt));
+        this.hoverTooltip.attachTo(this);
     }
 
     setInventory(inventory: InventoryComponent) {
@@ -132,13 +95,14 @@ export class InventoryUI extends ex.ScreenElement {
     show() {
         this.isVisible = true;
         this.graphics.use(this.background);
+        this.registerPane();
         this.updateDisplay();
     }
 
     hide() {
         this.isVisible = false;
         this.hideHover();
-        this.dragController.reset(true);
+        this.dragManager.unregisterPane('inventory-main');
         this.graphics.hide();
         this.pane.clear();
     }
@@ -149,25 +113,6 @@ export class InventoryUI extends ex.ScreenElement {
         } else {
             this.show();
         }
-    }
-
-    private onPointerDown(evt: ex.PointerEvent) {
-        if (!this.inventory || !this.isVisible) {
-            return;
-        }
-
-        const localPos = evt.screenPos.sub(this.pos);
-        this.dragController.handlePointerDown(evt, localPos);
-    }
-
-    private onPointerMove(evt: ex.PointerEvent) {
-        const localPos = evt.screenPos.sub(this.pos);
-        this.dragController.handlePointerMove(localPos);
-    }
-
-    private onPointerUp(evt: ex.PointerEvent) {
-        const localPos = evt.screenPos.sub(this.pos);
-        this.dragController.handlePointerUp(localPos);
     }
 
     private showHover(item: ItemBase, localPos: ex.Vector) {
@@ -189,5 +134,37 @@ export class InventoryUI extends ex.ScreenElement {
 
         this.pane.setInventory(this.inventory);
         this.pane.render();
+    }
+
+    private registerPane() {
+        this.dragManager.registerPane({
+            id: 'inventory-main',
+            pane: this.pane,
+            getContainer: () => this.inventory,
+            screenToLocal: (screenPos) => screenPos.sub(this.pos),
+            localToScreen: (localPos) => this.pos.add(localPos),
+            onHover: (ctx) => {
+                if (!ctx.item) {
+                    this.hideHover();
+                    return;
+                }
+
+                this.showHover(ctx.item, ctx.localPos);
+            },
+            onRightClick: (ctx) => {
+                if (!this.inventory || !this.owner) {
+                    return;
+                }
+
+                InventorySystem.addUseRequest(this.inventory, ctx.item.uid, this.owner);
+                console.log(`标记道具使用请求：${ctx.item.name}`);
+                (ctx.event as any).preventDefault?.();
+                this.updateDisplay();
+            },
+            onChanged: () => {
+                this.updateDisplay();
+            },
+            isActive: () => this.isVisible
+        });
     }
 }

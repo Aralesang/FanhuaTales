@@ -2,11 +2,9 @@ import * as ex from 'excalibur';
 import { InventoryComponent } from '../components/inventory-component';
 import { ItemBase } from '../item-base';
 import { InventorySystem } from '../systems/inventory-system';
-import { GridDragController } from './grid-drag-controller';
 import { InventoryPane } from './inventory-pane';
 import { HoverTooltip } from './hover-tooltip';
-
-type StoragePane = 'player' | 'storage';
+import { getSharedInventoryDragManager } from './inventory-drag-manager';
 
 /** 存储UI */
 export class StorageUI extends ex.ScreenElement {
@@ -16,12 +14,11 @@ export class StorageUI extends ex.ScreenElement {
     private storageTitle: string = '箱子';
     private background: ex.Rectangle;
     private staticSlots: ex.Actor[] = [];
-    private readonly overlayLayer: ex.Actor;
+    private readonly dragManager;
     private isVisible: boolean = false;
 
     private dirty: boolean = false;
     private readonly hoverTooltip: HoverTooltip;
-    private readonly dragController: GridDragController<StoragePane>;
 
     private readonly SLOT_SIZE = 40;
     private readonly SLOT_MARGIN = 4;
@@ -34,7 +31,7 @@ export class StorageUI extends ex.ScreenElement {
     private readonly playerPane: InventoryPane;
     private readonly storagePane: InventoryPane;
 
-    constructor() {
+    constructor(engine: ex.Engine) {
         const gridWidth = 8 * (40 + 4) - 4;
         const gridHeight = 5 * (40 + 4) - 4;
         const width = gridWidth * 2 + 72;
@@ -90,11 +87,7 @@ export class StorageUI extends ex.ScreenElement {
         });
         this.storagePane.attachTo(this);
 
-        this.overlayLayer = new ex.Actor({
-            pos: ex.vec(0, 0),
-            z: 6000
-        });
-        this.addChild(this.overlayLayer);
+        this.dragManager = getSharedInventoryDragManager(engine);
 
         this.hoverTooltip = new HoverTooltip({
             width: 240,
@@ -103,54 +96,7 @@ export class StorageUI extends ex.ScreenElement {
             textOffsetX: 12,
             textOffsetY: 11
         });
-        this.hoverTooltip.attachTo(this.overlayLayer);
-
-        this.dragController = new GridDragController<StoragePane>({
-            host: this.overlayLayer,
-            panes: [{
-                id: 'player',
-                pane: this.playerPane,
-                getContainer: () => this.playerInventory
-            }, {
-                id: 'storage',
-                pane: this.storagePane,
-                getContainer: () => this.storageInventory
-            }],
-            dragZ: 1250,
-            onHover: (ctx) => {
-                if (!this.isVisible) {
-                    return;
-                }
-
-                if (!ctx.item) {
-                    this.hideHover();
-                    return;
-                }
-
-                this.showHover(ctx.item, ctx.localPos);
-            },
-            onRightClick: (ctx) => {
-                if (!this.playerInventory || !this.playerOwner) {
-                    return;
-                }
-
-                if (ctx.paneId !== 'player') {
-                    return;
-                }
-
-                InventorySystem.addUseRequest(this.playerInventory, ctx.item.uid, this.playerOwner);
-                this.dirty = true;
-                (ctx.event as any).preventDefault?.();
-            },
-            onChanged: () => {
-                this.dirty = true;
-                this.updateDisplay();
-            }
-        });
-
-        this.on('pointerdown', (evt) => this.onPointerDown(evt));
-        this.on('pointermove', (evt) => this.onPointerMove(evt));
-        this.on('pointerup', (evt) => this.onPointerUp(evt));
+        this.hoverTooltip.attachTo(this);
     }
 
     public show(playerOwner: ex.Entity, playerInventory: InventoryComponent, storageInventory: InventoryComponent, storageTitle: string) {
@@ -165,6 +111,7 @@ export class StorageUI extends ex.ScreenElement {
         this.isVisible = true;
         this.dirty = true;
         this.graphics.use(this.background);
+        this.registerPanes();
         this.updateDisplay();
     }
 
@@ -175,7 +122,8 @@ export class StorageUI extends ex.ScreenElement {
         this.playerOwner = null;
         this.storageTitle = '箱子';
         this.hideHover();
-        this.dragController.reset(true);
+        this.dragManager.unregisterPane('storage-player');
+        this.dragManager.unregisterPane('storage-target');
         this.graphics.hide();
         this.playerPane.setInventory(null);
         this.storagePane.setInventory(null);
@@ -198,25 +146,6 @@ export class StorageUI extends ex.ScreenElement {
 
     public isOpen(): boolean {
         return this.isVisible;
-    }
-
-    private onPointerDown(evt: ex.PointerEvent) {
-        if (!this.playerInventory || !this.storageInventory || !this.isVisible) {
-            return;
-        }
-
-        const localPos = evt.screenPos.sub(this.pos);
-        this.dragController.handlePointerDown(evt, localPos);
-    }
-
-    private onPointerMove(evt: ex.PointerEvent) {
-        const localPos = evt.screenPos.sub(this.pos);
-        this.dragController.handlePointerMove(localPos);
-    }
-
-    private onPointerUp(evt: ex.PointerEvent) {
-        const localPos = evt.screenPos.sub(this.pos);
-        this.dragController.handlePointerUp(localPos);
     }
 
     private showHover(item: ItemBase, localPos: ex.Vector) {
@@ -264,7 +193,57 @@ export class StorageUI extends ex.ScreenElement {
         this.staticSlots.push(hintLabel);
     }
 
-    private getInventoryByPane(pane: StoragePane): InventoryComponent | null {
-        return pane === 'player' ? this.playerInventory : this.storageInventory;
+    private registerPanes() {
+        this.dragManager.registerPane({
+            id: 'storage-player',
+            pane: this.playerPane,
+            getContainer: () => this.playerInventory,
+            screenToLocal: (screenPos) => screenPos.sub(this.pos),
+            localToScreen: (localPos) => this.pos.add(localPos),
+            onHover: (ctx) => {
+                if (!ctx.item) {
+                    this.hideHover();
+                    return;
+                }
+
+                this.showHover(ctx.item, ctx.localPos);
+            },
+            onRightClick: (ctx) => {
+                if (!this.playerInventory || !this.playerOwner) {
+                    return;
+                }
+
+                InventorySystem.addUseRequest(this.playerInventory, ctx.item.uid, this.playerOwner);
+                this.dirty = true;
+                (ctx.event as any).preventDefault?.();
+                this.updateDisplay();
+            },
+            onChanged: () => {
+                this.dirty = true;
+                this.updateDisplay();
+            },
+            isActive: () => this.isVisible
+        });
+
+        this.dragManager.registerPane({
+            id: 'storage-target',
+            pane: this.storagePane,
+            getContainer: () => this.storageInventory,
+            screenToLocal: (screenPos) => screenPos.sub(this.pos),
+            localToScreen: (localPos) => this.pos.add(localPos),
+            onHover: (ctx) => {
+                if (!ctx.item) {
+                    this.hideHover();
+                    return;
+                }
+
+                this.showHover(ctx.item, ctx.localPos);
+            },
+            onChanged: () => {
+                this.dirty = true;
+                this.updateDisplay();
+            },
+            isActive: () => this.isVisible
+        });
     }
 }
