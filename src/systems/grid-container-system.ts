@@ -18,6 +18,7 @@ export class GridContainerSystem {
             if (existing) {
                 if (existing.quantity + item.quantity <= existing.maxStack) {
                     existing.quantity += item.quantity;
+                    container.version++;
                     return true;
                 }
                 return false;
@@ -37,6 +38,7 @@ export class GridContainerSystem {
 
         this.placeItemOnGrid(container, newItem);
         container.items.set(newItem.uid, newItem);
+        container.version++;
         return true;
     }
 
@@ -88,6 +90,7 @@ export class GridContainerSystem {
 
         this.placeItemOnGrid(target, movedItem);
         target.items.set(movedItem.uid, movedItem);
+        target.version++;
         return this.removeItem(source, itemUid, transferQuantity);
     }
 
@@ -106,12 +109,14 @@ export class GridContainerSystem {
             item.inventoryX = x;
             item.inventoryY = y;
             this.placeItemOnGrid(container, item);
+            container.version++;
             return true;
         }
 
         item.inventoryX = originX;
         item.inventoryY = originY;
         this.placeItemOnGrid(container, item);
+        container.version++;
         return false;
     }
 
@@ -135,6 +140,7 @@ export class GridContainerSystem {
         if (item.inventoryX !== undefined && item.inventoryY !== undefined) {
             if (this.isGridPositionFree(container, item.inventoryX, item.inventoryY, item.width, item.height)) {
                 this.placeItemOnGrid(container, item);
+                container.version++;
                 return true;
             }
 
@@ -143,9 +149,11 @@ export class GridContainerSystem {
             item.width = item.height;
             item.height = rollbackWidth;
             this.placeItemOnGrid(container, item);
+            container.version++;
             return false;
         }
 
+        container.version++;
         return true;
     }
 
@@ -165,6 +173,7 @@ export class GridContainerSystem {
             this.removeItemFromGrid(container, item);
             container.items.delete(itemUid);
         }
+        container.version++;
         return true;
     }
 

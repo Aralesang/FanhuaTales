@@ -4,6 +4,7 @@ import { InventoryPane } from './inventory-pane';
 import { getSharedInventoryDragManager } from './inventory-drag-manager';
 import { HoverTooltip } from './hover-tooltip';
 import { ItemBase } from '../item-base';
+import { ItemUseRequestComponent } from '../components/item-use-request-component';
 
 /**
  * 底部快捷栏 UI
@@ -46,9 +47,9 @@ export class HotbarUI extends ex.ScreenElement {
         this.graphics.use(background);
 
         this.pane = new InventoryPane({
-            title: '快捷栏',
+            title: '',
             startX: -width / 2 + 12,
-            startY: -10,
+            startY: -20,
             headerY: -26,
             slotSize,
             slotMargin,
@@ -123,6 +124,40 @@ export class HotbarUI extends ex.ScreenElement {
                 }
 
                 this.showHover(ctx.item, ctx.localPos);
+            },
+            onRightClick: (ctx) => {
+                const item = ctx.item;
+                if (!item.usable) {
+                    console.log(`${item.name} 不能使用`);
+                    (ctx.event as any).preventDefault?.();
+                    return;
+                }
+
+                // 直接设置 ItemUseRequestComponent，由 ItemUseSystem 处理效果
+                let requestComp = this.player.get(ItemUseRequestComponent);
+                if (!requestComp) {
+                    requestComp = new ItemUseRequestComponent();
+                    this.player.addComponent(requestComp);
+                }
+
+                // 如果已有未处理的请求，跳过
+                if (requestComp.itemToUse !== null && !requestComp.processed) {
+                    console.log(`已有待处理的物品使用请求，跳过: ${item.name}`);
+                    (ctx.event as any).preventDefault?.();
+                    return;
+                }
+
+                requestComp.itemToUse = item;
+                requestComp.user = this.player;
+                requestComp.target = null;
+                requestComp.requestTime = Date.now();
+                requestComp.processed = false;
+                requestComp.success = false;
+                requestComp.clearFlag = false;
+
+                console.log(`快捷栏标记道具使用请求：${item.name}`);
+                (ctx.event as any).preventDefault?.();
+                this.updateDispaly();
             },
         });
 

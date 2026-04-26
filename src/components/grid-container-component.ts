@@ -36,6 +36,13 @@ export class GridContainerComponent extends ex.Component {
     /** 网格占用情况，true 表示该格子已被占据。 */
     public grid: boolean[][] = [];
 
+    /**
+     * 数据版本号，每次容器内容发生变化时自动递增。
+     * 用于上层 UI 通过 renderKey 机制快速检测数据是否变更，
+     * 避免每帧全量比对带来的性能开销。
+     */
+    public version: number = 0;
+
     constructor(options?: {
         kind?: GridContainerKind;
         gridWidth?: number;

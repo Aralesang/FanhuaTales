@@ -147,6 +147,18 @@ export class StorageUI extends ex.ScreenElement {
         return this.isVisible;
     }
 
+    /**
+     * 每帧后更新：当存储界面可见时，自动刷新两侧面板的渲染。
+     * 这里只调用 pane.render()，避免重复重建 staticSlots；
+     * 完整的 updateDisplay（含提示文本重建）只在打开或数据变更事件时调用。
+     */
+    override onPostUpdate(_engine: ex.Engine, _delta: number): void {
+        if (this.isVisible) {
+            this.playerPane.render();
+            this.storagePane.render();
+        }
+    }
+
     private showHover(item: ItemBase, localPos: ex.Vector) {
         this.hoverTooltip.show(
             `${item.name}\n${item.description}\n数量: ${item.quantity}`,

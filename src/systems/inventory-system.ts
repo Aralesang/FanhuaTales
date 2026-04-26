@@ -1,9 +1,9 @@
 import * as ex from "excalibur";
 import { InventoryComponent } from "../components/inventory-component";
+import { GridContainerComponent } from "../components/grid-container-component";
 import { ItemComponent } from "../components/item-component";
 import { ItemUseRequestComponent } from "../components/item-use-request-component";
 import { ItemBase } from "../item-base";
-import { ItemUseSystem } from "./item-use-system";
 import { GridContainerSystem } from "./grid-container-system";
 
 /** 库存系统 */
@@ -89,55 +89,55 @@ export class InventorySystem extends ex.System {
     }
 
     /** 添加物品到库存（自动寻找合适位置） */
-    static addItem(inventory: InventoryComponent, item: ItemBase): boolean {
-        return GridContainerSystem.addItem(inventory, item);
+    static addItem(container: GridContainerComponent, item: ItemBase): boolean {
+        return GridContainerSystem.addItem(container, item);
     }
 
     /** 在两个库存之间转移物品，参数 itemId 为物品实例 uid */
-    static transferItem(sourceInventory: InventoryComponent, targetInventory: InventoryComponent, itemId: string, quantity?: number): boolean {
-        return GridContainerSystem.transferItem(sourceInventory, targetInventory, itemId, quantity);
+    static transferItem(sourceContainer: GridContainerComponent, targetContainer: GridContainerComponent, itemId: string, quantity?: number): boolean {
+        return GridContainerSystem.transferItem(sourceContainer, targetContainer, itemId, quantity);
     }
 
     /** 在指定位置放置物品 */
-    static placeItem(inventory: InventoryComponent, itemId: string, x: number, y: number): boolean {
-        return GridContainerSystem.placeItem(inventory, itemId, x, y);
+    static placeItem(container: GridContainerComponent, itemId: string, x: number, y: number): boolean {
+        return GridContainerSystem.placeItem(container, itemId, x, y);
     }
 
     /** 旋转物品 */
-    static rotateItem(inventory: InventoryComponent, itemId: string): boolean {
-        return GridContainerSystem.rotateItem(inventory, itemId);
+    static rotateItem(container: GridContainerComponent, itemId: string): boolean {
+        return GridContainerSystem.rotateItem(container, itemId);
     }
 
     /** 移除物品 */
-    static removeItem(inventory: InventoryComponent, itemId: string, quantity: number = 1): boolean {
-        return GridContainerSystem.removeItem(inventory, itemId, quantity);
+    static removeItem(container: GridContainerComponent, itemId: string, quantity: number = 1): boolean {
+        return GridContainerSystem.removeItem(container, itemId, quantity);
     }
 
     /** 确认消耗物品（由系统调用） */
-    static consumeItemAfterUse(inventory: InventoryComponent, itemId: string, quantity: number = 1): boolean {
-        return GridContainerSystem.removeItem(inventory, itemId, quantity);
+    static consumeItemAfterUse(container: GridContainerComponent, itemId: string, quantity: number = 1): boolean {
+        return GridContainerSystem.removeItem(container, itemId, quantity);
     }
 
     /** 在网格上放置物品 */
-    public static placeItemOnGrid(inventory: InventoryComponent, item: ItemBase) {
-        GridContainerSystem.placeItemOnGrid(inventory, item);
+    public static placeItemOnGrid(container: GridContainerComponent, item: ItemBase) {
+        GridContainerSystem.placeItemOnGrid(container, item);
     }
 
     /** 从网格上移除物品 */
-    public static removeItemFromGrid(inventory: InventoryComponent, item: ItemBase) {
-        GridContainerSystem.removeItemFromGrid(inventory, item);
+    public static removeItemFromGrid(container: GridContainerComponent, item: ItemBase) {
+        GridContainerSystem.removeItemFromGrid(container, item);
     }
 
     // ===== 纯数据访问方法 =====
 
     /** 按类型 id 查找库存中的第一个匹配物品（用于可堆叠物品合并） */
-    public static findItemByTypeId(inventory: InventoryComponent, typeId: string): ItemBase | undefined {
-        return GridContainerSystem.findItemByTypeId(inventory, typeId);
+    public static findItemByTypeId(container: GridContainerComponent, typeId: string): ItemBase | undefined {
+        return GridContainerSystem.findItemByTypeId(container, typeId);
     }
 
     /** 获取物品（按实例 uid 查找） */
-    public static getItem(inventory: InventoryComponent, itemId: string): ItemBase | undefined {
-        return GridContainerSystem.getItem(inventory, itemId);
+    public static getItem(container: GridContainerComponent, itemId: string): ItemBase | undefined {
+        return GridContainerSystem.getItem(container, itemId);
     }
 
     /** 克隆物品数据，生成新的 uid，避免库存之间共享引用 */
@@ -146,25 +146,25 @@ export class InventorySystem extends ex.System {
     }
 
     /** 获取所有物品 */
-    public static getAllItems(inventory: InventoryComponent): ItemBase[] {
-        return GridContainerSystem.getAllItems(inventory);
+    public static getAllItems(container: GridContainerComponent): ItemBase[] {
+        return GridContainerSystem.getAllItems(container);
     }
 
     // ===== 网格操作方法 =====
 
     /** 检查网格位置是否可用 */
-    public static isGridPositionFree(inventory: InventoryComponent, x: number, y: number, width: number, height: number): boolean {
-        return GridContainerSystem.isGridPositionFree(inventory, x, y, width, height);
+    public static isGridPositionFree(container: GridContainerComponent, x: number, y: number, width: number, height: number): boolean {
+        return GridContainerSystem.isGridPositionFree(container, x, y, width, height);
     }
 
     /** 在网格上放置物品占用 */
-    public static occupyGridSpace(inventory: InventoryComponent, x: number, y: number, width: number, height: number): void {
-        GridContainerSystem.occupyGridSpace(inventory, x, y, width, height);
+    public static occupyGridSpace(container: GridContainerComponent, x: number, y: number, width: number, height: number): void {
+        GridContainerSystem.occupyGridSpace(container, x, y, width, height);
     }
 
     /** 从网格上移除物品占用 */
-    public static freeGridSpace(inventory: InventoryComponent, x: number, y: number, width: number, height: number): void {
-        GridContainerSystem.freeGridSpace(inventory, x, y, width, height);
+    public static freeGridSpace(container: GridContainerComponent, x: number, y: number, width: number, height: number): void {
+        GridContainerSystem.freeGridSpace(container, x, y, width, height);
     }
 
     // ===== 使用请求管理方法 =====

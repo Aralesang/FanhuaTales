@@ -121,6 +121,16 @@ export class InventoryLabUI extends ex.ScreenElement {
         }
     }
 
+    /**
+     * 每帧后更新：当实验容器界面可见时，自动刷新面板渲染。
+     * InventoryPane 内部有 renderKey 优化，只有数据真正变化时才会执行重绘。
+     */
+    override onPostUpdate(_engine: ex.Engine, _delta: number): void {
+        if (this.opened) {
+            this.updateDisplay();
+        }
+    }
+
     private showHover(item: ItemBase, localPos: ex.Vector) {
         this.hoverTooltip.show(
             `${item.name}\n${item.description}\n数量: ${item.quantity}`,

@@ -3,6 +3,7 @@ import { ItemBase, ItemUseEffect } from '../item-base';
 import { HealthComponent } from '../components/health-component';
 import { ItemUseRequestComponent } from '../components/item-use-request-component';
 import { InventoryComponent } from '../components/inventory-component';
+import { HotbarComponent } from '../components/hotbar-component';
 import { InventorySystem } from './inventory-system';
 
 /** 物品使用系统 */
@@ -146,9 +147,20 @@ export class ItemUseSystem extends ex.System {
             console.log(`物品 ${request.itemToUse.name} 使用成功`);
 
             // 消耗物品（通过数据驱动的方式）
+            // 先尝试从主背包消耗，若未找到则尝试快捷栏
             const inventory = request.user.get(InventoryComponent);
-            if (inventory) {
-                InventorySystem.consumeItemAfterUse(inventory, request.itemToUse.uid, 1);
+            const hotbar = request.user.get(HotbarComponent);
+            let consumed = false;
+
+            if (inventory && InventorySystem.getItem(inventory, request.itemToUse.uid)) {
+                consumed = InventorySystem.consumeItemAfterUse(inventory, request.itemToUse.uid, 1);
+            }
+            if (!consumed && hotbar && InventorySystem.getItem(hotbar, request.itemToUse.uid)) {
+                consumed = InventorySystem.consumeItemAfterUse(hotbar, request.itemToUse.uid, 1);
+            }
+
+            if (!consumed) {
+                console.warn(`无法消耗物品 ${request.itemToUse.name}：未在背包或快捷栏中找到`);
             }
 
             // 可以在这里触发事件、播放音效、显示特效等
