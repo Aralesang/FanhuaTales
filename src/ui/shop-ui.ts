@@ -5,12 +5,12 @@ import { GridContainerSystem } from '../systems/grid-container-system';
 import { InventoryPane } from './inventory-pane';
 import { HoverTooltip } from './hover-tooltip';
 import { getSharedInventoryDragManager } from './inventory-drag-manager';
+import { Asset } from '../asset';
+import { ItemFactory } from '../item-base';
 
 export class ShopUI extends ex.ScreenElement {
     private playerInventory: InventoryComponent | null = null;
     private merchantInventory: InventoryComponent | null = null;
-    private playerOfferInventory: InventoryComponent;
-    private merchantOfferInventory: InventoryComponent;
     private playerOwner: ex.Entity | null = null;
     private merchantName: string = '商人';
     private background: ex.Rectangle;
@@ -25,25 +25,22 @@ export class ShopUI extends ex.ScreenElement {
 
     private readonly playerPane: InventoryPane;
     private readonly merchantPane: InventoryPane;
-    private readonly playerOfferPane: InventoryPane;
-    private readonly merchantOfferPane: InventoryPane;
 
-    private valueLabel: ex.Label | null = null;
-    private tradeButton: ex.Actor | null = null;
+    private pendingTransaction: { type: 'buy' | 'sell'; price: number } | null = null;
 
     constructor(engine: ex.Engine) {
         super({
             x: 400,
             y: 300,
-            width: 760,
-            height: 400,
+            width: 520,
+            height: 320,
             anchor: ex.Vector.Half,
             z: 1200
         });
 
         this.background = new ex.Rectangle({
-            width: 760,
-            height: 400,
+            width: 520,
+            height: 320,
             color: ex.Color.fromHex('#1f1b18ee'),
             strokeColor: ex.Color.fromHex('#d7c5a3'),
             lineWidth: 2
@@ -54,14 +51,9 @@ export class ShopUI extends ex.ScreenElement {
             slotStrokeColor: ex.Color.fromHex('#b8a98d')
         });
 
-        const offerStyle = InventoryPane.createStyle({
-            slotColor: ex.Color.fromHex('#5a5040'),
-            slotStrokeColor: ex.Color.fromHex('#c9b896')
-        });
-
         this.playerPane = new InventoryPane({
             title: '玩家背包',
-            startX: -376,
+            startX: -250,
             startY: -70,
             headerY: -100,
             slotSize: this.SLOT_SIZE,
@@ -73,37 +65,9 @@ export class ShopUI extends ex.ScreenElement {
         });
         this.playerPane.attachTo(this);
 
-        this.playerOfferPane = new InventoryPane({
-            title: '你的出价',
-            startX: -148,
-            startY: -70,
-            headerY: -100,
-            slotSize: this.SLOT_SIZE,
-            slotMargin: this.SLOT_MARGIN,
-            gridWidth: 4,
-            gridHeight: 3,
-            zBase: 1200,
-            style: offerStyle
-        });
-        this.playerOfferPane.attachTo(this);
-
-        this.merchantOfferPane = new InventoryPane({
-            title: '商人出价',
-            startX: 8,
-            startY: -70,
-            headerY: -100,
-            slotSize: this.SLOT_SIZE,
-            slotMargin: this.SLOT_MARGIN,
-            gridWidth: 4,
-            gridHeight: 3,
-            zBase: 1200,
-            style: offerStyle
-        });
-        this.merchantOfferPane.attachTo(this);
-
         this.merchantPane = new InventoryPane({
             title: '商人背包',
-            startX: 164,
+            startX: 20,
             startY: -70,
             headerY: -100,
             slotSize: this.SLOT_SIZE,
@@ -114,9 +78,6 @@ export class ShopUI extends ex.ScreenElement {
             style: paneStyle
         });
         this.merchantPane.attachTo(this);
-
-        this.playerOfferInventory = new InventoryComponent({ gridWidth: 4, gridHeight: 3 });
-        this.merchantOfferInventory = new InventoryComponent({ gridWidth: 4, gridHeight: 3 });
 
         this.dragManager = getSharedInventoryDragManager(engine);
 
@@ -136,19 +97,15 @@ export class ShopUI extends ex.ScreenElement {
         this.merchantName = merchantName;
         this.playerPane.setInventory(playerInventory);
         this.merchantPane.setInventory(merchantInventory);
-        this.playerOfferPane.setInventory(this.playerOfferInventory);
-        this.merchantOfferPane.setInventory(this.merchantOfferInventory);
         this.isVisible = true;
         this.dirty = true;
         this.graphics.use(this.background);
+        this.graphics.visible = true;
         this.registerPanes();
         this.updateDisplay();
     }
 
     public hide() {
-        if (this.isVisible) {
-            this.returnOfferItems();
-        }
         this.isVisible = false;
         this.playerInventory = null;
         this.merchantInventory = null;
@@ -157,18 +114,13 @@ export class ShopUI extends ex.ScreenElement {
         this.hideHover();
         this.dragManager.unregisterPane('shop-player');
         this.dragManager.unregisterPane('shop-merchant');
-        this.dragManager.unregisterPane('shop-player-offer');
-        this.dragManager.unregisterPane('shop-merchant-offer');
         this.graphics.hide();
         this.playerPane.setInventory(null);
         this.merchantPane.setInventory(null);
-        this.playerOfferPane.setInventory(null);
-        this.merchantOfferPane.setInventory(null);
         this.playerPane.clear();
         this.merchantPane.clear();
-        this.playerOfferPane.clear();
-        this.merchantOfferPane.clear();
         this.clearStaticSlots();
+        this.pendingTransaction = null;
     }
 
     public refresh() {
@@ -190,134 +142,85 @@ export class ShopUI extends ex.ScreenElement {
         if (this.isVisible) {
             this.playerPane.render();
             this.merchantPane.render();
-            this.playerOfferPane.render();
-            this.merchantOfferPane.render();
         }
     }
 
-    private returnOfferItems() {
-        if (this.playerInventory && this.playerOfferInventory) {
-            const playerItems = GridContainerSystem.getAllItems(this.playerOfferInventory);
-            for (const item of [...playerItems]) {
-                GridContainerSystem.transferItem(this.playerOfferInventory, this.playerInventory, item.uid, item.quantity);
-            }
+    // ---- 交易核心逻辑 ----
+
+    /** 买入：检查玩家金币是否足够 */
+    private canBuy(item: ItemBase): boolean {
+        const price = item.value * item.quantity;
+        const playerGold = this.getGoldCount(this.playerInventory);
+        if (playerGold < price) {
+            this.pendingTransaction = null;
+            this.showToast('金币不足');
+            return false;
         }
-        if (this.merchantInventory && this.merchantOfferInventory) {
-            const merchantItems = GridContainerSystem.getAllItems(this.merchantOfferInventory);
-            for (const item of [...merchantItems]) {
-                GridContainerSystem.transferItem(this.merchantOfferInventory, this.merchantInventory, item.uid, item.quantity);
-            }
+        this.pendingTransaction = { type: 'buy', price };
+        return true;
+    }
+
+    /** 卖出：总是允许 */
+    private canSell(item: ItemBase): boolean {
+        const price = item.id === 'gold_coin' ? item.quantity : item.value * item.quantity;
+        this.pendingTransaction = { type: 'sell', price };
+        return true;
+    }
+
+    /** 处理待执行的金币交易 */
+    private handleTransaction() {
+        if (!this.pendingTransaction) return;
+        const tx = this.pendingTransaction;
+        this.pendingTransaction = null;
+
+        const playerInv = this.playerInventory;
+        const merchantInv = this.merchantInventory;
+        if (!playerInv || !merchantInv) return;
+
+        if (tx.type === 'buy') {
+            // 买入：玩家给商人金币
+            this.moveGold(playerInv, merchantInv, tx.price);
+        } else {
+            // 卖出：商人给玩家金币
+            this.moveGold(merchantInv, playerInv, tx.price);
         }
     }
 
-    private calculateOfferValue(container: InventoryComponent, isPlayerOffering: boolean): number {
-        const items = GridContainerSystem.getAllItems(container);
-        let total = 0;
-        for (const item of items) {
-            const unitValue = item.id === 'gold_coin' ? 1 : item.value;
-            const effectiveValue = isPlayerOffering && item.id !== 'gold_coin'
-                ? Math.floor(unitValue / 2)
-                : unitValue;
-            total += effectiveValue * item.quantity;
-        }
-        return total;
+    /** 获取容器中金币数量 */
+    private getGoldCount(container: InventoryComponent | null): number {
+        if (!container) return 0;
+        const goldItem = GridContainerSystem.findItemByTypeId(container, 'gold_coin');
+        return goldItem?.quantity ?? 0;
     }
 
-    private executeTrade() {
-        if (!this.playerInventory || !this.merchantInventory) return;
+    /** 从 from 容器转移金币到 to 容器 */
+    private moveGold(from: InventoryComponent, to: InventoryComponent, amount: number) {
+        if (amount <= 0) return;
+        const fromGold = GridContainerSystem.findItemByTypeId(from, 'gold_coin');
+        if (!fromGold || fromGold.quantity < amount) return;
 
-        const playerValue = this.calculateOfferValue(this.playerOfferInventory, true);
-        const merchantValue = this.calculateOfferValue(this.merchantOfferInventory, false);
+        GridContainerSystem.removeItem(from, fromGold.uid, amount);
 
-        if (playerValue < merchantValue) {
-            console.log('交易失败：你的出价不足');
-            return;
+        const goldConfig = Asset.itemDataMap?.get('gold_coin');
+        if (goldConfig) {
+            const goldItem = ItemFactory.fromConfig(goldConfig);
+            goldItem.quantity = amount;
+            GridContainerSystem.addItem(to, goldItem);
         }
-
-        const playerOfferItems = [...GridContainerSystem.getAllItems(this.playerOfferInventory)];
-        const merchantOfferItems = [...GridContainerSystem.getAllItems(this.merchantOfferInventory)];
-
-        for (const item of playerOfferItems) {
-            GridContainerSystem.transferItem(this.playerOfferInventory, this.merchantInventory, item.uid, item.quantity);
-        }
-
-        for (const item of merchantOfferItems) {
-            GridContainerSystem.transferItem(this.merchantOfferInventory, this.playerInventory, item.uid, item.quantity);
-        }
-
-        this.dirty = true;
-        this.updateDisplay();
-        console.log('交易成功！');
     }
+
+    // ---- UI ----
 
     private updateDisplay() {
         if (!this.isVisible) return;
 
         this.playerPane.render();
         this.merchantPane.render();
-        this.playerOfferPane.render();
-        this.merchantOfferPane.render();
-
         this.clearStaticSlots();
 
-        const playerValue = this.calculateOfferValue(this.playerOfferInventory, true);
-        const merchantValue = this.calculateOfferValue(this.merchantOfferInventory, false);
-        const canTrade = playerValue >= merchantValue;
-
-        this.valueLabel = new ex.Label({
-            text: `你的出价: ${playerValue}  |  商人出价: ${merchantValue}`,
-            font: new ex.Font({
-                family: 'Arial',
-                size: 16,
-                color: canTrade ? ex.Color.fromHex('#7cfc00') : ex.Color.fromHex('#ff6b6b'),
-                textAlign: ex.TextAlign.Center
-            }),
-            pos: ex.vec(0, 50),
-            z: 1201
-        });
-        this.addChild(this.valueLabel);
-        this.staticSlots.push(this.valueLabel);
-
-        this.tradeButton = new ex.Actor({
-            pos: ex.vec(0, 90),
-            width: 140,
-            height: 38,
-            z: 1201
-        });
-
-        const btnColor = canTrade ? ex.Color.fromHex('#4a7c3f') : ex.Color.fromHex('#5a3a3a');
-        const btnStroke = canTrade ? ex.Color.fromHex('#7cfc00') : ex.Color.fromHex('#ff6b6b');
-
-        this.tradeButton.graphics.use(new ex.Rectangle({
-            width: 140,
-            height: 38,
-            color: btnColor,
-            strokeColor: btnStroke,
-            lineWidth: 2
-        }));
-
-        const btnLabel = new ex.Label({
-            text: '交易',
-            font: new ex.Font({
-                family: 'Arial',
-                size: 18,
-                color: ex.Color.White,
-                textAlign: ex.TextAlign.Center
-            }),
-            pos: ex.vec(0, 0),
-            z: 1202
-        });
-        this.tradeButton.addChild(btnLabel);
-
-        if (canTrade) {
-            this.tradeButton.on('pointerdown', () => this.executeTrade());
-        }
-
-        this.addChild(this.tradeButton);
-        this.staticSlots.push(this.tradeButton);
-
-        this.addHint('把物品放入交换区进行议价', 0, -130, 14, ex.Color.fromHex('#d7c5a3'));
-        this.addHint('非金币物品卖给商人时价值减半', 0, 120, 12, ex.Color.fromHex('#b8a98d'));
+        this.addHint('拖动物品到对方背包即可完成买卖', 0, 110, 14, ex.Color.fromHex('#d7c5a3'));
+        this.addHint('商人背包 → 玩家背包 = 买入（消耗金币）', 0, 130, 12, ex.Color.fromHex('#b8a98d'));
+        this.addHint('玩家背包 → 商人背包 = 卖出（获得金币）', 0, 144, 12, ex.Color.fromHex('#b8a98d'));
     }
 
     private addHint(text: string, x: number, y: number, size: number, color: ex.Color) {
@@ -339,25 +242,6 @@ export class ShopUI extends ex.ScreenElement {
     private clearStaticSlots() {
         this.staticSlots.forEach(slot => this.removeChild(slot));
         this.staticSlots = [];
-        this.valueLabel = null;
-        this.tradeButton = null;
-    }
-
-    private showHover(item: ItemBase, localPos: ex.Vector) {
-        const unitValue = item.id === 'gold_coin' ? 1 : item.value;
-        const sellValue = item.id === 'gold_coin' ? 1 : Math.floor(item.value / 2);
-        const valueText = item.id === 'gold_coin'
-            ? `价值: 1`
-            : `标准价值: ${unitValue}  商人出价: ${sellValue}`;
-        this.hoverTooltip.show(
-            `${item.name}\n${item.description}\n数量: ${item.quantity}\n${valueText}`,
-            localPos,
-            ex.vec(128, 64)
-        );
-    }
-
-    private hideHover() {
-        this.hoverTooltip.hide();
     }
 
     private registerPanes() {
@@ -367,12 +251,15 @@ export class ShopUI extends ex.ScreenElement {
             getContainer: () => this.playerInventory,
             screenToLocal: (screenPos) => screenPos.sub(this.pos),
             localToScreen: (localPos) => this.pos.add(localPos),
-            canAcceptDrop: (sourcePaneId) => sourcePaneId === 'shop-player-offer',
+            canAcceptDrop: (_sourcePaneId, item) => {
+                if (_sourcePaneId !== 'shop-merchant') return false;
+                return this.canBuy(item);
+            },
             onHover: (ctx) => {
                 if (!ctx.item) { this.hideHover(); return; }
                 this.showHover(ctx.item, ctx.localPos);
             },
-            onChanged: () => { this.dirty = true; this.updateDisplay(); },
+            onChanged: () => { this.handleTransaction(); this.dirty = true; this.updateDisplay(); },
             isActive: () => this.isVisible
         });
 
@@ -382,43 +269,46 @@ export class ShopUI extends ex.ScreenElement {
             getContainer: () => this.merchantInventory,
             screenToLocal: (screenPos) => screenPos.sub(this.pos),
             localToScreen: (localPos) => this.pos.add(localPos),
-            canAcceptDrop: (sourcePaneId) => sourcePaneId === 'shop-merchant-offer',
+            canAcceptDrop: (sourcePaneId, item) => {
+                if (sourcePaneId !== 'shop-player') return false;
+                return this.canSell(item);
+            },
             onHover: (ctx) => {
                 if (!ctx.item) { this.hideHover(); return; }
                 this.showHover(ctx.item, ctx.localPos);
             },
-            onChanged: () => { this.dirty = true; this.updateDisplay(); },
+            onChanged: () => { this.handleTransaction(); this.dirty = true; this.updateDisplay(); },
             isActive: () => this.isVisible
         });
+    }
 
-        this.dragManager.registerPane({
-            id: 'shop-player-offer',
-            pane: this.playerOfferPane,
-            getContainer: () => this.playerOfferInventory,
-            screenToLocal: (screenPos) => screenPos.sub(this.pos),
-            localToScreen: (localPos) => this.pos.add(localPos),
-            canAcceptDrop: (sourcePaneId) => sourcePaneId === 'shop-player',
-            onHover: (ctx) => {
-                if (!ctx.item) { this.hideHover(); return; }
-                this.showHover(ctx.item, ctx.localPos);
-            },
-            onChanged: () => { this.dirty = true; this.updateDisplay(); },
-            isActive: () => this.isVisible
-        });
+    private showHover(item: ItemBase, localPos: ex.Vector) {
+        const priceText = item.id === 'gold_coin'
+            ? `价值: 1`
+            : `售价: ${item.value}`;
+        this.hoverTooltip.show(
+            `${item.name}\n${item.description}\n数量: ${item.quantity}\n${priceText}`,
+            localPos,
+            ex.vec(128, 64)
+        );
+    }
 
-        this.dragManager.registerPane({
-            id: 'shop-merchant-offer',
-            pane: this.merchantOfferPane,
-            getContainer: () => this.merchantOfferInventory,
-            screenToLocal: (screenPos) => screenPos.sub(this.pos),
-            localToScreen: (localPos) => this.pos.add(localPos),
-            canAcceptDrop: (sourcePaneId) => sourcePaneId === 'shop-merchant',
-            onHover: (ctx) => {
-                if (!ctx.item) { this.hideHover(); return; }
-                this.showHover(ctx.item, ctx.localPos);
-            },
-            onChanged: () => { this.dirty = true; this.updateDisplay(); },
-            isActive: () => this.isVisible
+    private hideHover() {
+        this.hoverTooltip.hide();
+    }
+
+    private showToast(text: string) {
+        const toast = new ex.Label({
+            text,
+            font: new ex.Font({ family: 'Arial', size: 16, color: ex.Color.Red, textAlign: ex.TextAlign.Center }),
+            pos: ex.vec(0, 90),
+            z: 1202
         });
+        this.addChild(toast);
+        setTimeout(() => {
+            if (toast.parent) {
+                this.removeChild(toast);
+            }
+        }, 2000);
     }
 }

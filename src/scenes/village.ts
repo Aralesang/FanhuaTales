@@ -52,18 +52,44 @@ export class Village extends SceneBase {
     constructor() {
         super("village");
     }
-    override onInitialize(engine: ex.Engine): void {
-        // 从配置文件加载物品的辅助函数
-        const createConfigItem = (itemId: string, quantity: number = 1) => {
-            const itemConfig = Asset.itemDataMap?.get(itemId);
-            if (itemConfig) {
-                const item = ItemFactory.fromConfig(itemConfig);
-                item.quantity = quantity;
-                return item;
-            }
-            return null;
-        };
+    private createConfigItem(itemId: string, quantity: number = 1) {
+        const itemConfig = Asset.itemDataMap?.get(itemId);
+        if (itemConfig) {
+            const item = ItemFactory.fromConfig(itemConfig);
+            item.quantity = quantity;
+            return item;
+        }
+        return null;
+    }
 
+    private initNPCStock(): void {
+        for (const actor of this.actors) {
+            if (!actor.tags.has('npc')) continue;
+            const npcInventory = actor.get(InventoryComponent);
+            if (!npcInventory) continue;
+            const npcPotion = this.createConfigItem('health_potion', 5);
+            const npcCoin = this.createConfigItem('gold_coin', 100);
+            const npcSword = this.createConfigItem('iron_sword');
+            const npcArmor = this.createConfigItem('leather_armor');
+            if (npcPotion) InventorySystem.addItem(npcInventory, npcPotion);
+            if (npcCoin) InventorySystem.addItem(npcInventory, npcCoin);
+            if (npcSword) InventorySystem.addItem(npcInventory, npcSword);
+            if (npcArmor) InventorySystem.addItem(npcInventory, npcArmor);
+        }
+    }
+
+    private initPlayerStock(player: Player): void {
+        const playerInventory = player.get(InventoryComponent);
+        if (!playerInventory) return;
+        const playerPotion = this.createConfigItem('health_potion', 3);
+        const playerSword = this.createConfigItem('iron_sword');
+        const playerCoin = this.createConfigItem('gold_coin', 50);
+        if (playerPotion) InventorySystem.addItem(playerInventory, playerPotion);
+        if (playerSword) InventorySystem.addItem(playerInventory, playerSword);
+        if (playerCoin) InventorySystem.addItem(playerInventory, playerCoin);
+    }
+
+    override onInitialize(engine: ex.Engine): void {
         //加载地图
         let player: Player | undefined;
         Asset.tileMapMap[this.sceneName].registerEntityFactory(
@@ -151,45 +177,17 @@ export class Village extends SceneBase {
         world.add(new ChestSystem(engine));
         world.add(new NPCSystem(engine));
 
-        // 初始化 NPC 默认商品（必须在 super.onInitialize 之后，此时所有 Tiled 实体已完成 onInitialize）
-        for (const actor of this.actors) {
-            if (!actor.tags.has('npc')) continue;
-            const npcInventory = actor.get(InventoryComponent);
-            if (!npcInventory) continue;
-            const npcPotion = createConfigItem('health_potion', 5);
-            const npcCoin = createConfigItem('gold_coin', 100);
-            const npcSword = createConfigItem('iron_sword');
-            const npcArmor = createConfigItem('leather_armor');
-            if (npcPotion) InventorySystem.addItem(npcInventory, npcPotion);
-            if (npcCoin) InventorySystem.addItem(npcInventory, npcCoin);
-            if (npcSword) InventorySystem.addItem(npcInventory, npcSword);
-            if (npcArmor) InventorySystem.addItem(npcInventory, npcArmor);
-        }
-
         // 添加左上角玩家 HUD 血条
         if (player) {
             this.add(new PlayerHUD(player));
             this.add(new HotbarUI(player));
         }
 
-        // 给玩家背包预置物品和金币
-        if (player) {
-            const playerInventory = player.get(InventoryComponent);
-            if (playerInventory) {
-                const playerPotion = createConfigItem('health_potion', 3);
-                const playerSword = createConfigItem('iron_sword');
-                const playerCoin = createConfigItem('gold_coin', 50);
-                if (playerPotion) InventorySystem.addItem(playerInventory, playerPotion);
-                if (playerSword) InventorySystem.addItem(playerInventory, playerSword);
-                if (playerCoin) InventorySystem.addItem(playerInventory, playerCoin);
-            }
-        }
-
         // 添加掉落在地上的测试物品
         if (player) {
-            const groundPotion = createConfigItem('health_potion');
-            const groundSword = createConfigItem('iron_sword');
-            const groundCoin = createConfigItem('gold_coin');
+            const groundPotion = this.createConfigItem('health_potion');
+            const groundSword = this.createConfigItem('iron_sword');
+            const groundCoin = this.createConfigItem('gold_coin');
 
             if (groundPotion) {
                 this.add(new Item(ex.vec(player.pos.x + 20, player.pos.y), groundPotion));
@@ -205,14 +203,21 @@ export class Village extends SceneBase {
             this.add(chest);
             const chestInventory = chest.get(InventoryComponent);
             if (chestInventory) {
-                const chestPotion = createConfigItem('health_potion', 3);
-                const chestCoin = createConfigItem('gold_coin', 15);
-                const chestSword = createConfigItem('iron_sword');
+                const chestPotion = this.createConfigItem('health_potion', 3);
+                const chestCoin = this.createConfigItem('gold_coin', 15);
+                const chestSword = this.createConfigItem('iron_sword');
                 if (chestPotion) InventorySystem.addItem(chestInventory, chestPotion);
                 if (chestCoin) InventorySystem.addItem(chestInventory, chestCoin);
                 if (chestSword) InventorySystem.addItem(chestInventory, chestSword);
             }
         }
 
+        // 初始化 NPC 商品和玩家背包（延迟一帧，确保所有 Tiled 实体已完成 onInitialize）
+        setTimeout(() => {
+            this.initNPCStock();
+            if (player) {
+                this.initPlayerStock(player);
+            }
+        }, 0);
     }
 }
