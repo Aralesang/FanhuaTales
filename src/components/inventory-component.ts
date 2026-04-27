@@ -3,9 +3,8 @@ import { GridContainerComponent } from './grid-container-component';
 
 /**
  * 库存组件 —— 存储实体的背包/库存数据
- * 
- * 采用网格化库存系统（类似《暨黑破坏神》风格），
- * 物品可以占据多个网格，支持拖拽、旋转、堆叠等操作。
+ *
+ * 每个物品只占一个格子，简化版库存系统。
  * 纯数据组件，具体逻辑由 InventorySystem 处理。
  */
 export class InventoryComponent extends GridContainerComponent {
@@ -41,8 +40,7 @@ export class InventoryComponent extends GridContainerComponent {
         super({
             kind: 'inventory',
             gridWidth: options?.gridWidth ?? 8,
-            gridHeight: options?.gridHeight ?? 5,
-            allowRotate: true
+            gridHeight: options?.gridHeight ?? 5
         });
     }
 }

@@ -5,6 +5,22 @@ export function generateItemUid(): string {
     return `item_${_nextUid++}`;
 }
 
+/** 装备槽位类型枚举 */
+export enum EquipmentSlotType {
+    Weapon = 'weapon',
+    Armor = 'armor',
+    Helmet = 'helmet',
+    Boots = 'boots',
+    Accessory = 'accessory'
+}
+
+/** 装备属性接口 */
+export interface EquipmentStats {
+    slot: EquipmentSlotType;
+    attack?: number;
+    defense?: number;
+}
+
 /** 物品接口 */
 export interface ItemBase {
     /** 物品类型 ID（如 'iron_sword'），同类型物品共享此值 */
@@ -29,7 +45,10 @@ export interface ItemBase {
     usable?: boolean;
     // 使用效果（数据驱动）
     useEffect?: ItemUseEffect;
-    // 可以添加更多属性，如图标、价值等
+    // 装备属性
+    equipmentStats?: EquipmentStats;
+    // 标准价值（金币），用于交易系统
+    value: number;
 }
 
 /** 物品使用效果接口 */
@@ -51,7 +70,7 @@ export enum ItemType {
 
 /** 创建物品的工厂函数 */
 export class ItemFactory {
-    static createItem(id: string, name: string, description: string, type: ItemType, stackable: boolean = true, maxStack: number = 99, width: number = 1, height: number = 1, useEffect?: ItemUseEffect): ItemBase {
+    static createItem(id: string, name: string, description: string, type: ItemType, stackable: boolean = true, maxStack: number = 99, width: number = 1, height: number = 1, useEffect?: ItemUseEffect, value: number = 1): ItemBase {
         return {
             id,
             uid: generateItemUid(),
@@ -65,7 +84,8 @@ export class ItemFactory {
             height,
             rotated: false,
             usable: type === ItemType.Consumable,
-            useEffect: useEffect
+            useEffect: useEffect,
+            value
         };
     }
 
@@ -86,7 +106,13 @@ export class ItemFactory {
             inventoryX: config.inventoryX,
             inventoryY: config.inventoryY,
             usable: config.usable ?? (type === ItemType.Consumable),
-            useEffect: config.useEffect
+            useEffect: config.useEffect,
+            equipmentStats: config.equipment ? {
+                slot: config.equipment.slot as EquipmentSlotType,
+                attack: config.equipment.attack,
+                defense: config.equipment.defense
+            } : undefined,
+            value: config.value ?? 1
         };
     }
 }

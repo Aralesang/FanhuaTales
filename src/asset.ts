@@ -27,6 +27,7 @@ export class Asset {
     public static imageDataMap: Map<string, ImageData>;
     public static tileMapMap: Record<string, TiledResource> = {};
     public static itemDataMap: Map<string, Record<string, any>>;
+    public static dropDataMap: Map<string, Record<string, any>>;
     public static music: ex.Sound | undefined;
     public static sounds: Record<string, ex.Sound> = {};
     public static async init() {
@@ -84,6 +85,20 @@ export class Asset {
         } catch (e) {
             console.warn("物品配置加载初始化失败", e);
             this.itemDataMap = new Map();
+        }
+
+        // --- 加载掉落配置 ---
+        try {
+            const dropPathResource = new ex.Resource<Record<string, any>>("./data/drops-map.json", "json");
+            const dropDataJson = await dropPathResource.load();
+            console.log("获取掉落配置", dropDataJson);
+            this.dropDataMap = new Map();
+            for (const key in dropDataJson) {
+                this.dropDataMap.set(key, dropDataJson[key]);
+            }
+        } catch (e) {
+            console.warn("掉落配置加载初始化失败", e);
+            this.dropDataMap = new Map();
         }
     }
     public static playMusic(name: string, volume: number = 1) {

@@ -29,6 +29,8 @@ export type GridPaneRegistration = {
     onRightClick?: (ctx: RightClickContext) => void;
     onChanged?: () => void;
     isActive?: () => boolean;
+    /** 自定义是否允许从指定源面板拖入当前面板 */
+    canAcceptDrop?: (sourcePaneId: string, item: ItemBase) => boolean;
 };
 
 type HitResult = {
@@ -166,6 +168,8 @@ class InventoryDragManager {
 
                     if (targetBinding.id === sourceBinding.id) {
                         handled = GridContainerSystem.placeItem(sourceContainer, this.draggedItem.uid, gridX, gridY);
+                    } else if (targetBinding.canAcceptDrop && !targetBinding.canAcceptDrop(sourceBinding.id, this.draggedItem)) {
+                        handled = false;
                     } else {
                         handled = GridContainerSystem.transferItemToPosition(
                             sourceContainer,
@@ -200,14 +204,14 @@ class InventoryDragManager {
         const itemScreenAnchor = binding.localToScreen(itemAnchor);
         this.draggedActor = new ex.Actor({
             pos: itemScreenAnchor,
-            width: binding.pane.getItemPixelWidth(item),
-            height: binding.pane.getItemPixelHeight(item),
+            width: binding.pane.getItemPixelSize(),
+            height: binding.pane.getItemPixelSize(),
             z: 10001
         });
 
         this.draggedActor.graphics.use(new ex.Rectangle({
-            width: binding.pane.getItemPixelWidth(item),
-            height: binding.pane.getItemPixelHeight(item),
+            width: binding.pane.getItemPixelSize(),
+            height: binding.pane.getItemPixelSize(),
             color: binding.pane.getItemColor(item),
             strokeColor: ex.Color.White,
             lineWidth: 2

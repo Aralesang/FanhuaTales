@@ -1,0 +1,82 @@
+{
+  "default_enemy": {
+    "description": "通用敌人默认掉落表，适用于未指定掉落的敌人类型",
+    "drops": [
+      {
+        "itemId": "gold_coin",
+        "chance": 0.6,
+        "minQuantity": 1,
+        "maxQuantity": 5
+      },
+      {
+        "itemId": "health_potion",
+        "chance": 0.2,
+        "minQuantity": 1,
+        "maxQuantity": 1
+      }
+    ]
+  },
+  "goblin": {
+    "description": "哥布林掉落表——贪婪的小家伙总会私藏一些金币",
+    "drops": [
+      {
+        "itemId": "gold_coin",
+        "chance": 0.8,
+        "minQuantity": 2,
+        "maxQuantity": 8
+      },
+      {
+        "itemId": "health_potion",
+        "chance": 0.15,
+        "minQuantity": 1,
+        "maxQuantity": 1
+      },
+      {
+        "itemId": "iron_sword",
+        "chance": 0.05,
+        "minQuantity": 1,
+        "maxQuantity": 1
+      }
+    ]
+  },
+  "orc": {
+    "description": "兽人掉落表——强大的敌人掉落更丰厚的战利品",
+    "drops": [
+      {
+        "itemId": "gold_coin",
+        "chance": 0.9,
+        "minQuantity": 5,
+        "maxQuantity": 15
+      },
+      {
+        "itemId": "health_potion",
+        "chance": 0.35,
+        "minQuantity": 1,
+        "maxQuantity": 2
+      },
+      {
+        "itemId": "iron_sword",
+        "chance": 0.1,
+        "minQuantity": 1,
+        "maxQuantity": 1
+      }
+    ]
+  },
+  "slime": {
+    "description": "史莱姆掉落表——弱小的魔物，偶尔会有意外收获",
+    "drops": [
+      {
+        "itemId": "gold_coin",
+        "chance": 0.4,
+        "minQuantity": 1,
+        "maxQuantity": 3
+      },
+      {
+        "itemId": "health_potion",
+        "chance": 0.1,
+        "minQuantity": 1,
+        "maxQuantity": 1
+      }
+    ]
+  }
+}

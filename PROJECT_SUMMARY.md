@@ -28,7 +28,7 @@
 - 敌人（临时实现）：`src/entitys/enemy.ts`
   - 复用玩家贴图与状态机，挂载 `HealthComponent`（默认 3 HP）。
   - 简单 AI：靠近玩家时以固定速度追踪；AI 会尊重眩晕（`__stunUntil`）并在眩晕期间停止行动。
-  - 已在 `src/scenes/village.ts` 中注册了 `enemy-start` 的 tiled factory，并在玩家生成后在其右侧生成一个测试敌人。
+  - 已在 `src/scenes/village.ts` 中注册了 `Enemy` 的 tiled factory，并在玩家生成后在其右侧生成一个测试敌人。
 
 - 动画与状态机
   - `StateMachineComponent` 将状态机描述绑定到Actor，状态包括 `Initial|Idle|Walk|Run|Sword`。
@@ -47,7 +47,7 @@
 - 新增：`src/entitys/enemy.ts` — 敌人实体
 - 新增：`src/components/health-component.ts` — 生命值与受击反馈
 - 新增：`tools/screenshot.js` — 可选的本地自动截图脚本（使用 Playwright），非必需
-- 修改：`src/scenes/village.ts` — 注册 `enemy-start` factory、生成测试敌人
+- 修改：`src/scenes/village.ts` — 注册 `Enemy` factory、生成测试敌人
 - 修改：`src/states/sword-state.ts` — 添加命中判定逻辑、触发伤害调用
 - 修改：`src/entitys/player.ts` — 挂载 `HealthComponent`（玩家默认 5 HP）
 
@@ -66,7 +66,7 @@ npm start
 
 3. 场景测试
   - 打开浏览器访问 `http://localhost:5173/`，进入 `Village` 场景。
-  - 玩家由 `tilemap` 中 `player-start` 工厂创建并设置为 `Global.localPlayer`。
+  - 玩家由 `tilemap` 中 `Player` 工厂创建并设置为 `Global.localPlayer`。
   - 敌人将在玩家右侧自动生成（用于快速验证）。
   - 按 `X` 发起攻击，观察控制台日志：
     - 应看到 `[Attack] trigger.action -> ...` 或 `[Attack] immediate-overlap hit:` 等日志。

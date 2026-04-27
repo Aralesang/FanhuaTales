@@ -1,78 +1,77 @@
-import * as ex from 'excalibur';
-import { ItemBase, ItemType } from '../item-base';
+import * as ex from "excalibur";
+import { ItemBase, ItemType, EquipmentSlotType } from "../item-base";
 
-/** 网格容器类型：用于区分背包、箱子、快捷栏、技能栏等不同用途。 */
-export type GridContainerKind = 'inventory' | 'chest' | 'hotbar' | 'skillbar' | 'generic';
+export type GridContainerKind = "inventory" | "chest" | "hotbar" | "skillbar" | "equipment" | "generic";
 
 /**
- * 通用网格容器组件（暗黑风格）：
- * - 一个容器由若干网格组成（宽 * 高）
- * - 每个物品可占据多个格子（由 item.width / item.height 决定）
- * - 容器之间可通过统一系统执行移动、堆叠、交换
- *
- * 该组件仅承载纯数据，不放置业务逻辑。
+ * 通用格子容器组件 —— 所有库存系统的基类
  */
 export class GridContainerComponent extends ex.Component {
-    public readonly type: string = 'grid-container';
-
-    /** 容器用途标签，不影响核心算法，仅用于规则层判断。 */
+    public readonly type: string = "grid-container";
     public readonly kind: GridContainerKind;
-
-    /** 网格宽度（列数） */
     public readonly gridWidth: number;
-
-    /** 网格高度（行数） */
     public readonly gridHeight: number;
-
-    /** 是否允许在该容器中旋转物品。 */
-    public readonly allowRotate: boolean;
-
-    /** 容器允许的物品类型；为空表示不限制。 */
     public readonly acceptedTypes: Set<ItemType>;
-
-    /** 物品映射表，键为实例 uid，值为物品数据。 */
+    public readonly slotType?: EquipmentSlotType;
     public items: Map<string, ItemBase> = new Map<string, ItemBase>();
-
-    /** 网格占用情况，true 表示该格子已被占据。 */
-    public grid: boolean[][] = [];
-
-    /**
-     * 数据版本号，每次容器内容发生变化时自动递增。
-     * 用于上层 UI 通过 renderKey 机制快速检测数据是否变更，
-     * 避免每帧全量比对带来的性能开销。
-     */
     public version: number = 0;
+    public readonly grid: boolean[][];
+    public allowRotate: boolean = false;
 
     constructor(options?: {
         kind?: GridContainerKind;
         gridWidth?: number;
         gridHeight?: number;
-        allowRotate?: boolean;
         acceptedTypes?: ItemType[];
+        slotType?: EquipmentSlotType;
+        allowRotate?: boolean;
     }) {
         super();
-
-        this.kind = options?.kind ?? 'generic';
+        this.kind = options?.kind ?? "generic";
         this.gridWidth = options?.gridWidth ?? 8;
         this.gridHeight = options?.gridHeight ?? 5;
-        this.allowRotate = options?.allowRotate ?? true;
         this.acceptedTypes = new Set(options?.acceptedTypes ?? []);
-        this.grid = GridContainerComponent.createEmptyGrid(this.gridWidth, this.gridHeight);
-    }
-
-    /** 重置占用网格到全空状态。 */
-    public resetGrid() {
-        this.grid = GridContainerComponent.createEmptyGrid(this.gridWidth, this.gridHeight);
-    }
-
-    private static createEmptyGrid(width: number, height: number): boolean[][] {
-        const result: boolean[][] = [];
-        for (let y = 0; y < height; y++) {
-            result[y] = [];
-            for (let x = 0; x < width; x++) {
-                result[y][x] = false;
+        this.slotType = options?.slotType;
+        this.allowRotate = options?.allowRotate ?? false;
+        this.grid = [];
+        for (let y = 0; y < this.gridHeight; y++) {
+            this.grid[y] = [];
+            for (let x = 0; x < this.gridWidth; x++) {
+                this.grid[y][x] = false;
             }
         }
-        return result;
+    }
+
+    /** 检查指定格子是否被占用 */
+    public isSlotOccupied(x: number, y: number): boolean {
+        if (x < 0 || y < 0 || x >= this.gridWidth || y >= this.gridHeight) {
+            return true;
+        }
+        return this.grid[y][x];
+    }
+
+    /** 获取指定格子上的物品（简化版：只检查左上角） */
+    public getItemAt(x: number, y: number): ItemBase | undefined {
+        for (const item of this.items.values()) {
+            if (item.inventoryX === x && item.inventoryY === y) {
+                return item;
+            }
+        }
+        return undefined;
+    }
+
+    /** 获取当前已用格子数 */
+    public get usedSlots(): number {
+        return this.items.size;
+    }
+
+    /** 获取总格子数 */
+    public get totalSlots(): number {
+        return this.gridWidth * this.gridHeight;
+    }
+
+    /** 获取空格子数 */
+    public get freeSlots(): number {
+        return this.totalSlots - this.usedSlots;
     }
 }

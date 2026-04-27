@@ -22,6 +22,8 @@ import { Chest } from '../entitys/chest';
 import { InventoryComponent } from '../components/inventory-component';
 import { ChestSystem } from '../systems/chest-system';
 import { HotbarUI } from '../ui/hotbar-ui';
+import { NPC } from '../entitys/npc';
+import { NPCSystem } from '../systems/npc-system';
 
 
 
@@ -35,13 +37,33 @@ export class Village extends SceneBase {
         //加载地图
         let player: Player | undefined;
         Asset.tileMapMap[this.sceneName].registerEntityFactory(
-            "player-start", (props: FactoryProps) => {
+            "Player", (props: FactoryProps) => {
                 player = new Player(props.worldPos, true);
                 //相机跟随
                 this.camera.strategy.lockToActor(player);
                 return player;
             }
         );
+         // 注册 enemy 的 tiled factory（可在 Tiled map 中使用 object type: "Enemy"）
+        Asset.tileMapMap[this.sceneName].registerEntityFactory(
+            "Enemy", (props: FactoryProps) => {
+                const enemy = new Enemy(props.worldPos);
+                return enemy;
+            }
+        );
+
+        // 注册 NPC 的 tiled factory（可在 Tiled map 中使用 object type: "NPC"）
+        Asset.tileMapMap[this.sceneName].registerEntityFactory(
+            "NPC", (props: FactoryProps) => {
+                const npc = new NPC(props.worldPos, {
+                    name: props.name,
+                    animationType: props.object.properties.get("animation_type") as string | undefined,
+                    interactDistance: props.object.properties.get("interact_distance") as number | undefined,
+                });
+                return npc;
+            }
+        );
+
         super.onInitialize(engine);
         const tileMap = Asset.tileMapMap[this.sceneName];
         //获取门
@@ -97,23 +119,9 @@ export class Village extends SceneBase {
         world.add(new PickupSystem());
         world.add(new ItemUseSystem());
         world.add(new ChestSystem(engine));
+        world.add(new NPCSystem(engine));
 
-        // 注册 enemy 的 tiled factory（可在 Tiled map 中使用 object type: "enemy-start"）
-        Asset.tileMapMap[this.sceneName].registerEntityFactory(
-            "enemy-start", (props: FactoryProps) => {
-                const enemy = new Enemy(props.worldPos);
-                return enemy;
-            }
-        );
-
-        //立即在玩家右侧生成一个测试敌人，便于立刻在场景中查看效果
-        if (player) {
-            const spawnPos = ex.vec(player.pos.x + 40, player.pos.y);
-            const enemy = new Enemy(spawnPos);
-            enemy.name = "Test Enemy";
-            this.add(enemy);
-        }
-
+       
         // 添加左上角玩家 HUD 血条
         if (player) {
             this.add(new PlayerHUD(player));
@@ -168,6 +176,21 @@ export class Village extends SceneBase {
                 }
             }
             this.add(chest);
+
+            const npc = new NPC(ex.vec(player.pos.x - 60, player.pos.y - 20), { name: '旅行商人' });
+            const npcInventory = npc.get(InventoryComponent);
+            if (npcInventory) {
+                const npcPotion = createConfigItem("health_potion", 5);
+                const npcCoin = createConfigItem("gold_coin", 100);
+                const npcSword = createConfigItem("iron_sword");
+                const npcArmor = createConfigItem("leather_armor");
+
+                if (npcPotion) InventorySystem.addItem(npcInventory, npcPotion);
+                if (npcCoin) InventorySystem.addItem(npcInventory, npcCoin);
+                if (npcSword) InventorySystem.addItem(npcInventory, npcSword);
+                if (npcArmor) InventorySystem.addItem(npcInventory, npcArmor);
+            }
+            this.add(npc);
         }
 
     }

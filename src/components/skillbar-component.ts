@@ -19,7 +19,6 @@ export class SkillbarComponent extends GridContainerComponent {
             kind: 'skillbar',
             gridWidth: options?.gridWidth ?? 6,
             gridHeight: options?.gridHeight ?? 1,
-            allowRotate: false,
             acceptedTypes: options?.acceptedTypes
         });
     }

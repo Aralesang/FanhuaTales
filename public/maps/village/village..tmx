@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="12" nextobjectid="6">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="12" nextobjectid="11">
  <tileset firstgid="1" name="surface" tilewidth="16" tileheight="16" tilecount="288" columns="24">
   <image source="../../images/map/village/FDR_Ground_Tiles.png" width="384" height="192"/>
  </tileset>
@@ -177,7 +177,7 @@
 </data>
  </layer>
  <objectgroup id="3" name="Objects">
-  <object id="4" name="Player" type="player-start" x="249.348" y="164.667">
+  <object id="4" name="Player" type="Player" x="249.348" y="164.667">
    <point/>
   </object>
   <object id="3" name="camera" type="Camera" x="230.909" y="162.182">
@@ -193,6 +193,21 @@
     <property name="target_spawn_x" type="float" value="0"/>
     <property name="target_spawn_y" type="float" value="0"/>
    </properties>
+  </object>
+  <object id="6" name="敌人" type="Enemy" x="314.364" y="271.636">
+   <point/>
+  </object>
+  <object id="7" name="敌人2" type="Enemy" x="232.727" y="47.4545">
+   <point/>
+  </object>
+  <object id="8" name="敌人3" type="Enemy" x="408.545" y="41.4545">
+   <point/>
+  </object>
+  <object id="9" name="敌人4" type="Enemy" x="119.818" y="167.818">
+   <point/>
+  </object>
+  <object id="10" name="商人" type="NPC" x="248.545" y="121.455">
+   <point/>
   </object>
  </objectgroup>
 </map>

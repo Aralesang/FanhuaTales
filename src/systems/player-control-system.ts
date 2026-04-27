@@ -1,15 +1,15 @@
-import * as ex from 'excalibur';
-import { PlayerControlComponent } from '../components/player-control-component';
-import { StateMachineComponent } from '../components/state-machine-component';
-import { DirectionComponent } from '../components/direction-component';
-import { SkillComponent } from '../components/skill-component';
-import { InventoryUI } from '../ui/inventory-ui';
-import { InventoryComponent } from '../components/inventory-component';
-import { InventoryLabUI } from '../ui/Inventory-lab-ui';
+import * as ex from "excalibur";
+import { PlayerControlComponent } from "../components/player-control-component";
+import { StateMachineComponent } from "../components/state-machine-component";
+import { DirectionComponent } from "../components/direction-component";
+import { SkillComponent } from "../components/skill-component";
+import { InventoryComponent } from "../components/inventory-component";
+import { EquipmentComponent } from "../components/equipment-component";
+import { CharacterInventoryUI } from "../ui/character-inventory-ui";
+import { InventoryLabUI } from "../ui/Inventory-lab-ui";
 
 export class PlayerControlSystem extends ex.System {
     private engine: ex.Engine;
-    //定义这个系统感兴趣的组件
     public systemType = ex.SystemType.Update;
     public query!: ex.Query<
         typeof ex.TransformComponent |
@@ -22,17 +22,18 @@ export class PlayerControlSystem extends ex.System {
     private _horizontalKeys: ex.Keys[] = [];
     private _verticalKeys: ex.Keys[] = [];
     private _otherKeys: ex.Keys[] = [];
-    private inventoryUI: InventoryUI;
+    private characterInventoryUI: CharacterInventoryUI;
     private inventoryLabUI: InventoryLabUI;
     private world!: ex.World;
     private currentInventory: InventoryComponent | null = null;
+    private currentEquipment: EquipmentComponent | null = null;
 
     constructor(engine: ex.Engine) {
         super();
         this.engine = engine;
-        this.inventoryUI = new InventoryUI(engine);
+        this.characterInventoryUI = new CharacterInventoryUI(engine);
         this.inventoryLabUI = new InventoryLabUI(engine);
-        this.engine.add(this.inventoryUI);
+        this.engine.add(this.characterInventoryUI);
         this.engine.add(this.inventoryLabUI);
     }
 
@@ -46,11 +47,9 @@ export class PlayerControlSystem extends ex.System {
             SkillComponent,
             DirectionComponent
         ]);
-        // 监听按键按下，维护按键栈，确保最后按下的按键优先级最高
-        this.engine.input.keyboard.on('press', (evt) => {
+        this.engine.input.keyboard.on("press", (evt) => {
             const key = evt.key;
             if (key === ex.Keys.Left || key === ex.Keys.Right) {
-                // 如果已经在栈中，先移除，再添加到末尾（表示最新）
                 this._horizontalKeys = this._horizontalKeys.filter(k => k !== key);
                 this._horizontalKeys.push(key);
             } else if (key === ex.Keys.Up || key === ex.Keys.Down) {
@@ -62,8 +61,7 @@ export class PlayerControlSystem extends ex.System {
             }
         });
 
-        // 监听按键释放，从栈中移除
-        this.engine.input.keyboard.on('release', (evt) => {
+        this.engine.input.keyboard.on("release", (evt) => {
             const key = evt.key;
             if (key === ex.Keys.Left || key === ex.Keys.Right) {
                 this._horizontalKeys = this._horizontalKeys.filter(k => k !== key);
@@ -72,9 +70,8 @@ export class PlayerControlSystem extends ex.System {
                 this._verticalKeys = this._verticalKeys.filter(k => k !== key);
             }
             if (key === ex.Keys.I) {
-                console.log("打开库存界面");
-                // 切换库存界面
-                this.inventoryUI.toggle();
+                console.log("打开角色装备+背包界面");
+                this.characterInventoryUI.toggle();
             }
             if (key === ex.Keys.B) {
                 console.log("打开测试界面");
@@ -84,21 +81,23 @@ export class PlayerControlSystem extends ex.System {
     }
 
     update(delta: number): void {
-        // 仅查询同时拥有 PlayerControlComponent 和 InventoryComponent 的实体，避免误取敌人或箱子
         const playerEntities = this.world.query([PlayerControlComponent, InventoryComponent]).entities;
         if (playerEntities.length > 0) {
             const player = playerEntities[0];
             const inventory = player.get(InventoryComponent);
             if (inventory && inventory !== this.currentInventory) {
                 this.currentInventory = inventory;
-                this.inventoryUI.setInventory(inventory);
-                this.inventoryUI.setOwner(player);
+                this.characterInventoryUI.setInventory(inventory);
+                this.characterInventoryUI.setOwner(player);
+            }
+            const equipment = player.get(EquipmentComponent);
+            if (equipment && equipment !== this.currentEquipment) {
+                this.currentEquipment = equipment;
+                this.characterInventoryUI.setEquipment(equipment);
             }
         }
 
         const kb = this.engine.input.keyboard;
-        // 获取当前有效的按键（栈顶是最后按下的）
-        // 增加一个额外的检查: kb.isHeld(key) 确保按键确实是按下的（防止状态不同步）
         const horizontalKey = this._horizontalKeys.slice().reverse().find(k => kb.isHeld(k));
         const verticalKey = this._verticalKeys.slice().reverse().find(k => kb.isHeld(k));
         const otherKey = this._otherKeys.shift();
@@ -118,12 +117,10 @@ export class PlayerControlSystem extends ex.System {
 
             if (otherKey === ex.Keys.X) {
                 console.log("按下攻击");
-                // 检查剑击技能是否可用
                 if (skillComponent.isSkillReady("Sword")) {
                     const swordSkill = skillComponent.getSkill("Sword");
                     if (swordSkill) {
                         skillComponent.setCurrentSkill(swordSkill);
-                        // 触发技能：设置当前技能，然后进入Skill状态
                         stateMachine.fsm.go("Skill");
                     }
                 }
@@ -147,17 +144,13 @@ export class PlayerControlSystem extends ex.System {
                 }
             }
 
-            //只有处于闲置状态下才能切换到移动状态
             if (currentState.name === "Idle") {
                 if (velX != 0 || velY != 0) {
                     stateMachine.fsm.go("Walk");
                 }
             }
 
-            //只有处于移动状态下才应用移动
             if (currentState.name == "Walk" || currentState.name == "Run") {
-                // 计算每一帧的位移 (速度 * 时间)
-                // 注意：如果你用了 Actor，也可以直接修改 entity.vel，
                 const deltaSeconds = delta / 1000;
                 transform.pos.x += velX * deltaSeconds;
                 transform.pos.y += velY * deltaSeconds;
@@ -166,7 +159,6 @@ export class PlayerControlSystem extends ex.System {
                     stateMachine.fsm.go("Idle");
                 }
             }
-
         }
     }
 }

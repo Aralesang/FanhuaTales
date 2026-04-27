@@ -57,7 +57,7 @@ export class AISystem extends ex.System {
             const skillComponent = entity.get(SkillComponent);
             const attackRange = 20; // 近战触发距离
             const canAttack = Date.now() - ai.lastAttackTime >= ai.attackCooldown;
-
+            
             if (dist <= attackRange && skillComponent && canAttack && skillComponent.isSkillReady("Sword")) {
                 // 进入Skill状态并执行当前技能（当前只支持SwordSkill）
                 const swordSkill = skillComponent.getSkill("Sword");

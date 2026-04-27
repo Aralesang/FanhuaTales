@@ -14,7 +14,8 @@
       "type": "heal",
       "value": 50,
       "target": "self"
-    }
+    },
+    "value": 5
   },
   "iron_sword": {
     "id": "iron_sword",
@@ -25,7 +26,44 @@
     "maxStack": 1,
     "quantity": 1,
     "width": 1,
-    "height": 3
+    "height": 3,
+    "equipment": {
+      "slot": "weapon",
+      "attack": 5
+    },
+    "value": 10
+  },
+  "leather_armor": {
+    "id": "leather_armor",
+    "name": "皮甲",
+    "description": "轻便的皮革护甲",
+    "type": "equipment",
+    "stackable": false,
+    "maxStack": 1,
+    "quantity": 1,
+    "width": 2,
+    "height": 3,
+    "equipment": {
+      "slot": "armor",
+      "defense": 3
+    },
+    "value": 15
+  },
+  "wooden_helmet": {
+    "id": "wooden_helmet",
+    "name": "木盔",
+    "description": "简陋但能提供一定保护的木头头盔",
+    "type": "equipment",
+    "stackable": false,
+    "maxStack": 1,
+    "quantity": 1,
+    "width": 2,
+    "height": 2,
+    "equipment": {
+      "slot": "helmet",
+      "defense": 1
+    },
+    "value": 8
   },
   "gold_coin": {
     "id": "gold_coin",
@@ -36,6 +74,7 @@
     "maxStack": 999,
     "quantity": 1,
     "width": 1,
-    "height": 1
+    "height": 1,
+    "value": 1
   }
 }

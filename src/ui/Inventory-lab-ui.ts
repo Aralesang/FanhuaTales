@@ -36,8 +36,7 @@ export class InventoryLabUI extends ex.ScreenElement {
         this.labContainer = new GridContainerComponent({
             kind: 'generic',
             gridWidth: this.GRID_COLS,
-            gridHeight: this.GRID_ROWS,
-            allowRotate: true
+            gridHeight: this.GRID_ROWS
         });
 
         this.background = new ex.Rectangle({

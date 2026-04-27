@@ -1,5 +1,7 @@
 import * as ex from 'excalibur';
 import { HealthComponent } from '../components/health-component';
+import { DeathMarkerComponent } from '../components/death-marker-component';
+import { LootDropComponent } from '../components/loot-drop-component';
 import { Asset } from '../asset';
 
 export class DamageSystem extends ex.System {
@@ -24,6 +26,21 @@ export class DamageSystem extends ex.System {
                 }
             }
             if (health.isDead()) {
+                // 死亡处理：如果实体带有 LootDropComponent（敌人），
+                // 则附加 DeathMarkerComponent，让 LootDropSystem 先处理掉落，
+                // 而不是立即 kill。LootDropSystem 处理完毕后会标记 processed，
+                // 下一帧 DamageSystem 再执行 kill() 完成清理。
+                const lootComp = entity.get(LootDropComponent);
+                const marker = entity.get(DeathMarkerComponent);
+                if (lootComp && !marker) {
+                    entity.addComponent(new DeathMarkerComponent());
+                    // 此时不 kill，等待 LootDropSystem 处理
+                    continue;
+                }
+                if (marker && !marker.processed) {
+                    // 掉落系统尚未处理完毕，继续等待
+                    continue;
+                }
                 entity.kill();
             }
         }

@@ -177,7 +177,7 @@
 </data>
  </layer>
  <objectgroup id="3" name="Objects">
-  <object id="4" name="Player" type="player-start" x="249.348" y="164.667">
+  <object id="4" name="Player" type="Player" x="249.348" y="164.667">
    <point/>
   </object>
   <object id="3" name="camera" type="Camera" x="230.909" y="162.182">

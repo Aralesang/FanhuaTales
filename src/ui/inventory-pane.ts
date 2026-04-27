@@ -202,24 +202,17 @@ export class InventoryPane {
             return null;
         }
 
-        // 遍历容器中的所有物品，检查坐标是否落在该物品的矩形区域内
-        for (const item of GridContainerSystem.getAllItems(this.container)) {
-            if (item.inventoryX === undefined || item.inventoryY === undefined) {
-                continue;
-            }
+        // 先计算点击的是哪个格子
+        const gridX = this.getGridX(localPos);
+        const gridY = this.getGridY(localPos);
 
-            // 计算物品在面板中的像素边界（考虑多格占据的情况）
-            const itemLeft = this.startX + item.inventoryX * (this.slotSize + this.slotMargin);
-            const itemTop = this.startY + item.inventoryY * (this.slotSize + this.slotMargin);
-            const itemRight = itemLeft + item.width * (this.slotSize + this.slotMargin) - this.slotMargin;
-            const itemBottom = itemTop + item.height * (this.slotSize + this.slotMargin) - this.slotMargin;
-
-            if (localPos.x >= itemLeft && localPos.x <= itemRight && localPos.y >= itemTop && localPos.y <= itemBottom) {
-                return item;
-            }
+        // 检查是否越界
+        if (gridX < 0 || gridY < 0 || gridX >= this.gridWidth || gridY >= this.gridHeight) {
+            return null;
         }
 
-        return null;
+        // 查找该格子上的物品
+        return this.container.getItemAt(gridX, gridY) ?? null;
     }
 
     /**
@@ -267,31 +260,17 @@ export class InventoryPane {
      */
     public getItemAnchor(item: ItemBase): ex.Vector {
         return ex.vec(
-            this.startX + (item.inventoryX || 0) * (this.slotSize + this.slotMargin) + item.width * this.slotSize / 2,
-            this.startY + (item.inventoryY || 0) * (this.slotSize + this.slotMargin) + item.height * this.slotSize / 2
+            this.startX + (item.inventoryX || 0) * (this.slotSize + this.slotMargin) + this.slotSize / 2,
+            this.startY + (item.inventoryY || 0) * (this.slotSize + this.slotMargin) + this.slotSize / 2
         );
     }
 
     /**
-     * 获取指定物品在面板中的像素宽度
-     * 用于创建与原物品等大的拖拽图标
-     *
-     * @param item - 目标物品
-     * @returns 像素宽度
+     * 获取物品在面板中的像素大小
+     * 每个物品只占一格
      */
-    public getItemPixelWidth(item: ItemBase): number {
-        return item.width * this.slotSize;
-    }
-
-    /**
-     * 获取指定物品在面板中的像素高度
-     * 用于创建与原物品等大的拖拽图标
-     *
-     * @param item - 目标物品
-     * @returns 像素高度
-     */
-    public getItemPixelHeight(item: ItemBase): number {
-        return item.height * this.slotSize;
+    public getItemPixelSize(): number {
+        return this.slotSize;
     }
 
     /**
@@ -411,15 +390,15 @@ export class InventoryPane {
 
             // ===== 1. 物品图标矩形 =====
             const itemIcon = new ex.Actor({
-                pos: ex.vec(itemX + item.width * this.slotSize / 2, itemY + item.height * this.slotSize / 2),
-                width: item.width * this.slotSize,
-                height: item.height * this.slotSize,
+                pos: ex.vec(itemX + this.slotSize / 2, itemY + this.slotSize / 2),
+                width: this.slotSize,
+                height: this.slotSize,
                 z: this.zBase + 2  // 图标层级高于格子背景
             });
 
             itemIcon.graphics.use(new ex.Rectangle({
-                width: item.width * this.slotSize,
-                height: item.height * this.slotSize,
+                width: this.slotSize,
+                height: this.slotSize,
                 color: this.getItemColor(item),
                 strokeColor: this.style.itemStrokeColor,
                 lineWidth: 1
@@ -437,7 +416,7 @@ export class InventoryPane {
                     color: this.style.labelColor,
                     textAlign: ex.TextAlign.Center
                 }),
-                pos: ex.vec(itemX + item.width * this.slotSize / 2, itemY + item.height * this.slotSize / 2 - 6),
+                pos: ex.vec(itemX + this.slotSize / 2, itemY + this.slotSize / 2 - 6),
                 z: this.zBase + 3  // 文字层级高于图标
             });
             this.root.addChild(nameLabel);
@@ -453,7 +432,7 @@ export class InventoryPane {
                         color: this.style.quantityColor,
                         textAlign: ex.TextAlign.Right
                     }),
-                    pos: ex.vec(itemX + item.width * this.slotSize - 10, itemY + item.height * this.slotSize - 10),
+                    pos: ex.vec(itemX + this.slotSize - 10, itemY + this.slotSize - 10),
                     z: this.zBase + 3
                 });
                 this.root.addChild(quantityLabel);
@@ -486,7 +465,7 @@ export class InventoryPane {
      * - 标题文本变化
      * - 容器引用切换（不同背包/快捷栏之间切换）
      * - 容器的行列尺寸变化
-     * - 物品的摆放位置、尺寸、旋转状态、数量、名称变化
+     * - 物品的摆放位置、数量、名称变化
      *
      * 这样即使上层每帧调用 render()，只要内容未变化，就不会反复销毁/重建 UI Actor，
      * 显著提升渲染性能。
@@ -505,10 +484,7 @@ export class InventoryPane {
                 item.uid,           // 唯一标识
                 item.inventoryX ?? -1,  // 网格X坐标
                 item.inventoryY ?? -1,  // 网格Y坐标
-                item.width,         // 物品宽度（格）
-                item.height,        // 物品高度（格）
                 item.quantity,      // 堆叠数量
-                item.rotated ? 1 : 0,  // 是否旋转
                 item.name           // 物品名称
             ].join(':'))
             .sort();

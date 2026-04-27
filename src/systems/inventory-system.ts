@@ -103,11 +103,6 @@ export class InventorySystem extends ex.System {
         return GridContainerSystem.placeItem(container, itemId, x, y);
     }
 
-    /** 旋转物品 */
-    static rotateItem(container: GridContainerComponent, itemId: string): boolean {
-        return GridContainerSystem.rotateItem(container, itemId);
-    }
-
     /** 移除物品 */
     static removeItem(container: GridContainerComponent, itemId: string, quantity: number = 1): boolean {
         return GridContainerSystem.removeItem(container, itemId, quantity);
@@ -116,16 +111,6 @@ export class InventorySystem extends ex.System {
     /** 确认消耗物品（由系统调用） */
     static consumeItemAfterUse(container: GridContainerComponent, itemId: string, quantity: number = 1): boolean {
         return GridContainerSystem.removeItem(container, itemId, quantity);
-    }
-
-    /** 在网格上放置物品 */
-    public static placeItemOnGrid(container: GridContainerComponent, item: ItemBase) {
-        GridContainerSystem.placeItemOnGrid(container, item);
-    }
-
-    /** 从网格上移除物品 */
-    public static removeItemFromGrid(container: GridContainerComponent, item: ItemBase) {
-        GridContainerSystem.removeItemFromGrid(container, item);
     }
 
     // ===== 纯数据访问方法 =====
@@ -148,23 +133,6 @@ export class InventorySystem extends ex.System {
     /** 获取所有物品 */
     public static getAllItems(container: GridContainerComponent): ItemBase[] {
         return GridContainerSystem.getAllItems(container);
-    }
-
-    // ===== 网格操作方法 =====
-
-    /** 检查网格位置是否可用 */
-    public static isGridPositionFree(container: GridContainerComponent, x: number, y: number, width: number, height: number): boolean {
-        return GridContainerSystem.isGridPositionFree(container, x, y, width, height);
-    }
-
-    /** 在网格上放置物品占用 */
-    public static occupyGridSpace(container: GridContainerComponent, x: number, y: number, width: number, height: number): void {
-        GridContainerSystem.occupyGridSpace(container, x, y, width, height);
-    }
-
-    /** 从网格上移除物品占用 */
-    public static freeGridSpace(container: GridContainerComponent, x: number, y: number, width: number, height: number): void {
-        GridContainerSystem.freeGridSpace(container, x, y, width, height);
     }
 
     // ===== 使用请求管理方法 =====

@@ -110,7 +110,7 @@ public/
   - `public/data/maps-map.json` 的地图映射
   - `src/scenes/*` 中门对象的 `target_scene` 配置
 
-- 地图对象工厂命名需与 Tiled 对象类型一致（如 `player-start`、`enemy-start`）。
+- 地图对象工厂命名需与 Tiled 对象类型一致（如 `Player`、`Enemy`）。
 
 - 关键标签约定：
   - 玩家：`player`
