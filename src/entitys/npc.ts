@@ -4,6 +4,7 @@ import { InventoryComponent } from '../components/inventory-component';
 import { DirectionComponent } from '../components/direction-component';
 import { AnimationComponent } from '../components/animation-component';
 import { HealthComponent } from '../components/health-component';
+import { StateMachineComponent } from '../components/state-machine-component';
 
 export type NPCOptions = {
     name?: string;
@@ -31,6 +32,7 @@ export class NPC extends ex.Actor {
         this.addComponent(new NPCComponent(this.options.name ?? '商人', this.options.interactDistance));
         this.addComponent(new InventoryComponent());
         this.addComponent(new DirectionComponent(ex.Vector.Down));
+        this.addComponent(new StateMachineComponent());
         this.addComponent(new AnimationComponent(this.options.animationType ?? 'human', this, this.options.tint));
         this.addComponent(new HealthComponent(999));
 

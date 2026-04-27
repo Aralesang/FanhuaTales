@@ -20,7 +20,7 @@ export class NPCSystem extends ex.System {
     constructor(engine: ex.Engine) {
         super();
         this.engine = engine;
-        this.interactUI = new NPCInteractUI();
+        this.interactUI = new NPCInteractUI(engine);
         this.shopUI = new ShopUI(engine);
         this.prompt = new ex.ScreenElement({
             x: 400,
