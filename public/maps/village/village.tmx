@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="12" nextobjectid="11">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="12" nextobjectid="12">
  <editorsettings>
-  <export target="village..tmx" format="tmx"/>
+  <export target="village.json" format="json"/>
  </editorsettings>
  <tileset firstgid="1" name="surface" tilewidth="16" tileheight="16" tilecount="288" columns="24">
   <image source="../../images/map/village/FDR_Ground_Tiles.png" width="384" height="192"/>
@@ -195,9 +195,6 @@
     <property name="target_scene" value="interior"/>
    </properties>
   </object>
-  <object id="6" name="敌人" type="Enemy" x="314.364" y="271.636">
-   <point/>
-  </object>
   <object id="7" name="敌人2" type="Enemy" x="232.727" y="47.4545">
    <point/>
   </object>
@@ -208,6 +205,21 @@
    <point/>
   </object>
   <object id="10" name="商人" type="NPC" x="248.545" y="121.455">
+   <point/>
+  </object>
+  <object id="11" name="箱子" type="Container" x="248.364" y="202.364">
+   <properties>
+    <property name="gold_coin" type="class" propertytype="Item">
+     <properties>
+      <property name="quantity" type="int" value="10"/>
+     </properties>
+    </property>
+    <property name="health_potion" type="class" propertytype="Item">
+     <properties>
+      <property name="quantity" type="int" value="2"/>
+     </properties>
+    </property>
+   </properties>
    <point/>
   </object>
  </objectgroup>

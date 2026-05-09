@@ -9,7 +9,7 @@
     "file.lastUsedOpenFilter": "全部文件 (*)",
     "fileStates": {
         "": {
-            "scaleInDock": 11
+            "scaleInDock": 1
         },
         "building.tsx": {
             "scaleInDock": 3,
@@ -22,7 +22,7 @@
             "scale": 5.5,
             "selectedLayer": 6,
             "viewCenter": {
-                "x": -0.09090909090908639,
+                "x": -0.18181818181818699,
                 "y": -0.09090909090909349
             }
         },
@@ -33,6 +33,20 @@
         "solid.tsx": {
             "scaleInDock": 2
         },
+        "village.json": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 5.5,
+            "selectedLayer": 7,
+            "viewCenter": {
+                "x": 248.36363636363637,
+                "y": 202.4545454545455
+            }
+        },
+        "village.json#surface": {
+            "scaleInDock": 1
+        },
         "village.tmx": {
             "expandedObjectLayers": [
                 3
@@ -40,8 +54,8 @@
             "scale": 5.5,
             "selectedLayer": 7,
             "viewCenter": {
-                "x": 200.9090909090909,
-                "y": 208.09090909090912
+                "x": 248.36363636363637,
+                "y": 202.4545454545455
             }
         },
         "village.tmx#building": {
@@ -59,12 +73,12 @@
             "scaleInEditor": 1
         }
     },
-    "last.exportedFilePath": "D:/MyProjects/Excalibur/FanhuaTales/public/map/village",
+    "last.exportedFilePath": "D:/MyProjects/Phaser/FanhuaTales/public/maps/village",
     "last.externalTilesetPath": "D:/MyProjects/Excalibur/FanhuaTales/public/map/village",
     "last.imagePath": "D:/MyProjects/Excalibur/FanhuaTales/public/images/map/village",
     "map.fixedSize": false,
-    "map.lastUsedExportFilter": "全部文件 (*)",
-    "map.lastUsedFormat": "tmx",
+    "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
+    "map.lastUsedFormat": "json",
     "map.tileHeight": 16,
     "map.tileWidth": 16,
     "openFiles": [
@@ -72,12 +86,12 @@
         "interior.tmx"
     ],
     "project": "village.tiled-project",
-    "property.type": "bool",
+    "property.type": "Item",
     "recentFiles": [
+        "interior.tsx",
         "interior.tmx",
         "village.tmx",
-        "building.tsx",
-        "interior.tsx"
+        "building.tsx"
     ],
     "tileset.embedInMap": true,
     "tileset.lastUsedFormat": "tsx",

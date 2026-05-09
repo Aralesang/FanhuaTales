@@ -43,6 +43,26 @@
         {
             "color": "#ffa0a0a4",
             "drawFill": true,
+            "id": 7,
+            "members": [
+            ],
+            "name": "Container",
+            "type": "class",
+            "useAs": [
+                "property",
+                "map",
+                "layer",
+                "object",
+                "tile",
+                "tileset",
+                "wangcolor",
+                "wangset",
+                "project"
+            ]
+        },
+        {
+            "color": "#ffa0a0a4",
+            "drawFill": true,
             "id": 2,
             "members": [
                 {
@@ -98,15 +118,15 @@
         {
             "color": "#ffa0a0a4",
             "drawFill": true,
-            "id": 3,
+            "id": 10,
             "members": [
                 {
-                    "name": "solid",
-                    "type": "bool",
-                    "value": true
+                    "name": "quantity",
+                    "type": "int",
+                    "value": 1
                 }
             ],
-            "name": "Solid",
+            "name": "Item",
             "type": "class",
             "useAs": [
                 "property",
@@ -127,6 +147,31 @@
             "members": [
             ],
             "name": "NPC",
+            "type": "class",
+            "useAs": [
+                "property",
+                "map",
+                "layer",
+                "object",
+                "tile",
+                "tileset",
+                "wangcolor",
+                "wangset",
+                "project"
+            ]
+        },
+        {
+            "color": "#ffa0a0a4",
+            "drawFill": true,
+            "id": 3,
+            "members": [
+                {
+                    "name": "solid",
+                    "type": "bool",
+                    "value": true
+                }
+            ],
+            "name": "Solid",
             "type": "class",
             "useAs": [
                 "property",

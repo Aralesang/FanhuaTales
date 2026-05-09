@@ -1,11 +1,14 @@
 import { Scene, Input, Tilemaps, GameObjects } from 'phaser';
 import { Entity } from '../ecs/Entity';
-import { RenderComponent, HealthComponent, SpriteComponent, VisualComponent, InventoryComponent, ItemDefinition } from '../ecs/Component';
+import { RenderComponent, HealthComponent, SpriteComponent, VisualComponent, InventoryComponent, ItemDefinition, SettingsComponent, UIStateComponent } from '../ecs/Component';
 import { Player } from '../entity/Player';
 import { Enemy } from '../entity/Enemy';
+import { Container } from '../entity/Container';
 import { InputSystem } from '../systems/InputSystem';
 import { InventorySystem } from '../systems/InventorySystem';
 import { InventoryUISystem } from '../systems/InventoryUISystem';
+import { SystemMenuSystem } from '../systems/SystemMenuSystem';
+import { ContainerSystem } from '../systems/ContainerSystem';
 import { EnemyAISystem } from '../systems/EnemyAISystem';
 import { AttackSystem } from '../systems/AttackSystem';
 import { HitSystem } from '../systems/HitSystem';
@@ -15,7 +18,7 @@ import { AnimationSystem } from '../systems/AnimationSystem';
 export class GameScene extends Scene {
     private entities: Entity[] = [];
     private map!: Tilemaps.Tilemap;
-    private solidLayer: Tilemaps.TilemapLayer | null = null;
+    private solidLayer: Tilemaps.TilemapLayer | Tilemaps.TilemapGPULayer | null = null;
     private debugKey!: Input.Keyboard.Key;
     private debugEnabled = false;
 
@@ -27,8 +30,10 @@ export class GameScene extends Scene {
 
     // ECS 系统
     private inputSystem!: InputSystem;
+    private containerSystem!: ContainerSystem;
     private inventorySystem!: InventorySystem;
     private inventoryUISystem!: InventoryUISystem;
+    private systemMenuSystem!: SystemMenuSystem;
     private enemyAISystem!: EnemyAISystem;
     private attackSystem!: AttackSystem;
     private hitSystem!: HitSystem;
@@ -41,6 +46,9 @@ export class GameScene extends Scene {
 
     create(data: { mapKey?: string }): void {
         const mapKey = data.mapKey || 'village';
+
+        // 全局道具定义表
+        const itemsMap = this.cache.json.get('itemsMap') as Record<string, ItemDefinition>;
 
         // 创建 tilemap
         this.map = this.make.tilemap({ key: mapKey });
@@ -89,6 +97,34 @@ export class GameScene extends Scene {
                     const enemy = new Enemy(this, obj.x, obj.y);
                     this.entities.push(enemy);
                 }
+                if (obj.type === 'Container' && obj.x != null && obj.y != null) {
+                    const presetItems: Record<string, number> = {};
+                    if (obj.properties) {
+                        // 兼容多种 Tiled 属性格式：
+                        // 1) 数组 [{ name, value }, ...]
+                        // 2) 对象 { key: number }（简单数值）
+                        // 3) 嵌套对象 { key: { quantity: number } }（Tiled 1.10+ 自定义类）
+                        if (Array.isArray(obj.properties)) {
+                            const props = obj.properties as Array<{ name: string; value: unknown }>;
+                            for (const prop of props) {
+                                const qty = this.extractQuantity(prop.value);
+                                if (itemsMap[prop.name] && qty > 0) {
+                                    presetItems[prop.name] = qty;
+                                }
+                            }
+                        } else {
+                            const props = obj.properties as Record<string, unknown>;
+                            for (const [key, value] of Object.entries(props)) {
+                                const qty = this.extractQuantity(value);
+                                if (itemsMap[key] && qty > 0) {
+                                    presetItems[key] = qty;
+                                }
+                            }
+                        }
+                    }
+                    const container = new Container(this, obj.x, obj.y, itemsMap, presetItems);
+                    this.entities.push(container);
+                }
                 if (obj.type === 'camera' && obj.properties) {
                     const props = obj.properties as Array<{ name: string; value: number }>;
                     const zoomProp = props.find(p => p.name === 'zoom');
@@ -103,8 +139,17 @@ export class GameScene extends Scene {
         const player = new Player(this, playerX, playerY);
         this.entities.push(player);
 
+        // 创建全局设置实体
+        const settingsEntity = new Entity(this);
+        settingsEntity.addComponent(new SettingsComponent());
+        this.entities.push(settingsEntity);
+
+        // 创建全局 UI 状态实体
+        const uiStateEntity = new Entity(this);
+        uiStateEntity.addComponent(new UIStateComponent());
+        this.entities.push(uiStateEntity);
+
         // 给玩家背包添加初始道具
-        const itemsMap = this.cache.json.get('itemsMap') as Record<string, ItemDefinition>;
         const playerInventory = player.getComponent<InventoryComponent>('inventory')!;
         InventorySystem.addItem(playerInventory, itemsMap, 'gold_coin', 5);
         InventorySystem.addItem(playerInventory, itemsMap, 'health_potion', 1);
@@ -157,8 +202,10 @@ export class GameScene extends Scene {
 
         // 初始化 ECS 系统
         this.inputSystem = new InputSystem(this);
+        this.containerSystem = new ContainerSystem(this);
         this.inventorySystem = new InventorySystem(this);
         this.inventoryUISystem = new InventoryUISystem(this);
+        this.systemMenuSystem = new SystemMenuSystem(this);
         this.enemyAISystem = new EnemyAISystem(this);
         this.attackSystem = new AttackSystem(this);
         this.hitSystem = new HitSystem(this);
@@ -178,7 +225,7 @@ export class GameScene extends Scene {
      */
     private createHealthBar(entity: Entity): void {
         const bar = this.add.graphics();
-        bar.setDepth(9998);
+        bar.setDepth(100);
         this.healthBars.set(entity, bar);
         this.updateHealthBar(entity, bar);
     }
@@ -234,6 +281,24 @@ export class GameScene extends Scene {
         this.debugOverlay.clear();
     }
 
+    /**
+     * 从 Tiled 属性值中提取数量。
+     * 支持格式：
+     * - 简单数值: 10
+     * - 嵌套对象: { quantity: 10 }
+     */
+    private extractQuantity(value: unknown): number {
+        if (typeof value === 'number') return value;
+        if (typeof value === 'string') return Number(value) || 0;
+        if (value && typeof value === 'object') {
+            const obj = value as Record<string, unknown>;
+            if ('quantity' in obj) {
+                return Number(obj.quantity) || 0;
+            }
+        }
+        return 0;
+    }
+
     update(_time: number, delta: number): void {
         this.entities = this.entities.filter(e => e.active);
 
@@ -242,6 +307,7 @@ export class GameScene extends Scene {
         }
 
         this.inputSystem.update(this.entities, delta);
+        this.containerSystem.update(this.entities, delta);
         this.inventorySystem.update(this.entities, delta);
         this.enemyAISystem.update(this.entities, delta);
         this.hitSystem.update(this.entities, delta);
@@ -252,6 +318,7 @@ export class GameScene extends Scene {
         this.movementSystem.update(this.entities, delta);
         this.animationSystem.update(this.entities, delta);
         this.inventoryUISystem.update(this.entities, delta);
+        this.systemMenuSystem.update(this.entities, delta);
 
         // 清理已销毁实体的血条
         for (const [entity, bar] of this.healthBars) {

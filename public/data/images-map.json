@@ -38,5 +38,15 @@
             "spriteHeight": 80
         },
         "animationStrategy": "freeze"
+    },
+    "宝箱1": {
+        "path": "./images/宝箱1.png",
+        "grid": {
+            "rows": 1,
+            "columns": 5,
+            "spriteWidth": 16,
+            "spriteHeight": 32
+        },
+        "animationStrategy": "freeze"
     }
 }

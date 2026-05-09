@@ -34,6 +34,22 @@ export class BootScene extends Scene {
         super({ key: 'BootScene' });
     }
 
+    /** 等待 CSS @font-face 字体加载完成 */
+    private async loadFonts(): Promise<void> {
+        const fonts: FontFace[] = [
+            new FontFace('VonwaonBitmap12', 'url(/fonts/VonwaonBitmap-12px.ttf)'),
+            new FontFace('VonwaonBitmap16', 'url(/fonts/VonwaonBitmap-16px.ttf)'),
+        ];
+        for (const font of fonts) {
+            try {
+                const loaded = await font.load();
+                document.fonts.add(loaded);
+            } catch {
+                console.warn(`[BootScene] 字体加载失败: ${font.family}`);
+            }
+        }
+    }
+
     preload(): void {
         // 加载资源映射表
         this.load.json('imagesMap', 'data/images-map.json');
@@ -42,7 +58,10 @@ export class BootScene extends Scene {
         this.load.json('itemsMap', 'data/items-map.json');
     }
 
-    create(): void {
+    async create(): Promise<void> {
+        // 等待自定义位图字体加载完成
+        await this.loadFonts();
+
         this.imagesMap = this.cache.json.get('imagesMap') as ImagesMap;
         this.mapsMap = this.cache.json.get('mapsMap') as MapsMap;
         this.soundsMap = this.cache.json.get('soundsMap') as SoundsMap;
@@ -77,9 +96,11 @@ export class BootScene extends Scene {
     }
 
     private onLoadComplete(): void {
-        // 自动创建动画：每张精灵表 3 行分别对应 right / down / up
+        // 自动创建动画：仅对 3 行精灵表创建方向性动画（right / down / up）
         for (const [key, config] of Object.entries(this.imagesMap)) {
-            const columns = config.grid.columns;
+            const { rows, columns } = config.grid;
+            if (rows !== 3) continue;
+
             const directions = [
                 { suffix: 'right', start: 0, end: columns - 1 },
                 { suffix: 'down', start: columns, end: 2 * columns - 1 },

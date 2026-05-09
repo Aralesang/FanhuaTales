@@ -1,4 +1,5 @@
 import { Types, Input, GameObjects } from 'phaser';
+import { Entity } from './Entity';
 
 export interface Component {
     readonly type: string;
@@ -133,4 +134,26 @@ export class InventoryComponent implements Component {
         this.capacity = capacity;
         this.items = new Array(capacity).fill(null);
     }
+}
+
+/** 全局设置组件：存储 UI 缩放等全局配置 */
+export class SettingsComponent implements Component {
+    readonly type = 'settings';
+    uiScale: number = 0.5;
+}
+
+/** 全局 UI 状态组件：用于各 UI 系统之间协调 */
+export class UIStateComponent implements Component {
+    readonly type = 'uistate';
+    inventoryOpen = false;
+    containerOpen = false;
+    /** 当前交互的容器实体 */
+    activeContainer: Entity | null = null;
+}
+
+/** 容器标记组件 */
+export class ContainerComponent implements Component {
+    readonly type = 'container';
+    /** 交互提示文字（如"按 E 打开"） */
+    promptText: string = '宝箱';
 }

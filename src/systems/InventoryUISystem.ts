@@ -1,16 +1,24 @@
 import { Scene, GameObjects, Input } from 'phaser';
 import { System } from '../ecs/System';
 import { Entity } from '../ecs/Entity';
-import { InventoryComponent, ItemDefinition, InventoryItem } from '../ecs/Component';
+import { InventoryComponent, ItemDefinition, InventoryItem, SettingsComponent, UIStateComponent } from '../ecs/Component';
+
+interface SlotRef {
+    source: 'player' | 'container';
+    index: number;
+}
 
 export class InventoryUISystem extends System {
     private isOpen = false;
+    private isContainerMode = false;
     private previousBDown = false;
     private bKey: Input.Keyboard.Key | null = null;
 
     private heldItem: InventoryItem | null = null;
     private heldFromSlot = -1;
+    private heldSource: 'player' | 'container' = 'player';
     private targetEntity: Entity | null = null;
+    private containerEntity: Entity | null = null;
 
     private panel!: GameObjects.Graphics;
     private itemGraphics!: GameObjects.Graphics;
@@ -27,10 +35,11 @@ export class InventoryUISystem extends System {
 
     private readonly COLS = 5;
     private readonly ROWS = 4;
-    private readonly CELL_SIZE = 40;
-    private readonly GAP = 4;
-    private readonly PADDING = 12;
+    private readonly BASE_CELL_SIZE = 40;
+    private readonly BASE_GAP = 4;
+    private readonly BASE_PADDING = 12;
 
+    private uiScale = 1.0;
     private panelW = 0;
     private panelH = 0;
 
@@ -50,8 +59,8 @@ export class InventoryUISystem extends System {
     }
 
     private initUI(): void {
-        this.panelW = this.COLS * this.CELL_SIZE + (this.COLS - 1) * this.GAP + this.PADDING * 2;
-        this.panelH = this.ROWS * this.CELL_SIZE + (this.ROWS - 1) * this.GAP + this.PADDING * 2;
+        this.panelW = this.COLS * this.BASE_CELL_SIZE + (this.COLS - 1) * this.BASE_GAP + this.BASE_PADDING * 2;
+        this.panelH = this.ROWS * this.BASE_CELL_SIZE + (this.ROWS - 1) * this.BASE_GAP + this.BASE_PADDING * 2;
 
         this.panel = this.scene.add.graphics();
         this.panel.setDepth(1000);
@@ -65,10 +74,11 @@ export class InventoryUISystem extends System {
         this.heldGraphics.setDepth(1002);
         this.heldGraphics.visible = false;
 
-        for (let i = 0; i < 20; i++) {
+        // 最多 40 个数量文字（20 玩家 + 20 容器）
+        for (let i = 0; i < 40; i++) {
             const text = this.scene.add.text(0, 0, '', {
                 fontSize: '12px', color: '#ffffff',
-                stroke: '#000000', strokeThickness: 2,
+                fontFamily: 'VonwaonBitmap12',
             });
             text.setDepth(1001);
             text.setOrigin(1, 1);
@@ -78,7 +88,7 @@ export class InventoryUISystem extends System {
 
         this.heldText = this.scene.add.text(0, 0, '', {
             fontSize: '12px', color: '#ffffff',
-            stroke: '#000000', strokeThickness: 2,
+            fontFamily: 'VonwaonBitmap12',
         });
         this.heldText.setDepth(1002);
         this.heldText.setOrigin(1, 1);
@@ -89,35 +99,33 @@ export class InventoryUISystem extends System {
         this.tooltipPanel.setDepth(10000);
         this.tooltipPanel.visible = false;
 
-        const textRes = 2; // 提高渲染分辨率，减少高 zoom 下的模糊
-
         this.tooltipName = this.scene.add.text(0, 0, '', {
-            fontSize: '14px', color: '#ffffff',
-            resolution: textRes,
+            fontSize: '16px', color: '#ffffff',
+            fontFamily: 'VonwaonBitmap16',
         });
         this.tooltipName.setDepth(10001);
         this.tooltipName.setOrigin(0, 0);
         this.tooltipName.visible = false;
 
         this.tooltipType = this.scene.add.text(0, 0, '', {
-            fontSize: '10px', color: '#aaaaaa',
-            resolution: textRes,
+            fontSize: '12px', color: '#aaaaaa',
+            fontFamily: 'VonwaonBitmap12',
         });
         this.tooltipType.setDepth(10001);
         this.tooltipType.setOrigin(0, 0);
         this.tooltipType.visible = false;
 
         this.tooltipDesc = this.scene.add.text(0, 0, '', {
-            fontSize: '11px', color: '#cccccc',
-            resolution: textRes,
+            fontSize: '12px', color: '#cccccc',
+            fontFamily: 'VonwaonBitmap12',
         });
         this.tooltipDesc.setDepth(10001);
         this.tooltipDesc.setOrigin(0, 0);
         this.tooltipDesc.visible = false;
 
         this.tooltipStats = this.scene.add.text(0, 0, '', {
-            fontSize: '11px', color: '#88cc88',
-            resolution: textRes,
+            fontSize: '12px', color: '#88cc88',
+            fontFamily: 'VonwaonBitmap12',
         });
         this.tooltipStats.setDepth(10001);
         this.tooltipStats.setOrigin(0, 0);
@@ -125,11 +133,51 @@ export class InventoryUISystem extends System {
     }
 
     update(entities: Entity[], _delta: number): void {
+        const uistate = this.getUIState(entities);
+
+        // 容器模式：外部打开（E 键交互）
+        if (uistate?.containerOpen && !this.isOpen) {
+            const player = entities.find(e => e.hasComponent('inventory') && e.hasComponent('player'));
+            const container = uistate.activeContainer;
+            if (player && container) {
+                this.isOpen = true;
+                this.isContainerMode = true;
+                this.targetEntity = player;
+                this.containerEntity = container;
+            }
+        }
+
+        // 外部关闭请求（ESC 关闭全部 UI）
+        if (uistate && !uistate.inventoryOpen && !uistate.containerOpen && this.isOpen) {
+            this.returnHeldItem();
+            this.isOpen = false;
+            this.isContainerMode = false;
+            this.targetEntity = null;
+            this.containerEntity = null;
+        }
+
         const bDown = this.bKey?.isDown ?? false;
         if (bDown && !this.previousBDown) {
-            this.toggleUI(entities);
+            if (uistate?.containerOpen) {
+                // 容器模式下按 B 关闭全部
+                uistate.containerOpen = false;
+                uistate.inventoryOpen = false;
+                uistate.activeContainer = null;
+            } else {
+                this.toggleUI(entities);
+            }
         }
         this.previousBDown = bDown;
+
+        // 同步 UI 打开状态到全局组件
+        if (uistate && !this.isContainerMode) {
+            uistate.inventoryOpen = this.isOpen;
+        }
+
+        // 读取全局 UI 缩放
+        const settingsEntity = entities.find(e => e.hasComponent('settings'));
+        const settings = settingsEntity?.getComponent<SettingsComponent>('settings');
+        this.uiScale = settings?.uiScale ?? 1.0;
 
         if (!this.isOpen || !this.targetEntity) {
             this.hideAll();
@@ -139,6 +187,11 @@ export class InventoryUISystem extends System {
         this.renderGrid();
         this.renderHeldItem();
         this.renderTooltip();
+    }
+
+    private getUIState(entities: Entity[]): UIStateComponent | undefined {
+        const entity = entities.find(e => e.hasComponent('uistate'));
+        return entity?.getComponent<UIStateComponent>('uistate');
     }
 
     /** 将屏幕像素坐标转换为世界坐标 — 使用 Phaser 内置方法 */
@@ -152,19 +205,31 @@ export class InventoryUISystem extends System {
         if (this.isOpen) {
             this.returnHeldItem();
             this.isOpen = false;
+            this.isContainerMode = false;
             this.targetEntity = null;
+            this.containerEntity = null;
         } else {
             const entity = entities.find(e => e.hasComponent('inventory') && e.hasComponent('player'));
             if (entity) {
                 this.isOpen = true;
+                this.isContainerMode = false;
                 this.targetEntity = entity;
             }
         }
     }
 
     private returnHeldItem(): void {
-        if (!this.heldItem || !this.targetEntity) return;
-        const inventory = this.targetEntity.getComponent<InventoryComponent>('inventory')!;
+        if (!this.heldItem) return;
+
+        const inventory = this.heldSource === 'player'
+            ? this.targetEntity?.getComponent<InventoryComponent>('inventory')
+            : this.containerEntity?.getComponent<InventoryComponent>('inventory');
+
+        if (!inventory) {
+            this.clearHeld();
+            return;
+        }
+
         if (this.heldFromSlot >= 0 && this.heldFromSlot < inventory.capacity && inventory.items[this.heldFromSlot] === null) {
             inventory.items[this.heldFromSlot] = { ...this.heldItem };
         } else {
@@ -173,71 +238,94 @@ export class InventoryUISystem extends System {
                 inventory.items[emptySlot] = { ...this.heldItem };
             }
         }
-        this.heldItem = null;
-        this.heldFromSlot = -1;
+        this.clearHeld();
+    }
+
+    // ============================================================
+    // 渲染
+    // ============================================================
+
+    private getPanelLayout(): {
+        leftGridX: number;
+        rightGridX: number | null;
+        gridY: number;
+        panelW: number;
+        panelH: number;
+    } {
+        const cam = this.scene.cameras.main;
+        const scale = this.uiScale;
+
+        const cellSize = this.BASE_CELL_SIZE * scale;
+        const gap = this.BASE_GAP * scale;
+        const padding = this.BASE_PADDING * scale;
+
+        const panelW = this.COLS * cellSize + (this.COLS - 1) * gap + padding * 2;
+        const panelH = this.ROWS * cellSize + (this.ROWS - 1) * gap + padding * 2;
+
+        const cx = cam.midPoint.x;
+        const cy = cam.midPoint.y;
+
+        let leftGridX: number;
+        let rightGridX: number | null = null;
+        let gridY: number;
+
+        if (this.isContainerMode && this.containerEntity) {
+            const gapBetween = 24 * scale;
+            const totalW = panelW * 2 + gapBetween;
+            leftGridX = cx - totalW / 2;
+            rightGridX = leftGridX + panelW + gapBetween;
+            gridY = cy - panelH / 2;
+            this.panelW = totalW;
+        } else {
+            leftGridX = cx - panelW / 2;
+            gridY = cy - panelH / 2;
+            this.panelW = panelW;
+        }
+        this.panelH = panelH;
+
+        return { leftGridX, rightGridX, gridY, panelW, panelH };
     }
 
     private renderGrid(): void {
         if (!this.targetEntity) return;
 
-        const inventory = this.targetEntity.getComponent<InventoryComponent>('inventory')!;
-        const cam = this.scene.cameras.main;
-        const zoom = cam.zoom || 1;
+        const playerInventory = this.targetEntity.getComponent<InventoryComponent>('inventory')!;
+        const containerInventory = this.containerEntity?.getComponent<InventoryComponent>('inventory');
 
-        const cx = cam.midPoint.x;
-        const cy = cam.midPoint.y;
-        const gridX = cx - this.panelW / 2;
-        const gridY = cy - this.panelH / 2;
+        const scale = this.uiScale;
+        const { leftGridX, rightGridX, gridY, panelW, panelH } = this.getPanelLayout();
+        const padding = this.BASE_PADDING * scale;
 
         // 绘制背景面板
         this.panel.clear();
+
+        // 玩家面板背景
         this.panel.fillStyle(0x1a1a2e, 0.95);
-        this.panel.fillRoundedRect(
-            gridX - this.PADDING,
-            gridY - this.PADDING,
-            this.panelW,
-            this.panelH,
-            8
-        );
-        this.panel.lineStyle(2, 0x444466, 1);
-        this.panel.strokeRoundedRect(
-            gridX - this.PADDING,
-            gridY - this.PADDING,
-            this.panelW,
-            this.panelH,
-            8
-        );
+        this.panel.fillRoundedRect(leftGridX - padding, gridY - padding, panelW, panelH, 8 * scale);
+        this.panel.lineStyle(2 * scale, 0x444466, 1);
+        this.panel.strokeRoundedRect(leftGridX - padding, gridY - padding, panelW, panelH, 8 * scale);
+
+        // 容器面板背景
+        if (this.isContainerMode && rightGridX !== null) {
+            this.panel.fillStyle(0x1a1a2e, 0.95);
+            this.panel.fillRoundedRect(rightGridX - padding, gridY - padding, panelW, panelH, 8 * scale);
+            this.panel.lineStyle(2 * scale, 0x444466, 1);
+            this.panel.strokeRoundedRect(rightGridX - padding, gridY - padding, panelW, panelH, 8 * scale);
+        }
 
         // 绘制格子和物品
         this.itemGraphics.clear();
         let textIdx = 0;
 
-        for (let i = 0; i < inventory.capacity; i++) {
-            const slotX = gridX + (i % this.COLS) * (this.CELL_SIZE + this.GAP);
-            const slotY = gridY + Math.floor(i / this.COLS) * (this.CELL_SIZE + this.GAP);
+        // 玩家格子
+        for (let i = 0; i < playerInventory.capacity; i++) {
+            textIdx = this.renderSlot(leftGridX, gridY, i, playerInventory, scale, textIdx);
+        }
 
-            // 格子背景
-            this.itemGraphics.fillStyle(0x2a2a3e, 1);
-            this.itemGraphics.fillRect(slotX, slotY, this.CELL_SIZE, this.CELL_SIZE);
-
-            // 格子边框
-            this.itemGraphics.lineStyle(1, 0x555577, 1);
-            this.itemGraphics.strokeRect(slotX, slotY, this.CELL_SIZE, this.CELL_SIZE);
-
-            // 物品方块
-            const item = inventory.items[i];
-            if (item) {
-                const color = this.itemColors[item.itemId] ?? 0xaaaaaa;
-                this.itemGraphics.fillStyle(color, 1);
-                this.itemGraphics.fillRect(slotX + 4, slotY + 4, this.CELL_SIZE - 8, this.CELL_SIZE - 8);
-
-                if (textIdx < this.quantityTexts.length) {
-                    const text = this.quantityTexts[textIdx];
-                    text.setPosition(slotX + this.CELL_SIZE - 3, slotY + this.CELL_SIZE - 2);
-                    text.setText(item.quantity > 1 ? String(item.quantity) : '');
-                    text.visible = true;
-                    textIdx++;
-                }
+        // 容器格子
+        if (this.isContainerMode && rightGridX !== null && containerInventory) {
+            for (let i = 0; i < containerInventory.capacity; i++) {
+                textIdx = this.renderSlot(rightGridX, gridY, i, containerInventory, scale, textIdx);
             }
         }
 
@@ -249,6 +337,47 @@ export class InventoryUISystem extends System {
         this.itemGraphics.visible = true;
     }
 
+    private renderSlot(
+        gridX: number,
+        gridY: number,
+        index: number,
+        inventory: InventoryComponent,
+        scale: number,
+        textIdx: number
+    ): number {
+        const cellSize = this.BASE_CELL_SIZE * scale;
+        const gap = this.BASE_GAP * scale;
+        const slotX = gridX + (index % this.COLS) * (cellSize + gap);
+        const slotY = gridY + Math.floor(index / this.COLS) * (cellSize + gap);
+
+        // 格子背景
+        this.itemGraphics.fillStyle(0x2a2a3e, 1);
+        this.itemGraphics.fillRect(slotX, slotY, cellSize, cellSize);
+
+        // 格子边框
+        this.itemGraphics.lineStyle(Math.max(1, scale), 0x555577, 1);
+        this.itemGraphics.strokeRect(slotX, slotY, cellSize, cellSize);
+
+        // 物品方块
+        const item = inventory.items[index];
+        if (item) {
+            const color = this.itemColors[item.itemId] ?? 0xaaaaaa;
+            this.itemGraphics.fillStyle(color, 1);
+            this.itemGraphics.fillRect(slotX + 4 * scale, slotY + 4 * scale, cellSize - 8 * scale, cellSize - 8 * scale);
+
+            if (textIdx < this.quantityTexts.length) {
+                const text = this.quantityTexts[textIdx];
+                text.setPosition(slotX + cellSize - 3 * scale, slotY + cellSize - 2 * scale);
+                text.setScale(scale);
+                text.setText(item.quantity > 1 ? String(item.quantity) : '');
+                text.visible = true;
+                textIdx++;
+            }
+        }
+
+        return textIdx;
+    }
+
     private renderHeldItem(): void {
         if (!this.heldItem) {
             this.heldGraphics.visible = false;
@@ -258,19 +387,22 @@ export class InventoryUISystem extends System {
 
         const pointer = this.scene.input.activePointer;
         const { x: worldX, y: worldY } = this.screenToWorld(pointer.x, pointer.y);
-        const size = this.CELL_SIZE - 8;
+        const scale = this.uiScale;
+        const cellSize = this.BASE_CELL_SIZE * scale;
+        const size = cellSize - 8 * scale;
         const hx = worldX - size / 2;
         const hy = worldY - size / 2;
 
         this.heldGraphics.clear();
         this.heldGraphics.fillStyle(this.itemColors[this.heldItem.itemId] ?? 0xaaaaaa, 0.9);
         this.heldGraphics.fillRect(hx, hy, size, size);
-        this.heldGraphics.lineStyle(2, 0xffffff, 0.6);
+        this.heldGraphics.lineStyle(2 * scale, 0xffffff, 0.6);
         this.heldGraphics.strokeRect(hx, hy, size, size);
         this.heldGraphics.visible = true;
 
         if (this.heldItem.quantity > 1) {
-            this.heldText.setPosition(worldX + size / 2 - 2, worldY + size / 2 - 2);
+            this.heldText.setPosition(worldX + size / 2 - 2 * scale, worldY + size / 2 - 2 * scale);
+            this.heldText.setScale(scale);
             this.heldText.setText(String(this.heldItem.quantity));
             this.heldText.visible = true;
         } else {
@@ -293,55 +425,89 @@ export class InventoryUISystem extends System {
         this.tooltipStats.visible = false;
     }
 
+    // ============================================================
+    // 点击交互
+    // ============================================================
+
     private onPointerDown(pointer: Input.Pointer): void {
         if (!this.isOpen || !this.targetEntity) return;
 
-        const slot = this.getSlotAt(pointer.x, pointer.y);
-        if (slot < 0) return;
+        const slotInfo = this.getSlotAt(pointer.x, pointer.y);
+        if (!slotInfo) return;
 
-        const inventory = this.targetEntity.getComponent<InventoryComponent>('inventory')!;
+        const { source, index } = slotInfo;
+        const inventory = source === 'player'
+            ? this.targetEntity.getComponent<InventoryComponent>('inventory')!
+            : this.containerEntity?.getComponent<InventoryComponent>('inventory')!;
+
+        if (!inventory) return;
+
         const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
 
         if (pointer.button === 0) {
-            this.handleLeftClick(inventory, itemsMap, slot);
+            this.handleLeftClick(inventory, itemsMap, index, source);
         } else if (pointer.button === 2) {
-            this.handleRightClick(inventory, itemsMap, slot);
+            this.handleRightClick(inventory, itemsMap, index, source);
         }
     }
 
-    private getSlotAt(screenX: number, screenY: number): number {
+    private getSlotAt(screenX: number, screenY: number): SlotRef | null {
         const { x: worldX, y: worldY } = this.screenToWorld(screenX, screenY);
-        const cam = this.scene.cameras.main;
-        const gridX = cam.midPoint.x - this.panelW / 2;
-        const gridY = cam.midPoint.y - this.panelH / 2;
-        const relX = worldX - gridX;
-        const relY = worldY - gridY;
+        const scale = this.uiScale;
+        const cellSize = this.BASE_CELL_SIZE * scale;
+        const gap = this.BASE_GAP * scale;
+        const { leftGridX, rightGridX, gridY } = this.getPanelLayout();
 
+        // 检测玩家面板
+        const playerRelX = worldX - leftGridX;
+        const playerRelY = worldY - gridY;
         for (let i = 0; i < this.COLS * this.ROWS; i++) {
-            const slotX = (i % this.COLS) * (this.CELL_SIZE + this.GAP);
-            const slotY = Math.floor(i / this.COLS) * (this.CELL_SIZE + this.GAP);
+            const slotX = (i % this.COLS) * (cellSize + gap);
+            const slotY = Math.floor(i / this.COLS) * (cellSize + gap);
             if (
-                relX >= slotX &&
-                relX < slotX + this.CELL_SIZE &&
-                relY >= slotY &&
-                relY < slotY + this.CELL_SIZE
+                playerRelX >= slotX &&
+                playerRelX < slotX + cellSize &&
+                playerRelY >= slotY &&
+                playerRelY < slotY + cellSize
             ) {
-                return i;
+                return { source: 'player', index: i };
             }
         }
-        return -1;
+
+        // 检测容器面板
+        if (this.isContainerMode && rightGridX !== null) {
+            const containerRelX = worldX - rightGridX;
+            const containerRelY = worldY - gridY;
+            for (let i = 0; i < this.COLS * this.ROWS; i++) {
+                const slotX = (i % this.COLS) * (cellSize + gap);
+                const slotY = Math.floor(i / this.COLS) * (cellSize + gap);
+                if (
+                    containerRelX >= slotX &&
+                    containerRelX < slotX + cellSize &&
+                    containerRelY >= slotY &&
+                    containerRelY < slotY + cellSize
+                ) {
+                    return { source: 'container', index: i };
+                }
+            }
+        }
+
+        return null;
     }
 
     private handleLeftClick(
         inventory: InventoryComponent,
         itemsMap: Record<string, ItemDefinition> | undefined,
-        slot: number
+        slot: number,
+        source: 'player' | 'container'
     ): void {
         const slotItem = inventory.items[slot];
+
         if (!this.heldItem) {
             if (slotItem) {
                 this.heldItem = { ...slotItem };
                 this.heldFromSlot = slot;
+                this.heldSource = source;
                 inventory.items[slot] = null;
             }
         } else {
@@ -349,9 +515,9 @@ export class InventoryUISystem extends System {
                 inventory.items[slot] = { ...this.heldItem };
                 this.clearHeld();
             } else if (slotItem.itemId === this.heldItem.itemId) {
-                this.tryStackAll(inventory, itemsMap, slot);
+                this.tryStackAll(inventory, itemsMap, slot, source);
             } else {
-                this.swapWithSlot(inventory, slot);
+                this.swapWithSlot(inventory, slot, source);
             }
         }
     }
@@ -359,7 +525,8 @@ export class InventoryUISystem extends System {
     private handleRightClick(
         inventory: InventoryComponent,
         itemsMap: Record<string, ItemDefinition> | undefined,
-        slot: number
+        slot: number,
+        source: 'player' | 'container'
     ): void {
         const slotItem = inventory.items[slot];
         if (!this.heldItem) {
@@ -367,6 +534,7 @@ export class InventoryUISystem extends System {
                 const half = Math.ceil(slotItem.quantity / 2);
                 this.heldItem = { itemId: slotItem.itemId, quantity: half };
                 this.heldFromSlot = slot;
+                this.heldSource = source;
                 slotItem.quantity -= half;
                 if (slotItem.quantity <= 0) {
                     inventory.items[slot] = null;
@@ -378,7 +546,7 @@ export class InventoryUISystem extends System {
             } else if (slotItem.itemId === this.heldItem.itemId) {
                 this.tryStackOne(inventory, itemsMap, slot);
             } else {
-                this.swapWithSlot(inventory, slot);
+                this.swapWithSlot(inventory, slot, source);
             }
         }
     }
@@ -386,7 +554,8 @@ export class InventoryUISystem extends System {
     private tryStackAll(
         inventory: InventoryComponent,
         itemsMap: Record<string, ItemDefinition> | undefined,
-        slot: number
+        slot: number,
+        source: 'player' | 'container'
     ): void {
         if (!this.heldItem) return;
         const def = itemsMap?.[this.heldItem.itemId];
@@ -404,7 +573,7 @@ export class InventoryUISystem extends System {
                 return;
             }
         }
-        this.swapWithSlot(inventory, slot);
+        this.swapWithSlot(inventory, slot, source);
     }
 
     private tryStackOne(
@@ -427,7 +596,9 @@ export class InventoryUISystem extends System {
                 return;
             }
         }
-        this.swapWithSlot(inventory, slot);
+        // 同面板时交换，跨面板时不做交换（保持 held）
+        const currentSource = inventory === this.targetEntity?.getComponent<InventoryComponent>('inventory') ? 'player' : 'container';
+        this.swapWithSlot(inventory, slot, currentSource);
     }
 
     private placeOne(inventory: InventoryComponent, slot: number): void {
@@ -439,13 +610,14 @@ export class InventoryUISystem extends System {
         }
     }
 
-    private swapWithSlot(inventory: InventoryComponent, slot: number): void {
+    private swapWithSlot(inventory: InventoryComponent, slot: number, source: 'player' | 'container'): void {
         if (!this.heldItem) return;
         const temp = inventory.items[slot];
         inventory.items[slot] = { ...this.heldItem };
         if (temp) {
             this.heldItem = { ...temp };
             this.heldFromSlot = slot;
+            this.heldSource = source;
         } else {
             this.clearHeld();
         }
@@ -462,15 +634,24 @@ export class InventoryUISystem extends System {
         }
 
         const pointer = this.scene.input.activePointer;
-        const slot = this.getSlotAt(pointer.x, pointer.y);
+        const slotInfo = this.getSlotAt(pointer.x, pointer.y);
 
-        if (slot < 0) {
+        if (!slotInfo) {
             this.hideTooltip();
             return;
         }
 
-        const inventory = this.targetEntity.getComponent<InventoryComponent>('inventory')!;
-        const item = inventory.items[slot];
+        const { source, index } = slotInfo;
+        const inventory = source === 'player'
+            ? this.targetEntity.getComponent<InventoryComponent>('inventory')!
+            : this.containerEntity?.getComponent<InventoryComponent>('inventory')!;
+
+        if (!inventory) {
+            this.hideTooltip();
+            return;
+        }
+
+        const item = inventory.items[index];
         if (!item) {
             this.hideTooltip();
             return;
@@ -484,6 +665,7 @@ export class InventoryUISystem extends System {
         }
 
         const { x: worldX, y: worldY } = this.screenToWorld(pointer.x, pointer.y);
+        const scale = this.uiScale;
 
         // 构建 Tooltip 文本
         const nameText = def.name;
@@ -503,58 +685,65 @@ export class InventoryUISystem extends System {
             statsText = `价值: ${def.value} 金币`;
         }
 
-        // 测量文本尺寸（用 Phaser Text 的 getBounds 不如先设置再测，这里用估算）
-        const lineHeight = 14;
-        const pad = 8;
+        // 测量文本尺寸（位图字体字符宽度 ≈ fontSize）
+        const pad = 8 * scale;
+        const nameLineH = 18 * scale;
+        const bodyLineH = 14 * scale;
+        const nameFontSize = 16 * scale;
+        const bodyFontSize = 12 * scale;
         const maxTextW = Math.max(
-            nameText.length * 9,
-            typeText.length * 6,
-            descText.length * 7,
-            statsText.length * 7
+            nameText.length * nameFontSize,
+            typeText.length * bodyFontSize,
+            descText.length * bodyFontSize,
+            statsText.length * bodyFontSize
         );
-        const tooltipW = Math.max(maxTextW + pad * 2, 120);
-        const tooltipH = (statsText ? 4 : 3) * lineHeight + pad * 2;
+        const tooltipW = Math.max(maxTextW + pad * 2, 140 * scale);
+        const tooltipH = nameLineH + bodyLineH * 2 + (statsText ? bodyLineH : 0) + pad * 2;
 
-        // 边界检查：默认显示在鼠标右下方，超出边界则调整
-        let tx = worldX + 16;
-        let ty = worldY + 16;
+        // 边界检查
+        let tx = worldX + 16 * scale;
+        let ty = worldY + 16 * scale;
         const cam = this.scene.cameras.main;
         const camRight = cam.midPoint.x + (cam.width / 2 / (cam.zoom || 1));
         const camBottom = cam.midPoint.y + (cam.height / 2 / (cam.zoom || 1));
         if (tx + tooltipW > camRight) {
-            tx = worldX - tooltipW - 8;
+            tx = worldX - tooltipW - 8 * scale;
         }
         if (ty + tooltipH > camBottom) {
-            ty = worldY - tooltipH - 8;
+            ty = worldY - tooltipH - 8 * scale;
         }
 
         // 绘制背景
         this.tooltipPanel.clear();
-        this.tooltipPanel.fillStyle(0x111122, 0.95);
-        this.tooltipPanel.fillRoundedRect(tx, ty, tooltipW, tooltipH, 4);
-        this.tooltipPanel.lineStyle(1, 0x666688, 1);
-        this.tooltipPanel.strokeRoundedRect(tx, ty, tooltipW, tooltipH, 4);
+        this.tooltipPanel.fillStyle(0x0a0a18, 1);
+        this.tooltipPanel.fillRoundedRect(tx, ty, tooltipW, tooltipH, 4 * scale);
+        this.tooltipPanel.lineStyle(Math.max(1, scale), 0x444466, 1);
+        this.tooltipPanel.strokeRoundedRect(tx, ty, tooltipW, tooltipH, 4 * scale);
         this.tooltipPanel.visible = true;
 
-        // 名称（带颜色）
+        // 名称
         this.tooltipName.setPosition(tx + pad, ty + pad);
+        this.tooltipName.setScale(scale);
         this.tooltipName.setText(nameText);
         this.tooltipName.setColor(this.getRarityColor(def.type));
         this.tooltipName.visible = true;
 
         // 类型
-        this.tooltipType.setPosition(tx + pad, ty + pad + lineHeight);
+        this.tooltipType.setPosition(tx + pad, ty + pad + nameLineH);
+        this.tooltipType.setScale(scale);
         this.tooltipType.setText(`[${typeText}]`);
         this.tooltipType.visible = true;
 
         // 描述
-        this.tooltipDesc.setPosition(tx + pad, ty + pad + lineHeight * 2);
+        this.tooltipDesc.setPosition(tx + pad, ty + pad + nameLineH + bodyLineH);
+        this.tooltipDesc.setScale(scale);
         this.tooltipDesc.setText(descText);
         this.tooltipDesc.visible = true;
 
         // 属性
         if (statsText) {
-            this.tooltipStats.setPosition(tx + pad, ty + pad + lineHeight * 3);
+            this.tooltipStats.setPosition(tx + pad, ty + pad + nameLineH + bodyLineH * 2);
+            this.tooltipStats.setScale(scale);
             this.tooltipStats.setText(statsText);
             this.tooltipStats.visible = true;
         } else {
@@ -607,5 +796,6 @@ export class InventoryUISystem extends System {
     private clearHeld(): void {
         this.heldItem = null;
         this.heldFromSlot = -1;
+        this.heldSource = 'player';
     }
 }
