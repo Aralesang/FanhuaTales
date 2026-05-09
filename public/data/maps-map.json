@@ -1,4 +1,4 @@
 {
-    "village": "./maps/village/village.tmx",
-    "interior": "./maps/village/interior.tmx"
+    "village": "maps/village/village.json",
+    "interior": "maps/interior/interior.json"
 }

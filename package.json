@@ -1,21 +1,14 @@
 {
-  "name": "fanhuatales",
-  "version": "1.0.0",
-  "description": "",
-  "license": "ISC",
-  "author": "",
-  "type": "commonjs",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "vite"
+  "dependencies": {
+    "phaser": "^4.0.0",
+    "vite": "^8.0.10"
   },
   "devDependencies": {
-    "typescript": "5.9.3",
-    "vite": "6.4.1"
+    "typescript": "^5.0.0"
   },
-  "dependencies": {
-    "@excaliburjs/plugin-tiled": "0.31.0",
-    "excalibur": "0.31.0"
+  "scripts": {
+    "start": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   }
 }
