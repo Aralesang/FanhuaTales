@@ -1,6 +1,7 @@
 import { Scene, GameObjects, Input } from 'phaser';
 import { System } from '../ecs/System';
 import { Entity } from '../ecs/Entity';
+import { FontConfig } from '../config/FontConfig';
 import { SettingsComponent, UIStateComponent } from '../ecs/Component';
 
 export class SystemMenuSystem extends System {
@@ -51,30 +52,30 @@ export class SystemMenuSystem extends System {
         this.panel.visible = false;
 
         // 标题：系统菜单（使用位图字体设计尺寸 16px，通过 setScale 缩放）
-        this.titleText = this.scene.add.text(0, 0, '系统菜单', {
-            fontSize: '16px',
+        this.titleText = this.createText(0, 0, '系统菜单', {
+            fontSize: FontConfig.large.size,
             color: '#ffffff',
-            fontFamily: 'VonwaonBitmap16',
+            fontFamily: FontConfig.large.family,
         });
         this.titleText.setDepth(20002);
         this.titleText.setOrigin(0.5, 0);
         this.titleText.visible = false;
 
         // 标签：UI 大小（使用位图字体设计尺寸 12px，通过 setScale 缩放）
-        this.labelText = this.scene.add.text(0, 0, 'UI 大小', {
-            fontSize: '12px',
+        this.labelText = this.createText(0, 0, 'UI 大小', {
+            fontSize: FontConfig.small.size,
             color: '#cccccc',
-            fontFamily: 'VonwaonBitmap12',
+            fontFamily: FontConfig.small.family,
         });
         this.labelText.setDepth(20002);
         this.labelText.setOrigin(0, 0.5);
         this.labelText.visible = false;
 
         // 数值百分比
-        this.valueText = this.scene.add.text(0, 0, '100%', {
-            fontSize: '12px',
+        this.valueText = this.createText(0, 0, '100%', {
+            fontSize: FontConfig.small.size,
             color: '#ffffff',
-            fontFamily: 'VonwaonBitmap12',
+            fontFamily: FontConfig.small.family,
         });
         this.valueText.setDepth(20002);
         this.valueText.setOrigin(0, 0.5);

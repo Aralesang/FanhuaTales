@@ -1,6 +1,7 @@
 import { Scene, GameObjects, Input } from 'phaser';
 import { System } from '../ecs/System';
 import { Entity } from '../ecs/Entity';
+import { FontConfig } from '../config/FontConfig';
 import {
     InventoryComponent, ItemDefinition, InventoryItem,
     SettingsComponent, UIStateComponent, StoreComponent
@@ -65,9 +66,9 @@ export class StoreUISystem extends System {
         this.itemGraphics.visible = false;
 
         for (let i = 0; i < 40; i++) {
-            const text = this.scene.add.text(0, 0, '', {
-                fontSize: '12px', color: '#ffffff',
-                fontFamily: 'VonwaonBitmap12',
+            const text = this.createText(0, 0, '', {
+                fontSize: FontConfig.small.size, color: '#ffffff',
+                fontFamily: FontConfig.small.family,
             });
             text.setDepth(1001);
             text.setOrigin(1, 1);
@@ -80,33 +81,33 @@ export class StoreUISystem extends System {
         this.tooltipPanel.setDepth(10000);
         this.tooltipPanel.visible = false;
 
-        this.tooltipName = this.scene.add.text(0, 0, '', {
-            fontSize: '16px', color: '#ffffff',
-            fontFamily: 'VonwaonBitmap16',
+        this.tooltipName = this.createText(0, 0, '', {
+            fontSize: FontConfig.large.size, color: '#ffffff',
+            fontFamily: FontConfig.large.family,
         });
         this.tooltipName.setDepth(10001);
         this.tooltipName.setOrigin(0, 0);
         this.tooltipName.visible = false;
 
-        this.tooltipType = this.scene.add.text(0, 0, '', {
-            fontSize: '12px', color: '#aaaaaa',
-            fontFamily: 'VonwaonBitmap12',
+        this.tooltipType = this.createText(0, 0, '', {
+            fontSize: FontConfig.small.size, color: '#aaaaaa',
+            fontFamily: FontConfig.small.family,
         });
         this.tooltipType.setDepth(10001);
         this.tooltipType.setOrigin(0, 0);
         this.tooltipType.visible = false;
 
-        this.tooltipDesc = this.scene.add.text(0, 0, '', {
-            fontSize: '12px', color: '#cccccc',
-            fontFamily: 'VonwaonBitmap12',
+        this.tooltipDesc = this.createText(0, 0, '', {
+            fontSize: FontConfig.small.size, color: '#cccccc',
+            fontFamily: FontConfig.small.family,
         });
         this.tooltipDesc.setDepth(10001);
         this.tooltipDesc.setOrigin(0, 0);
         this.tooltipDesc.visible = false;
 
-        this.tooltipStats = this.scene.add.text(0, 0, '', {
-            fontSize: '12px', color: '#88cc88',
-            fontFamily: 'VonwaonBitmap12',
+        this.tooltipStats = this.createText(0, 0, '', {
+            fontSize: FontConfig.small.size, color: '#88cc88',
+            fontFamily: FontConfig.small.family,
         });
         this.tooltipStats.setDepth(10001);
         this.tooltipStats.setOrigin(0, 0);

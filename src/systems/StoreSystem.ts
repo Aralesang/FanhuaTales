@@ -1,6 +1,7 @@
 import { Scene, Input, GameObjects } from 'phaser';
 import { System } from '../ecs/System';
 import { Entity } from '../ecs/Entity';
+import { FontConfig } from '../config/FontConfig';
 import { SpriteComponent, StoreComponent, UIStateComponent, VisualComponent } from '../ecs/Component';
 
 export class StoreSystem extends System {
@@ -25,10 +26,10 @@ export class StoreSystem extends System {
         this.promptBg.setDepth(200);
         this.promptBg.visible = false;
 
-        this.promptText = this.scene.add.text(0, 0, '按 E 交易', {
-            fontSize: '12px',
+        this.promptText = this.createText(0, 0, '按 E 交易', {
+            fontSize: FontConfig.small.size,
             color: '#ffffff',
-            fontFamily: 'VonwaonBitmap12',
+            fontFamily: FontConfig.small.family,
         });
         this.promptText.setDepth(201);
         this.promptText.setOrigin(0.5, 1);
