@@ -3,11 +3,11 @@ import { Entity } from '../ecs/Entity';
 import {
     MovementComponent, AnimationComponent, AIComponent,
     RenderComponent, HealthComponent, AttackComponent,
-    SpriteComponent, VisualComponent
+    SpriteComponent, VisualComponent, DropComponent
 } from '../ecs/Component';
 
 export class Enemy extends Entity {
-    constructor(scene: Scene, x: number, y: number) {
+    constructor(scene: Scene, x: number, y: number, dropTable: string = 'default_enemy') {
         super(scene);
 
         // 创建精灵并挂载到 SpriteComponent
@@ -43,6 +43,9 @@ export class Enemy extends Entity {
 
         // 攻击组件
         this.addComponent(new AttackComponent());
+
+        // 掉落组件
+        this.addComponent(new DropComponent(dropTable));
 
         // 渲染组件：外观数据（红色区分于玩家）
         const render = new RenderComponent();

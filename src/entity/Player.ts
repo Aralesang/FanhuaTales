@@ -3,7 +3,8 @@ import { Entity } from '../ecs/Entity';
 import {
     MovementComponent, AnimationComponent, InputComponent,
     AttackComponent, PlayerComponent, HealthComponent,
-    SpriteComponent, VisualComponent, InventoryComponent
+    SpriteComponent, VisualComponent, InventoryComponent,
+    EquipmentSlotComponent, AttributeComponent
 } from '../ecs/Component';
 
 export class Player extends Entity {
@@ -38,6 +39,12 @@ export class Player extends Entity {
 
         // 库存组件
         this.addComponent(new InventoryComponent(20));
+
+        // 装备槽组件
+        this.addComponent(new EquipmentSlotComponent());
+
+        // 属性组件
+        this.addComponent(new AttributeComponent());
 
         // 生命值组件
         const health = new HealthComponent();

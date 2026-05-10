@@ -23,10 +23,10 @@ export class Container extends Entity {
         body.setOffset(0, 16);
         this.addComponent(new SpriteComponent(sprite));
 
-        // 视觉大小
+        // 视觉大小：图片为 16x32，但上半部分透明，实际可见箱体为 16x16
         const visual = new VisualComponent();
         visual.width = 16;
-        visual.height = 32;
+        visual.height = 16;
         this.addComponent(visual);
 
         // 容器标记

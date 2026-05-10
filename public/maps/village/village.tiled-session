@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "village.tmx",
+    "activeFile": "village.json",
     "expandedProjectPaths": [
     ],
     "file.lastUsedOpenFilter": "全部文件 (*)",
@@ -40,9 +40,15 @@
             "scale": 5.5,
             "selectedLayer": 7,
             "viewCenter": {
-                "x": 248.36363636363637,
-                "y": 202.4545454545455
+                "x": 212.54545454545456,
+                "y": 133
             }
+        },
+        "village.json#building": {
+            "scaleInDock": 1
+        },
+        "village.json#solid": {
+            "scaleInDock": 1
         },
         "village.json#surface": {
             "scaleInDock": 1
@@ -82,14 +88,15 @@
     "map.tileHeight": 16,
     "map.tileWidth": 16,
     "openFiles": [
-        "village.tmx",
+        "village.json",
         "interior.tmx"
     ],
     "project": "village.tiled-project",
     "property.type": "Item",
     "recentFiles": [
-        "interior.tsx",
         "interior.tmx",
+        "village.json",
+        "interior.tsx",
         "village.tmx",
         "building.tsx"
     ],

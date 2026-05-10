@@ -1,9 +1,9 @@
 import { Scene, Input, GameObjects } from 'phaser';
 import { System } from '../ecs/System';
 import { Entity } from '../ecs/Entity';
-import { SpriteComponent, ContainerComponent, UIStateComponent, VisualComponent } from '../ecs/Component';
+import { SpriteComponent, StoreComponent, UIStateComponent, VisualComponent } from '../ecs/Component';
 
-export class ContainerSystem extends System {
+export class StoreSystem extends System {
     private eKey!: Input.Keyboard.Key;
     private previousEDown = false;
 
@@ -25,7 +25,7 @@ export class ContainerSystem extends System {
         this.promptBg.setDepth(200);
         this.promptBg.visible = false;
 
-        this.promptText = this.scene.add.text(0, 0, '按 E 打开', {
+        this.promptText = this.scene.add.text(0, 0, '按 E 交易', {
             fontSize: '12px',
             color: '#ffffff',
             fontFamily: 'VonwaonBitmap12',
@@ -45,59 +45,57 @@ export class ContainerSystem extends System {
         const uistate = this.getUIState(entities);
         if (!uistate) return;
 
-        // 找到距离最近的容器
-        let nearestContainer: Entity | null = null;
+        // 找到距离最近的商店
+        let nearestStore: Entity | null = null;
         let nearestDist = Infinity;
 
         for (const entity of entities) {
-            if (!entity.hasComponent('container')) continue;
+            if (!entity.hasComponent('store')) continue;
 
-            const containerSprite = entity.getComponent<SpriteComponent>('sprite')?.sprite;
-            if (!containerSprite) continue;
+            const storeSprite = entity.getComponent<SpriteComponent>('sprite')?.sprite;
+            if (!storeSprite) continue;
 
-            const dx = playerSprite.x - containerSprite.x;
-            const dy = playerSprite.y - containerSprite.y;
+            const dx = playerSprite.x - storeSprite.x;
+            const dy = playerSprite.y - storeSprite.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
 
             if (dist < nearestDist) {
                 nearestDist = dist;
-                nearestContainer = entity;
+                nearestStore = entity;
             }
         }
 
         // 更新交互提示
-        const canInteract = nearestContainer && nearestDist <= this.INTERACT_DISTANCE && !uistate.containerOpen;
-        this.updatePrompt(nearestContainer, canInteract);
+        const canInteract = nearestStore && nearestDist <= this.INTERACT_DISTANCE && !uistate.storeOpen && !uistate.containerOpen;
+        this.updatePrompt(nearestStore, canInteract);
 
         // 检测 E 键按下
         const eDown = this.eKey.isDown;
         if (eDown && !this.previousEDown && canInteract) {
-            uistate.containerOpen = true;
-            uistate.activeContainer = nearestContainer;
-            uistate.inventoryOpen = true;
+            uistate.storeOpen = true;
+            uistate.activeStore = nearestStore;
         }
         this.previousEDown = eDown;
     }
 
-    private updatePrompt(container: Entity | null, visible: boolean): void {
-        if (!visible || !container) {
+    private updatePrompt(store: Entity | null, visible: boolean): void {
+        if (!visible || !store) {
             this.promptBg.visible = false;
             this.promptText.visible = false;
             return;
         }
 
-        const spriteComp = container.getComponent<SpriteComponent>('sprite');
-        const visualComp = container.getComponent<VisualComponent>('visual');
+        const spriteComp = store.getComponent<SpriteComponent>('sprite');
+        const visualComp = store.getComponent<VisualComponent>('visual');
         if (!spriteComp) return;
 
         const sprite = spriteComp.sprite;
         const visualH = visualComp?.height ?? sprite.height;
+        const promptScale = 0.5;
 
         const x = sprite.x;
         const y = sprite.y - visualH / 2 - 4;
 
-        // 背景气泡（缩小为设计尺寸的一半）
-        const promptScale = 0.5;
         const textW = this.promptText.width * promptScale;
         const textH = this.promptText.height * promptScale;
         const pad = 4 * promptScale;

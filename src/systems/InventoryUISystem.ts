@@ -1,10 +1,14 @@
 import { Scene, GameObjects, Input } from 'phaser';
 import { System } from '../ecs/System';
 import { Entity } from '../ecs/Entity';
-import { InventoryComponent, ItemDefinition, InventoryItem, SettingsComponent, UIStateComponent } from '../ecs/Component';
+import {
+    InventoryComponent, ItemDefinition, InventoryItem,
+    SettingsComponent, UIStateComponent, EquipmentSlotComponent,
+    AttributeComponent
+} from '../ecs/Component';
 
 interface SlotRef {
-    source: 'player' | 'container';
+    source: 'player' | 'container' | 'equipment';
     index: number;
 }
 
@@ -25,6 +29,10 @@ export class InventoryUISystem extends System {
     private heldGraphics!: GameObjects.Graphics;
     private quantityTexts: GameObjects.Text[] = [];
     private heldText!: GameObjects.Text;
+
+    // 装备栏标签
+    private equipLabel!: GameObjects.Text;
+    private equipSlotLabels: GameObjects.Text[] = [];
 
     // Tooltip 元素
     private tooltipPanel!: GameObjects.Graphics;
@@ -74,7 +82,7 @@ export class InventoryUISystem extends System {
         this.heldGraphics.setDepth(1002);
         this.heldGraphics.visible = false;
 
-        // 最多 40 个数量文字（20 玩家 + 20 容器）
+        // 最多 40 个数量文字（20 玩家 + 20 容器 / 装备）
         for (let i = 0; i < 40; i++) {
             const text = this.scene.add.text(0, 0, '', {
                 fontSize: '12px', color: '#ffffff',
@@ -93,6 +101,27 @@ export class InventoryUISystem extends System {
         this.heldText.setDepth(1002);
         this.heldText.setOrigin(1, 1);
         this.heldText.visible = false;
+
+        // 装备栏标签
+        this.equipLabel = this.scene.add.text(0, 0, '装备栏', {
+            fontSize: '12px', color: '#8888aa',
+            fontFamily: 'VonwaonBitmap12',
+        });
+        this.equipLabel.setDepth(1001);
+        this.equipLabel.setOrigin(0, 0);
+        this.equipLabel.visible = false;
+
+        const equipNames = ['武器', '护甲', '头盔'];
+        for (const name of equipNames) {
+            const text = this.scene.add.text(0, 0, name, {
+                fontSize: '10px', color: '#666688',
+                fontFamily: 'VonwaonBitmap12',
+            });
+            text.setDepth(1001);
+            text.setOrigin(0.5, 0);
+            text.visible = false;
+            this.equipSlotLabels.push(text);
+        }
 
         // Tooltip（depth 高于血条 9998）
         this.tooltipPanel = this.scene.add.graphics();
@@ -194,7 +223,7 @@ export class InventoryUISystem extends System {
         return entity?.getComponent<UIStateComponent>('uistate');
     }
 
-    /** 将屏幕像素坐标转换为世界坐标 — 使用 Phaser 内置方法 */
+    /** 将屏幕像素坐标转换为世界坐标 */
     private screenToWorld(screenX: number, screenY: number): { x: number; y: number } {
         const cam = this.scene.cameras.main;
         const worldPoint = cam.getWorldPoint(screenX, screenY);
@@ -250,7 +279,10 @@ export class InventoryUISystem extends System {
         rightGridX: number | null;
         gridY: number;
         panelW: number;
-        panelH: number;
+        leftPanelH: number;
+        rightPanelH: number;
+        equipGridX: number | null;
+        equipGridY: number | null;
     } {
         const cam = this.scene.cameras.main;
         const scale = this.uiScale;
@@ -260,7 +292,7 @@ export class InventoryUISystem extends System {
         const padding = this.BASE_PADDING * scale;
 
         const panelW = this.COLS * cellSize + (this.COLS - 1) * gap + padding * 2;
-        const panelH = this.ROWS * cellSize + (this.ROWS - 1) * gap + padding * 2;
+        const leftPanelH = this.ROWS * cellSize + (this.ROWS - 1) * gap + padding * 2;
 
         const cx = cam.midPoint.x;
         const cy = cam.midPoint.y;
@@ -268,22 +300,44 @@ export class InventoryUISystem extends System {
         let leftGridX: number;
         let rightGridX: number | null = null;
         let gridY: number;
+        let rightPanelH = leftPanelH;
+        let equipGridX: number | null = null;
+        let equipGridY: number | null = null;
 
         if (this.isContainerMode && this.containerEntity) {
             const gapBetween = 24 * scale;
             const totalW = panelW * 2 + gapBetween;
             leftGridX = cx - totalW / 2;
             rightGridX = leftGridX + panelW + gapBetween;
-            gridY = cy - panelH / 2;
+            gridY = cy - leftPanelH / 2;
             this.panelW = totalW;
+            this.panelH = leftPanelH;
         } else {
-            leftGridX = cx - panelW / 2;
-            gridY = cy - panelH / 2;
-            this.panelW = panelW;
-        }
-        this.panelH = panelH;
+            // 普通背包模式：左侧背包 + 右侧装备栏
+            const gapBetween = 24 * scale;
+            const equipLabelH = 14 * scale;
+            const equipGridH = cellSize;
+            const rightH = equipGridH + equipLabelH + padding * 2;
+            const maxH = Math.max(leftPanelH, rightH);
+            const totalW = panelW * 2 + gapBetween;
+            leftGridX = cx - totalW / 2;
+            rightGridX = leftGridX + panelW + gapBetween;
+            gridY = cy - maxH / 2;
 
-        return { leftGridX, rightGridX, gridY, panelW, panelH };
+            rightPanelH = maxH;
+            equipGridY = gridY + padding + equipLabelH;
+            const equipSlotTotalW = 3 * cellSize + 2 * (gap * 3);
+            equipGridX = rightGridX + (panelW - padding * 2 - equipSlotTotalW) / 2;
+
+            this.panelW = totalW;
+            this.panelH = maxH;
+        }
+
+        return {
+            leftGridX, rightGridX, gridY,
+            panelW, leftPanelH, rightPanelH,
+            equipGridX, equipGridY,
+        };
     }
 
     private renderGrid(): void {
@@ -291,41 +345,85 @@ export class InventoryUISystem extends System {
 
         const playerInventory = this.targetEntity.getComponent<InventoryComponent>('inventory')!;
         const containerInventory = this.containerEntity?.getComponent<InventoryComponent>('inventory');
+        const equipComp = this.targetEntity.getComponent<EquipmentSlotComponent>('equipment_slots');
 
         const scale = this.uiScale;
-        const { leftGridX, rightGridX, gridY, panelW, panelH } = this.getPanelLayout();
+        const {
+            leftGridX, rightGridX, gridY,
+            panelW, leftPanelH, rightPanelH,
+            equipGridX, equipGridY,
+        } = this.getPanelLayout();
         const padding = this.BASE_PADDING * scale;
 
         // 绘制背景面板
         this.panel.clear();
 
-        // 玩家面板背景
+        // 玩家面板背景（左侧）
         this.panel.fillStyle(0x1a1a2e, 0.95);
-        this.panel.fillRoundedRect(leftGridX - padding, gridY - padding, panelW, panelH, 8 * scale);
+        this.panel.fillRoundedRect(leftGridX - padding, gridY - padding, panelW, leftPanelH, 8 * scale);
         this.panel.lineStyle(2 * scale, 0x444466, 1);
-        this.panel.strokeRoundedRect(leftGridX - padding, gridY - padding, panelW, panelH, 8 * scale);
+        this.panel.strokeRoundedRect(leftGridX - padding, gridY - padding, panelW, leftPanelH, 8 * scale);
 
-        // 容器面板背景
         if (this.isContainerMode && rightGridX !== null) {
+            // 容器面板背景（右侧）
             this.panel.fillStyle(0x1a1a2e, 0.95);
-            this.panel.fillRoundedRect(rightGridX - padding, gridY - padding, panelW, panelH, 8 * scale);
+            this.panel.fillRoundedRect(rightGridX - padding, gridY - padding, panelW, leftPanelH, 8 * scale);
             this.panel.lineStyle(2 * scale, 0x444466, 1);
-            this.panel.strokeRoundedRect(rightGridX - padding, gridY - padding, panelW, panelH, 8 * scale);
+            this.panel.strokeRoundedRect(rightGridX - padding, gridY - padding, panelW, leftPanelH, 8 * scale);
+        } else if (!this.isContainerMode && rightGridX !== null) {
+            // 装备栏面板背景（右侧）
+            this.panel.fillStyle(0x1a1a2e, 0.95);
+            this.panel.fillRoundedRect(rightGridX - padding, gridY - padding, panelW, rightPanelH, 8 * scale);
+            this.panel.lineStyle(2 * scale, 0x444466, 1);
+            this.panel.strokeRoundedRect(rightGridX - padding, gridY - padding, panelW, rightPanelH, 8 * scale);
         }
 
         // 绘制格子和物品
         this.itemGraphics.clear();
         let textIdx = 0;
 
-        // 玩家格子
+        // 玩家格子（左侧）
         for (let i = 0; i < playerInventory.capacity; i++) {
             textIdx = this.renderSlot(leftGridX, gridY, i, playerInventory, scale, textIdx);
         }
 
-        // 容器格子
+        // 容器格子（右侧）
         if (this.isContainerMode && rightGridX !== null && containerInventory) {
             for (let i = 0; i < containerInventory.capacity; i++) {
                 textIdx = this.renderSlot(rightGridX, gridY, i, containerInventory, scale, textIdx);
+            }
+        }
+
+        // 装备栏格子（右侧）
+        if (!this.isContainerMode && equipGridX !== null && equipGridY !== null) {
+            const equipItems: (InventoryItem | null)[] = [
+                equipComp?.weapon ?? null,
+                equipComp?.armor ?? null,
+                equipComp?.helmet ?? null,
+            ];
+            const cellSize = this.BASE_CELL_SIZE * scale;
+            const gap = this.BASE_GAP * scale;
+            const equipGap = gap * 3;
+            for (let i = 0; i < equipItems.length; i++) {
+                const slotX = equipGridX + i * (cellSize + equipGap);
+                textIdx = this.renderEquipSlot(slotX, equipGridY, equipItems[i], scale, textIdx);
+            }
+
+            // 装备栏标签
+            this.equipLabel.setPosition(rightGridX, gridY + padding / 2);
+            this.equipLabel.setScale(scale);
+            this.equipLabel.visible = true;
+
+            for (let i = 0; i < this.equipSlotLabels.length; i++) {
+                const slotX = equipGridX + i * (cellSize + equipGap) + cellSize / 2;
+                this.equipSlotLabels[i].setPosition(slotX, equipGridY + cellSize + 2 * scale);
+                this.equipSlotLabels[i].setScale(scale);
+                this.equipSlotLabels[i].visible = true;
+            }
+        } else {
+            this.equipLabel.visible = false;
+            for (const text of this.equipSlotLabels) {
+                text.visible = false;
             }
         }
 
@@ -378,6 +476,41 @@ export class InventoryUISystem extends System {
         return textIdx;
     }
 
+    private renderEquipSlot(
+        gridX: number,
+        gridY: number,
+        item: InventoryItem | null,
+        scale: number,
+        textIdx: number
+    ): number {
+        const cellSize = this.BASE_CELL_SIZE * scale;
+
+        // 格子背景
+        this.itemGraphics.fillStyle(0x2a2a3e, 1);
+        this.itemGraphics.fillRect(gridX, gridY, cellSize, cellSize);
+
+        // 装备栏边框（蓝色突出）
+        this.itemGraphics.lineStyle(Math.max(1, scale), 0x6677aa, 1);
+        this.itemGraphics.strokeRect(gridX, gridY, cellSize, cellSize);
+
+        if (item) {
+            const color = this.itemColors[item.itemId] ?? 0xaaaaaa;
+            this.itemGraphics.fillStyle(color, 1);
+            this.itemGraphics.fillRect(gridX + 4 * scale, gridY + 4 * scale, cellSize - 8 * scale, cellSize - 8 * scale);
+
+            if (textIdx < this.quantityTexts.length) {
+                const text = this.quantityTexts[textIdx];
+                text.setPosition(gridX + cellSize - 3 * scale, gridY + cellSize - 2 * scale);
+                text.setScale(scale);
+                text.setText(item.quantity > 1 ? String(item.quantity) : '');
+                text.visible = true;
+                textIdx++;
+            }
+        }
+
+        return textIdx;
+    }
+
     private renderHeldItem(): void {
         if (!this.heldItem) {
             this.heldGraphics.visible = false;
@@ -418,6 +551,10 @@ export class InventoryUISystem extends System {
         for (const text of this.quantityTexts) {
             text.visible = false;
         }
+        this.equipLabel.visible = false;
+        for (const text of this.equipSlotLabels) {
+            text.visible = false;
+        }
         this.tooltipPanel.visible = false;
         this.tooltipName.visible = false;
         this.tooltipType.visible = false;
@@ -434,6 +571,12 @@ export class InventoryUISystem extends System {
 
         const slotInfo = this.getSlotAt(pointer.x, pointer.y);
         if (!slotInfo) return;
+
+        // 装备栏点击
+        if (slotInfo.source === 'equipment') {
+            this.handleEquipClick(slotInfo.index);
+            return;
+        }
 
         const { source, index } = slotInfo;
         const inventory = source === 'player'
@@ -456,38 +599,52 @@ export class InventoryUISystem extends System {
         const scale = this.uiScale;
         const cellSize = this.BASE_CELL_SIZE * scale;
         const gap = this.BASE_GAP * scale;
-        const { leftGridX, rightGridX, gridY } = this.getPanelLayout();
+        const {
+            leftGridX, rightGridX, gridY,
+            equipGridX, equipGridY,
+        } = this.getPanelLayout();
 
-        // 检测玩家面板
+        // 检测玩家面板（左侧）
         const playerRelX = worldX - leftGridX;
         const playerRelY = worldY - gridY;
         for (let i = 0; i < this.COLS * this.ROWS; i++) {
             const slotX = (i % this.COLS) * (cellSize + gap);
             const slotY = Math.floor(i / this.COLS) * (cellSize + gap);
             if (
-                playerRelX >= slotX &&
-                playerRelX < slotX + cellSize &&
-                playerRelY >= slotY &&
-                playerRelY < slotY + cellSize
+                playerRelX >= slotX && playerRelX < slotX + cellSize &&
+                playerRelY >= slotY && playerRelY < slotY + cellSize
             ) {
                 return { source: 'player', index: i };
             }
         }
 
-        // 检测容器面板
         if (this.isContainerMode && rightGridX !== null) {
+            // 检测容器面板（右侧）
             const containerRelX = worldX - rightGridX;
             const containerRelY = worldY - gridY;
             for (let i = 0; i < this.COLS * this.ROWS; i++) {
                 const slotX = (i % this.COLS) * (cellSize + gap);
                 const slotY = Math.floor(i / this.COLS) * (cellSize + gap);
                 if (
-                    containerRelX >= slotX &&
-                    containerRelX < slotX + cellSize &&
-                    containerRelY >= slotY &&
-                    containerRelY < slotY + cellSize
+                    containerRelX >= slotX && containerRelX < slotX + cellSize &&
+                    containerRelY >= slotY && containerRelY < slotY + cellSize
                 ) {
                     return { source: 'container', index: i };
+                }
+            }
+        }
+
+        if (!this.isContainerMode && equipGridX !== null && equipGridY !== null) {
+            // 检测装备栏
+            const equipGap = gap * 3;
+            for (let i = 0; i < 3; i++) {
+                const slotX = equipGridX + i * (cellSize + equipGap);
+                const slotY = equipGridY;
+                if (
+                    worldX >= slotX && worldX < slotX + cellSize &&
+                    worldY >= slotY && worldY < slotY + cellSize
+                ) {
+                    return { source: 'equipment', index: i };
                 }
             }
         }
@@ -624,6 +781,118 @@ export class InventoryUISystem extends System {
     }
 
     // ============================================================
+    // 装备栏交互
+    // ============================================================
+
+    private handleEquipClick(slotIndex: number): void {
+        if (!this.targetEntity) return;
+
+        const equipComp = this.targetEntity.getComponent<EquipmentSlotComponent>('equipment_slots')!;
+        const playerInventory = this.targetEntity.getComponent<InventoryComponent>('inventory')!;
+        const attrComp = this.targetEntity.getComponent<AttributeComponent>('attribute');
+        const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
+
+        const slotNames: ('weapon' | 'armor' | 'helmet')[] = ['weapon', 'armor', 'helmet'];
+        const slotName = slotNames[slotIndex];
+
+        // 情况1：手持物品，尝试装备
+        if (this.heldItem) {
+            const def = itemsMap?.[this.heldItem.itemId];
+            if (!def || def.type !== 'equipment' || def.equipment?.slot !== slotName) {
+                console.log(`[Equip] ${def?.name ?? this.heldItem.itemId} 无法装备到 ${this.slotLabel(slotName)} 槽`);
+                return;
+            }
+
+            // 如果槽位已有装备，先卸下回背包
+            const oldEquip = equipComp[slotName];
+            if (oldEquip) {
+                const emptySlot = playerInventory.items.findIndex(item => item === null);
+                if (emptySlot < 0) {
+                    console.log('[Equip] 背包已满，无法更换装备');
+                    return;
+                }
+                playerInventory.items[emptySlot] = oldEquip;
+                this.logUnequip(oldEquip.itemId, itemsMap);
+            }
+
+            // 装备新物品
+            equipComp[slotName] = { ...this.heldItem };
+            this.logEquip(this.heldItem.itemId, itemsMap);
+            this.clearHeld();
+
+            // 重新计算属性
+            this.recalculateAttributes(equipComp, attrComp, itemsMap);
+            return;
+        }
+
+        // 情况2：没有手持物品，尝试卸下
+        const currentEquip = equipComp[slotName];
+        if (currentEquip) {
+            // 把装备拿在手中（玩家可以拖到背包空位放下）
+            this.heldItem = { ...currentEquip };
+            this.heldFromSlot = -1;
+            this.heldSource = 'player';
+            equipComp[slotName] = null;
+
+            this.logUnequip(currentEquip.itemId, itemsMap);
+            this.recalculateAttributes(equipComp, attrComp, itemsMap);
+        }
+    }
+
+    private recalculateAttributes(
+        equipComp: EquipmentSlotComponent,
+        attrComp: AttributeComponent | undefined,
+        itemsMap: Record<string, ItemDefinition> | undefined
+    ): void {
+        if (!attrComp) return;
+
+        let equipAttack = 0;
+        let equipDefense = 0;
+
+        const slots: ('weapon' | 'armor' | 'helmet')[] = ['weapon', 'armor', 'helmet'];
+        for (const slot of slots) {
+            const item = equipComp[slot];
+            if (item) {
+                const def = itemsMap?.[item.itemId];
+                if (def?.equipment) {
+                    equipAttack += def.equipment.attack ?? 0;
+                    equipDefense += def.equipment.defense ?? 0;
+                }
+            }
+        }
+
+        const oldAttack = attrComp.attack;
+        const oldDefense = attrComp.defense;
+        attrComp.attack = attrComp.baseAttack + equipAttack;
+        attrComp.defense = attrComp.baseDefense + equipDefense;
+
+        if (oldAttack !== attrComp.attack || oldDefense !== attrComp.defense) {
+            console.log(`[Attribute] 攻击: ${oldAttack} → ${attrComp.attack}, 防御: ${oldDefense} → ${attrComp.defense}`);
+        }
+    }
+
+    private logEquip(itemId: string, itemsMap: Record<string, ItemDefinition> | undefined): void {
+        const def = itemsMap?.[itemId];
+        if (def) {
+            const attrs: string[] = [];
+            if (def.equipment?.attack) attrs.push(`攻击+${def.equipment.attack}`);
+            if (def.equipment?.defense) attrs.push(`防御+${def.equipment.defense}`);
+            console.log(`[Equip] 装备 ${def.name}${attrs.length > 0 ? ' (' + attrs.join(', ') + ')' : ''}`);
+        } else {
+            console.log(`[Equip] 装备 ${itemId}`);
+        }
+    }
+
+    private logUnequip(itemId: string, itemsMap: Record<string, ItemDefinition> | undefined): void {
+        const def = itemsMap?.[itemId];
+        if (def) {
+            console.log(`[Equip] 卸下 ${def.name}`);
+        } else {
+            console.log(`[Equip] 卸下 ${itemId}`);
+        }
+    }
+
+    // ============================================================
     // Tooltip
     // ============================================================
 
@@ -642,16 +911,20 @@ export class InventoryUISystem extends System {
         }
 
         const { source, index } = slotInfo;
-        const inventory = source === 'player'
-            ? this.targetEntity.getComponent<InventoryComponent>('inventory')!
-            : this.containerEntity?.getComponent<InventoryComponent>('inventory')!;
 
-        if (!inventory) {
-            this.hideTooltip();
-            return;
+        let item: InventoryItem | null = null;
+        if (source === 'player') {
+            const inventory = this.targetEntity.getComponent<InventoryComponent>('inventory')!;
+            item = inventory.items[index];
+        } else if (source === 'container') {
+            const inventory = this.containerEntity?.getComponent<InventoryComponent>('inventory');
+            item = inventory?.items[index] ?? null;
+        } else if (source === 'equipment') {
+            const equipComp = this.targetEntity.getComponent<EquipmentSlotComponent>('equipment_slots');
+            const equipItems = [equipComp?.weapon, equipComp?.armor, equipComp?.helmet];
+            item = equipItems[index] ?? null;
         }
 
-        const item = inventory.items[index];
         if (!item) {
             this.hideTooltip();
             return;

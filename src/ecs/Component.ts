@@ -115,7 +115,11 @@ export interface ItemDefinition {
     usable?: boolean;
     useEffect?: { type: string; value: number; target: string };
     equipment?: { slot: string; attack?: number; defense?: number };
-    value: number;
+    value?: number;
+    /** 购买价格：物品ID → 数量（为空则不能购买） */
+    buyPrice?: Record<string, number>;
+    /** 出售价格：物品ID → 数量（为空则不能出售） */
+    sellPrice?: Record<string, number>;
 }
 
 /** 库存中的单个道具实例 */
@@ -147,8 +151,11 @@ export class UIStateComponent implements Component {
     readonly type = 'uistate';
     inventoryOpen = false;
     containerOpen = false;
+    storeOpen = false;
     /** 当前交互的容器实体 */
     activeContainer: Entity | null = null;
+    /** 当前交互的商店实体 */
+    activeStore: Entity | null = null;
 }
 
 /** 容器标记组件 */
@@ -156,4 +163,62 @@ export class ContainerComponent implements Component {
     readonly type = 'container';
     /** 交互提示文字（如"按 E 打开"） */
     promptText: string = '宝箱';
+}
+
+/** 掉落组件：标记实体死亡时触发掉落 */
+export class DropComponent implements Component {
+    readonly type = 'drop';
+    /** 掉落表 key（对应 drops-map.json） */
+    dropTable: string;
+
+    constructor(dropTable: string = 'default_enemy') {
+        this.dropTable = dropTable;
+    }
+}
+
+/** 地面物品组件：标记可被拾取的掉落物 */
+export class GroundItemComponent implements Component {
+    readonly type = 'grounditem';
+    itemId: string;
+    quantity: number;
+
+    constructor(itemId: string, quantity: number) {
+        this.itemId = itemId;
+        this.quantity = quantity;
+    }
+}
+
+/** 商店组件：标记实体为商店NPC */
+export class StoreComponent implements Component {
+    readonly type = 'store';
+    /** 商店名称（显示在UI标题中） */
+    name: string;
+    /** 出售的商品列表 */
+    goods: InventoryItem[];
+
+    constructor(name: string = '商人') {
+        this.name = name;
+        this.goods = [];
+    }
+}
+
+/** 装备槽组件：存储角色已装备的道具 */
+export class EquipmentSlotComponent implements Component {
+    readonly type = 'equipment_slots';
+    weapon: InventoryItem | null = null;
+    armor: InventoryItem | null = null;
+    helmet: InventoryItem | null = null;
+}
+
+/** 角色属性组件：存储攻击/防御等战斗属性 */
+export class AttributeComponent implements Component {
+    readonly type = 'attribute';
+    /** 基础攻击力 */
+    baseAttack: number = 0;
+    /** 基础防御力 */
+    baseDefense: number = 0;
+    /** 当前总攻击力（基础 + 装备加成） */
+    attack: number = 0;
+    /** 当前总防御力（基础 + 装备加成） */
+    defense: number = 0;
 }

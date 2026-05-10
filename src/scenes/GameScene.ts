@@ -4,11 +4,16 @@ import { RenderComponent, HealthComponent, SpriteComponent, VisualComponent, Inv
 import { Player } from '../entity/Player';
 import { Enemy } from '../entity/Enemy';
 import { Container } from '../entity/Container';
+import { Store } from '../entity/Store';
 import { InputSystem } from '../systems/InputSystem';
 import { InventorySystem } from '../systems/InventorySystem';
 import { InventoryUISystem } from '../systems/InventoryUISystem';
 import { SystemMenuSystem } from '../systems/SystemMenuSystem';
 import { ContainerSystem } from '../systems/ContainerSystem';
+import { DropSystem } from '../systems/DropSystem';
+import { PickupSystem } from '../systems/PickupSystem';
+import { StoreSystem } from '../systems/StoreSystem';
+import { StoreUISystem } from '../systems/StoreUISystem';
 import { EnemyAISystem } from '../systems/EnemyAISystem';
 import { AttackSystem } from '../systems/AttackSystem';
 import { HitSystem } from '../systems/HitSystem';
@@ -32,8 +37,12 @@ export class GameScene extends Scene {
     private inputSystem!: InputSystem;
     private containerSystem!: ContainerSystem;
     private inventorySystem!: InventorySystem;
+    private dropSystem!: DropSystem;
+    private pickupSystem!: PickupSystem;
     private inventoryUISystem!: InventoryUISystem;
     private systemMenuSystem!: SystemMenuSystem;
+    private storeSystem!: StoreSystem;
+    private storeUISystem!: StoreUISystem;
     private enemyAISystem!: EnemyAISystem;
     private attackSystem!: AttackSystem;
     private hitSystem!: HitSystem;
@@ -94,7 +103,7 @@ export class GameScene extends Scene {
                     playerY = obj.y;
                 }
                 if (obj.type === 'Enemy' && obj.x != null && obj.y != null) {
-                    const enemy = new Enemy(this, obj.x, obj.y);
+                    const enemy = new Enemy(this, obj.x, obj.y, 'default_enemy');
                     this.entities.push(enemy);
                 }
                 if (obj.type === 'Container' && obj.x != null && obj.y != null) {
@@ -124,6 +133,31 @@ export class GameScene extends Scene {
                     }
                     const container = new Container(this, obj.x, obj.y, itemsMap, presetItems);
                     this.entities.push(container);
+                }
+                if (obj.type === 'Store' && obj.x != null && obj.y != null) {
+                    const storeGoods: { itemId: string; quantity: number }[] = [];
+                    if (obj.properties) {
+                        if (Array.isArray(obj.properties)) {
+                            const props = obj.properties as Array<{ name: string; value: unknown }>;
+                            for (const prop of props) {
+                                const qty = this.extractQuantity(prop.value);
+                                if (itemsMap[prop.name] && qty > 0) {
+                                    storeGoods.push({ itemId: prop.name, quantity: qty });
+                                }
+                            }
+                        } else {
+                            const props = obj.properties as Record<string, unknown>;
+                            for (const [key, value] of Object.entries(props)) {
+                                const qty = this.extractQuantity(value);
+                                if (itemsMap[key] && qty > 0) {
+                                    storeGoods.push({ itemId: key, quantity: qty });
+                                }
+                            }
+                        }
+                    }
+                    const storeName = obj.name || '商人';
+                    const store = new Store(this, obj.x, obj.y, storeName, storeGoods);
+                    this.entities.push(store);
                 }
                 if (obj.type === 'camera' && obj.properties) {
                     const props = obj.properties as Array<{ name: string; value: number }>;
@@ -178,6 +212,34 @@ export class GameScene extends Scene {
             }
         }
 
+        // 容器与所有其他有精灵的实体碰撞（防止穿过）
+        for (const entity of this.entities) {
+            if (!entity.hasComponent('container')) continue;
+            const containerSprite = entity.getComponent<SpriteComponent>('sprite')?.sprite;
+            if (!containerSprite) continue;
+            for (const other of this.entities) {
+                if (other === entity) continue;
+                const otherSprite = other.getComponent<SpriteComponent>('sprite')?.sprite;
+                if (otherSprite) {
+                    this.physics.add.collider(containerSprite, otherSprite);
+                }
+            }
+        }
+
+        // 商店与所有其他有精灵的实体碰撞（防止穿过）
+        for (const entity of this.entities) {
+            if (!entity.hasComponent('store')) continue;
+            const storeSprite = entity.getComponent<SpriteComponent>('sprite')?.sprite;
+            if (!storeSprite) continue;
+            for (const other of this.entities) {
+                if (other === entity) continue;
+                const otherSprite = other.getComponent<SpriteComponent>('sprite')?.sprite;
+                if (otherSprite) {
+                    this.physics.add.collider(storeSprite, otherSprite);
+                }
+            }
+        }
+
         // 为所有拥有生命值的实体创建血条
         for (const entity of this.entities) {
             if (entity.hasComponent('health')) {
@@ -204,8 +266,12 @@ export class GameScene extends Scene {
         this.inputSystem = new InputSystem(this);
         this.containerSystem = new ContainerSystem(this);
         this.inventorySystem = new InventorySystem(this);
+        this.dropSystem = new DropSystem(this);
+        this.pickupSystem = new PickupSystem(this);
         this.inventoryUISystem = new InventoryUISystem(this);
         this.systemMenuSystem = new SystemMenuSystem(this);
+        this.storeSystem = new StoreSystem(this);
+        this.storeUISystem = new StoreUISystem(this);
         this.enemyAISystem = new EnemyAISystem(this);
         this.attackSystem = new AttackSystem(this);
         this.hitSystem = new HitSystem(this);
@@ -311,6 +377,8 @@ export class GameScene extends Scene {
         this.inventorySystem.update(this.entities, delta);
         this.enemyAISystem.update(this.entities, delta);
         this.hitSystem.update(this.entities, delta);
+        this.dropSystem.update(this.entities, delta);
+        this.pickupSystem.update(this.entities, delta);
 
         this.entities = this.entities.filter(e => e.active);
 
@@ -318,6 +386,8 @@ export class GameScene extends Scene {
         this.movementSystem.update(this.entities, delta);
         this.animationSystem.update(this.entities, delta);
         this.inventoryUISystem.update(this.entities, delta);
+        this.storeSystem.update(this.entities, delta);
+        this.storeUISystem.update(this.entities, delta);
         this.systemMenuSystem.update(this.entities, delta);
 
         // 清理已销毁实体的血条

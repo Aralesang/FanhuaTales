@@ -333,8 +333,36 @@
                  "id":10,
                  "name":"\u5546\u4eba",
                  "point":true,
+                 "properties":[
+                        {
+                         "name":"iron_sword",
+                         "propertytype":"Item",
+                         "type":"class",
+                         "value":
+                            {
+                             "quantity":1
+                            }
+                        }, 
+                        {
+                         "name":"leather_armor",
+                         "propertytype":"Item",
+                         "type":"class",
+                         "value":
+                            {
+                             "quantity":1
+                            }
+                        }, 
+                        {
+                         "name":"wooden_helmet",
+                         "propertytype":"Item",
+                         "type":"class",
+                         "value":
+                            {
+                             "quantity":1
+                            }
+                        }],
                  "rotation":0,
-                 "type":"NPC",
+                 "type":"Store",
                  "visible":true,
                  "width":0,
                  "x":248.545,
@@ -352,7 +380,7 @@
                          "type":"class",
                          "value":
                             {
-                             "quantity":10
+                             "quantity":999
                             }
                         }, 
                         {

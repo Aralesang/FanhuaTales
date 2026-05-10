@@ -6,7 +6,6 @@
     "type": "consumable",
     "stackable": true,
     "maxStack": 99,
-    "quantity": 1,
     "width": 1,
     "height": 1,
     "usable": true,
@@ -15,7 +14,12 @@
       "value": 50,
       "target": "self"
     },
-    "value": 5
+    "buyPrice": {
+      "gold_coin": 3
+    },
+    "sellPrice": {
+      "gold_coin": 1
+    }
   },
   "iron_sword": {
     "id": "iron_sword",
@@ -24,14 +28,18 @@
     "type": "equipment",
     "stackable": false,
     "maxStack": 1,
-    "quantity": 1,
     "width": 1,
     "height": 3,
     "equipment": {
       "slot": "weapon",
       "attack": 5
     },
-    "value": 10
+    "buyPrice": {
+      "gold_coin": 10
+    },
+    "sellPrice": {
+      "gold_coin": 5
+    }
   },
   "leather_armor": {
     "id": "leather_armor",
@@ -40,14 +48,18 @@
     "type": "equipment",
     "stackable": false,
     "maxStack": 1,
-    "quantity": 1,
     "width": 2,
     "height": 3,
     "equipment": {
       "slot": "armor",
       "defense": 3
     },
-    "value": 15
+    "buyPrice": {
+      "gold_coin": 15
+    },
+    "sellPrice": {
+      "gold_coin": 8
+    }
   },
   "wooden_helmet": {
     "id": "wooden_helmet",
@@ -56,14 +68,18 @@
     "type": "equipment",
     "stackable": false,
     "maxStack": 1,
-    "quantity": 1,
     "width": 2,
     "height": 2,
     "equipment": {
       "slot": "helmet",
       "defense": 1
     },
-    "value": 8
+    "buyPrice": {
+      "gold_coin": 8
+    },
+    "sellPrice": {
+      "gold_coin": 4
+    }
   },
   "gold_coin": {
     "id": "gold_coin",
@@ -72,9 +88,7 @@
     "type": "material",
     "stackable": true,
     "maxStack": 999,
-    "quantity": 1,
     "width": 1,
-    "height": 1,
-    "value": 1
+    "height": 1
   }
 }
