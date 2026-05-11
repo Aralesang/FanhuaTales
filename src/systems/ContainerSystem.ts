@@ -2,7 +2,7 @@ import { Scene, Input, GameObjects } from 'phaser';
 import { System } from '../ecs/System';
 import { Entity } from '../ecs/Entity';
 import { FontConfig } from '../config/FontConfig';
-import { SpriteComponent, ContainerComponent, UIStateComponent, VisualComponent } from '../ecs/Component';
+import { SpriteComponent, ContainerComponent, UIStateComponent, VisualComponent, AnimationComponent } from '../ecs/Component';
 
 export class ContainerSystem extends System {
     private eKey!: Input.Keyboard.Key;
@@ -66,8 +66,9 @@ export class ContainerSystem extends System {
             }
         }
 
-        // 更新交互提示
-        const canInteract = nearestContainer && nearestDist <= this.INTERACT_DISTANCE && !uistate.containerOpen;
+        // 更新交互提示：必须距离足够近且玩家面向容器
+        const isFacingContainer = nearestContainer ? this.isFacing(player, nearestContainer) : false;
+        const canInteract = !!nearestContainer && nearestDist <= this.INTERACT_DISTANCE && isFacingContainer && !uistate.containerOpen;
         this.updatePrompt(nearestContainer, canInteract);
 
         // 检测 E 键按下
@@ -130,5 +131,30 @@ export class ContainerSystem extends System {
     private getUIState(entities: Entity[]): UIStateComponent | undefined {
         const entity = entities.find(e => e.hasComponent('uistate'));
         return entity?.getComponent<UIStateComponent>('uistate');
+    }
+
+    /** 判断玩家是否面向目标实体 */
+    private isFacing(player: Entity, target: Entity): boolean {
+        const anim = player.getComponent<AnimationComponent>('animation');
+        const playerSprite = player.getComponent<SpriteComponent>('sprite')?.sprite;
+        const targetSprite = target.getComponent<SpriteComponent>('sprite')?.sprite;
+        if (!anim || !playerSprite || !targetSprite) return false;
+
+        const dx = targetSprite.x - playerSprite.x;
+        const dy = targetSprite.y - playerSprite.y;
+
+        // 重叠时允许交互
+        if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return true;
+
+        switch (anim.facing) {
+            case 'right':
+                return playerSprite.flipX ? dx < 0 : dx > 0;
+            case 'down':
+                return dy > 0;
+            case 'up':
+                return dy < 0;
+            default:
+                return false;
+        }
     }
 }

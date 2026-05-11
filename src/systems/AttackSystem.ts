@@ -1,7 +1,7 @@
 import { Scene, Physics, GameObjects } from 'phaser';
 import { System } from '../ecs/System';
 import { Entity } from '../ecs/Entity';
-import { AttackComponent, AnimationComponent, HitStunComponent } from '../ecs/Component';
+import { AttackComponent, AnimationComponent, HitStunComponent, AttributeComponent } from '../ecs/Component';
 
 export class AttackSystem extends System {
     private previousAttackState: WeakMap<Entity, boolean> = new WeakMap();
@@ -166,13 +166,21 @@ export class AttackSystem extends System {
 
             const dist = Math.sqrt((hx - tx) * (hx - tx) + (hy - ty) * (hy - ty));
             if (dist < hitRadius + Math.max(targetBody.width, targetBody.height) / 2) {
-                // 命中，写入受击数据
+                // 命中，计算伤害（应用攻击者攻击力和被攻击者防御力）
+                const attackerAttr = attacker.getComponent<AttributeComponent>('attribute');
+                const targetAttr = target.getComponent<AttributeComponent>('attribute');
+                const baseDamage = 25;
+                const attackPower = attackerAttr?.attack ?? 0;
+                const defensePower = targetAttr?.defense ?? 0;
+                const rawDamage = baseDamage + attackPower - defensePower;
+                const damage = Math.max(1, rawDamage);
+
                 if (!target.hasComponent('hitstun')) {
                     target.addComponent(new HitStunComponent());
                 }
                 const hitStun = target.getComponent<HitStunComponent>('hitstun')!;
                 hitStun.isHit = true;
-                hitStun.damage = 25;
+                hitStun.damage = damage;
 
                 // 击退方向：从攻击者中心指向目标
                 const dx = tx - cx;

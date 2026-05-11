@@ -3,7 +3,8 @@ import { Entity } from '../ecs/Entity';
 import {
     MovementComponent, AnimationComponent, AIComponent,
     RenderComponent, HealthComponent, AttackComponent,
-    SpriteComponent, VisualComponent, DropComponent
+    SpriteComponent, VisualComponent, DropComponent,
+    AttributeComponent
 } from '../ecs/Component';
 
 export class Enemy extends Entity {
@@ -43,6 +44,14 @@ export class Enemy extends Entity {
 
         // 攻击组件
         this.addComponent(new AttackComponent());
+
+        // 属性组件
+        const attr = new AttributeComponent();
+        attr.baseAttack = 5;
+        attr.baseDefense = 2;
+        attr.attack = attr.baseAttack;
+        attr.defense = attr.baseDefense;
+        this.addComponent(attr);
 
         // 掉落组件
         this.addComponent(new DropComponent(dropTable));

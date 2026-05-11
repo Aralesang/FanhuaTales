@@ -1,5 +1,6 @@
 import { Scene, Input, Tilemaps, GameObjects } from 'phaser';
 import { Entity } from '../ecs/Entity';
+import { FontConfig } from '../config/FontConfig';
 import { RenderComponent, HealthComponent, SpriteComponent, VisualComponent, InventoryComponent, ItemDefinition, SettingsComponent, UIStateComponent } from '../ecs/Component';
 import { Player } from '../entity/Player';
 import { Enemy } from '../entity/Enemy';
@@ -32,6 +33,10 @@ export class GameScene extends Scene {
 
     // 血条映射：实体 -> 血条 Graphics
     private healthBars: Map<Entity, GameObjects.Graphics> = new Map();
+
+    // 左上角玩家 HUD
+    private playerHudBar!: GameObjects.Graphics;
+    private playerHudText!: GameObjects.Text;
 
     // ECS 系统
     private inputSystem!: InputSystem;
@@ -262,6 +267,18 @@ export class GameScene extends Scene {
         }
         this.cameras.main.roundPixels = false;
 
+        // 初始化左上角玩家 HUD
+        this.playerHudBar = this.add.graphics();
+        this.playerHudBar.setDepth(9998);
+
+        this.playerHudText = this.add.text(0, 0, '', {
+            fontSize: FontConfig.large.size,
+            color: '#ffffff',
+            fontFamily: FontConfig.large.family,
+            resolution: 3,
+        });
+        this.playerHudText.setDepth(9999);
+
         // 初始化 ECS 系统
         this.inputSystem = new InputSystem(this);
         this.containerSystem = new ContainerSystem(this);
@@ -407,5 +424,59 @@ export class GameScene extends Scene {
                 }
             }
         }
+
+        // 更新左上角玩家 HUD
+        this.updatePlayerHud();
+    }
+
+    /**
+     * 更新左上角玩家血量 HUD（跟随相机视口左上角）
+     */
+    private updatePlayerHud(): void {
+        const player = this.entities.find(e => e.hasComponent('player') && e.hasComponent('health'));
+        if (!player) {
+            this.playerHudBar.visible = false;
+            this.playerHudText.visible = false;
+            return;
+        }
+
+        const health = player.getComponent<HealthComponent>('health')!;
+        const ratio = Math.max(0, health.hp / health.maxHp);
+
+        const cam = this.cameras.main;
+        // 计算屏幕左上角对应的世界坐标，使 HUD 始终固定在视口左上角
+        const worldOrigin = cam.getWorldPoint(0, 0);
+        const pad = 10;
+        const barW = 100;
+        const barH = 10;
+
+        const x = worldOrigin.x + pad;
+        const y = worldOrigin.y + pad;
+
+        // 绘制血条背景 + 前景（文本直接叠加在血条上）
+        this.playerHudBar.clear();
+
+        // 血条背景
+        this.playerHudBar.fillStyle(0x333333, 1);
+        this.playerHudBar.fillRoundedRect(x, y, barW, barH, 3);
+
+        // 血条前景
+        const hpColor = ratio > 0.5 ? 0x44cc44 : ratio > 0.25 ? 0xccaa22 : 0xcc3333;
+        if (ratio > 0) {
+            this.playerHudBar.fillStyle(hpColor, 1);
+            this.playerHudBar.fillRoundedRect(x, y, barW * ratio, barH, 3);
+        }
+
+        // 血条边框
+        this.playerHudBar.lineStyle(1, 0x666688, 1);
+        this.playerHudBar.strokeRoundedRect(x, y, barW, barH, 3);
+        this.playerHudBar.visible = true;
+
+        // 血量文字叠加在血条中央
+        this.playerHudText.setPosition(x + barW / 2, y + barH / 2);
+        this.playerHudText.setOrigin(0.5, 0.5);
+        this.playerHudText.setScale(0.5);
+        this.playerHudText.setText(`${health.hp} / ${health.maxHp}`);
+        this.playerHudText.visible = true;
     }
 }
