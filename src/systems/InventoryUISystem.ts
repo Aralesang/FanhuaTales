@@ -5,11 +5,11 @@ import { FontConfig } from '../config/FontConfig';
 import {
     InventoryComponent, ItemDefinition, InventoryItem,
     SettingsComponent, UIStateComponent, EquipmentSlotComponent,
-    AttributeComponent
+    AttributeComponent, HotbarComponent
 } from '../ecs/Component';
 
 interface SlotRef {
-    source: 'player' | 'container' | 'equipment';
+    source: 'player' | 'container' | 'equipment' | 'hotbar';
     index: number;
 }
 
@@ -34,6 +34,10 @@ export class InventoryUISystem extends System {
     // 装备栏标签
     private equipLabel!: GameObjects.Text;
     private equipSlotLabels: GameObjects.Text[] = [];
+
+    // 快捷栏
+    private hotbarLabel!: GameObjects.Text;
+    private hotbarSlotLabels: GameObjects.Text[] = [];
 
     // Tooltip 元素
     private tooltipPanel!: GameObjects.Graphics;
@@ -122,6 +126,27 @@ export class InventoryUISystem extends System {
             text.setOrigin(0.5, 0);
             text.visible = false;
             this.equipSlotLabels.push(text);
+        }
+
+        // 快捷栏标签
+        this.hotbarLabel = this.createText(0, 0, '快捷栏', {
+            fontSize: FontConfig.small.size, color: '#8888aa',
+            fontFamily: FontConfig.small.family,
+        });
+        this.hotbarLabel.setDepth(1001);
+        this.hotbarLabel.setOrigin(0, 0);
+        this.hotbarLabel.visible = false;
+
+        const hotbarNames = ['上', '下', '左', '右'];
+        for (const name of hotbarNames) {
+            const text = this.createText(0, 0, name, {
+                fontSize: FontConfig.tiny.size, color: '#666688',
+                fontFamily: FontConfig.small.family,
+            });
+            text.setDepth(1001);
+            text.setOrigin(0.5, 0);
+            text.visible = false;
+            this.hotbarSlotLabels.push(text);
         }
 
         // Tooltip（depth 高于血条 9998）
@@ -284,6 +309,8 @@ export class InventoryUISystem extends System {
         rightPanelH: number;
         equipGridX: number | null;
         equipGridY: number | null;
+        hotbarGridX: number | null;
+        hotbarGridY: number | null;
     } {
         const cam = this.scene.cameras.main;
         const scale = this.uiScale;
@@ -304,6 +331,8 @@ export class InventoryUISystem extends System {
         let rightPanelH = leftPanelH;
         let equipGridX: number | null = null;
         let equipGridY: number | null = null;
+        let hotbarGridX: number | null = null;
+        let hotbarGridY: number | null = null;
 
         if (this.isContainerMode && this.containerEntity) {
             const gapBetween = 24 * scale;
@@ -314,11 +343,14 @@ export class InventoryUISystem extends System {
             this.panelW = totalW;
             this.panelH = leftPanelH;
         } else {
-            // 普通背包模式：左侧背包 + 右侧装备栏
+            // 普通背包模式：左侧背包 + 右侧装备栏 + 快捷栏
             const gapBetween = 24 * scale;
-            const equipLabelH = 14 * scale;
+            const labelH = 14 * scale;
             const equipGridH = cellSize;
-            const rightH = equipGridH + equipLabelH + padding * 2;
+            const hotbarGridH = cellSize;
+            const sectionGap = 16 * scale;
+            const rightContentH = equipGridH + labelH + sectionGap + hotbarGridH + labelH;
+            const rightH = rightContentH + padding * 2;
             const maxH = Math.max(leftPanelH, rightH);
             const totalW = panelW * 2 + gapBetween;
             leftGridX = cx - totalW / 2;
@@ -326,9 +358,17 @@ export class InventoryUISystem extends System {
             gridY = cy - maxH / 2;
 
             rightPanelH = maxH;
-            equipGridY = gridY + padding + equipLabelH;
+
+            // 装备栏位置
+            equipGridY = gridY + padding + labelH;
             const equipSlotTotalW = 3 * cellSize + 2 * (gap * 3);
             equipGridX = rightGridX + (panelW - padding * 2 - equipSlotTotalW) / 2;
+
+            // 快捷栏位置（装备栏下方）
+            const hotbarY = equipGridY + equipGridH + sectionGap + labelH;
+            hotbarGridY = hotbarY;
+            const hotbarSlotTotalW = 4 * cellSize + 3 * (gap * 3);
+            hotbarGridX = rightGridX + (panelW - padding * 2 - hotbarSlotTotalW) / 2;
 
             this.panelW = totalW;
             this.panelH = maxH;
@@ -338,6 +378,7 @@ export class InventoryUISystem extends System {
             leftGridX, rightGridX, gridY,
             panelW, leftPanelH, rightPanelH,
             equipGridX, equipGridY,
+            hotbarGridX, hotbarGridY,
         };
     }
 
@@ -353,6 +394,7 @@ export class InventoryUISystem extends System {
             leftGridX, rightGridX, gridY,
             panelW, leftPanelH, rightPanelH,
             equipGridX, equipGridY,
+            hotbarGridX, hotbarGridY,
         } = this.getPanelLayout();
         const padding = this.BASE_PADDING * scale;
 
@@ -424,6 +466,42 @@ export class InventoryUISystem extends System {
         } else {
             this.equipLabel.visible = false;
             for (const text of this.equipSlotLabels) {
+                text.visible = false;
+            }
+        }
+
+        // 快捷栏格子（右侧下方）
+        if (!this.isContainerMode && hotbarGridX !== null && hotbarGridY !== null) {
+            const hotbarComp = this.targetEntity?.getComponent<HotbarComponent>('hotbar');
+            const playerInventory = this.targetEntity.getComponent<InventoryComponent>('inventory');
+            const cellSize = this.BASE_CELL_SIZE * scale;
+            const gap = this.BASE_GAP * scale;
+            const hotbarGap = gap * 3;
+            for (let i = 0; i < 4; i++) {
+                const slotX = hotbarGridX + i * (cellSize + hotbarGap);
+                const itemId = hotbarComp?.slots[i] ?? null;
+                // 从背包中查找该物品的实际总数量
+                const totalQty = itemId && playerInventory
+                    ? playerInventory.items.reduce((sum, item) => sum + (item?.itemId === itemId ? item.quantity : 0), 0)
+                    : 0;
+                const item: InventoryItem | null = itemId ? { itemId, quantity: totalQty } : null;
+                textIdx = this.renderHotbarSlot(slotX, hotbarGridY, item, scale, textIdx);
+            }
+
+            // 快捷栏标签
+            this.hotbarLabel.setPosition(rightGridX, hotbarGridY - 14 * scale);
+            this.hotbarLabel.setScale(scale);
+            this.hotbarLabel.visible = true;
+
+            for (let i = 0; i < this.hotbarSlotLabels.length; i++) {
+                const slotX = hotbarGridX + i * (cellSize + hotbarGap) + cellSize / 2;
+                this.hotbarSlotLabels[i].setPosition(slotX, hotbarGridY + cellSize + 2 * scale);
+                this.hotbarSlotLabels[i].setScale(scale);
+                this.hotbarSlotLabels[i].visible = true;
+            }
+        } else {
+            this.hotbarLabel.visible = false;
+            for (const text of this.hotbarSlotLabels) {
                 text.visible = false;
             }
         }
@@ -512,6 +590,43 @@ export class InventoryUISystem extends System {
         return textIdx;
     }
 
+    private renderHotbarSlot(
+        gridX: number,
+        gridY: number,
+        item: InventoryItem | null,
+        scale: number,
+        textIdx: number
+    ): number {
+        const cellSize = this.BASE_CELL_SIZE * scale;
+
+        // 格子背景
+        this.itemGraphics.fillStyle(0x2a2a3e, 1);
+        this.itemGraphics.fillRect(gridX, gridY, cellSize, cellSize);
+
+        // 快捷栏边框（金色突出）
+        this.itemGraphics.lineStyle(Math.max(1, scale), 0xaa8844, 1);
+        this.itemGraphics.strokeRect(gridX, gridY, cellSize, cellSize);
+
+        if (item) {
+            const hasStock = item.quantity > 0;
+            const color = this.itemColors[item.itemId] ?? 0xaaaaaa;
+            this.itemGraphics.fillStyle(color, hasStock ? 1 : 0.3);
+            this.itemGraphics.fillRect(gridX + 4 * scale, gridY + 4 * scale, cellSize - 8 * scale, cellSize - 8 * scale);
+
+            if (textIdx < this.quantityTexts.length) {
+                const text = this.quantityTexts[textIdx];
+                text.setPosition(gridX + cellSize - 3 * scale, gridY + cellSize - 2 * scale);
+                text.setScale(scale);
+                // 快捷栏始终显示数量（包括0），方便玩家看到库存状态
+                text.setText(String(item.quantity));
+                text.visible = true;
+                textIdx++;
+            }
+        }
+
+        return textIdx;
+    }
+
     private renderHeldItem(): void {
         if (!this.heldItem) {
             this.heldGraphics.visible = false;
@@ -556,6 +671,10 @@ export class InventoryUISystem extends System {
         for (const text of this.equipSlotLabels) {
             text.visible = false;
         }
+        this.hotbarLabel.visible = false;
+        for (const text of this.hotbarSlotLabels) {
+            text.visible = false;
+        }
         this.tooltipPanel.visible = false;
         this.tooltipName.visible = false;
         this.tooltipType.visible = false;
@@ -576,6 +695,12 @@ export class InventoryUISystem extends System {
         // 装备栏点击
         if (slotInfo.source === 'equipment') {
             this.handleEquipClick(slotInfo.index);
+            return;
+        }
+
+        // 快捷栏点击
+        if (slotInfo.source === 'hotbar') {
+            this.handleHotbarClick(slotInfo.index);
             return;
         }
 
@@ -603,6 +728,7 @@ export class InventoryUISystem extends System {
         const {
             leftGridX, rightGridX, gridY,
             equipGridX, equipGridY,
+            hotbarGridX, hotbarGridY,
         } = this.getPanelLayout();
 
         // 检测玩家面板（左侧）
@@ -646,6 +772,21 @@ export class InventoryUISystem extends System {
                     worldY >= slotY && worldY < slotY + cellSize
                 ) {
                     return { source: 'equipment', index: i };
+                }
+            }
+        }
+
+        if (!this.isContainerMode && hotbarGridX !== null && hotbarGridY !== null) {
+            // 检测快捷栏
+            const hotbarGap = gap * 3;
+            for (let i = 0; i < 4; i++) {
+                const slotX = hotbarGridX + i * (cellSize + hotbarGap);
+                const slotY = hotbarGridY;
+                if (
+                    worldX >= slotX && worldX < slotX + cellSize &&
+                    worldY >= slotY && worldY < slotY + cellSize
+                ) {
+                    return { source: 'hotbar', index: i };
                 }
             }
         }
@@ -779,6 +920,66 @@ export class InventoryUISystem extends System {
         } else {
             this.clearHeld();
         }
+    }
+
+    // ============================================================
+    // 装备栏交互
+    // ============================================================
+
+    // ============================================================
+    // 快捷栏交互
+    // ============================================================
+
+    private handleHotbarClick(slotIndex: number): void {
+        if (!this.targetEntity) return;
+
+        const hotbarComp = this.targetEntity.getComponent<HotbarComponent>('hotbar')!;
+        const playerInventory = this.targetEntity.getComponent<InventoryComponent>('inventory')!;
+        const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
+
+        // 情况1：手持物品，尝试放入快捷栏
+        if (this.heldItem) {
+            const def = itemsMap?.[this.heldItem.itemId];
+            // 只允许可使用的物品（消耗品或标记为 usable）
+            if (!def || (def.type !== 'consumable' && !def.usable)) {
+                console.log(`[Hotbar] ${def?.name ?? this.heldItem.itemId} 无法放入快捷栏，只有可使用的物品才能放入`);
+                return;
+            }
+
+            // 将物品引用放入快捷栏
+            hotbarComp.slots[slotIndex] = this.heldItem.itemId;
+
+            // 将物品归还到背包（快捷栏只保存引用，不持有实物）
+            if (this.heldFromSlot >= 0 && this.heldFromSlot < playerInventory.capacity && playerInventory.items[this.heldFromSlot] === null) {
+                playerInventory.items[this.heldFromSlot] = { ...this.heldItem };
+            } else {
+                const emptySlot = playerInventory.items.findIndex(item => item === null);
+                if (emptySlot >= 0) {
+                    playerInventory.items[emptySlot] = { ...this.heldItem };
+                } else {
+                    console.log('[Hotbar] 背包已满，无法归还物品');
+                    hotbarComp.slots[slotIndex] = null;
+                    return;
+                }
+            }
+
+            console.log(`[Hotbar] 将 ${def.name} 设置到 ${this.hotbarDirName(slotIndex)} 槽`);
+            this.clearHeld();
+            return;
+        }
+
+        // 情况2：没有手持物品，清空该槽位
+        const oldItemId = hotbarComp.slots[slotIndex];
+        if (oldItemId) {
+            const def = itemsMap?.[oldItemId];
+            console.log(`[Hotbar] 从 ${this.hotbarDirName(slotIndex)} 槽移除 ${def?.name ?? oldItemId}`);
+        }
+        hotbarComp.slots[slotIndex] = null;
+    }
+
+    private hotbarDirName(index: number): string {
+        const names = ['上', '下', '左', '右'];
+        return names[index] ?? '?';
     }
 
     // ============================================================
@@ -924,6 +1125,10 @@ export class InventoryUISystem extends System {
             const equipComp = this.targetEntity.getComponent<EquipmentSlotComponent>('equipment_slots');
             const equipItems = [equipComp?.weapon, equipComp?.armor, equipComp?.helmet];
             item = equipItems[index] ?? null;
+        } else if (source === 'hotbar') {
+            const hotbarComp = this.targetEntity.getComponent<HotbarComponent>('hotbar');
+            const itemId = hotbarComp?.slots[index] ?? null;
+            item = itemId ? { itemId, quantity: 1 } : null;
         }
 
         if (!item) {

@@ -47,6 +47,7 @@ export class InputComponent implements Component {
     attackKey!: Input.Keyboard.Key;
     shiftKey!: Input.Keyboard.Key;
     inventoryKey!: Input.Keyboard.Key;
+    hotbarKey!: Input.Keyboard.Key;
 }
 
 /** 攻击状态数据组件 */
@@ -152,6 +153,10 @@ export class UIStateComponent implements Component {
     inventoryOpen = false;
     containerOpen = false;
     storeOpen = false;
+    /** 快捷栏是否打开（按住 Ctrl） */
+    hotbarOpen = false;
+    /** 需要使用的快捷栏槽位索引（0=上,1=下,2=左,3=右），使用完后由 HotbarUISystem 重置为 null */
+    hotbarUseIndex: number | null = null;
     /** 当前交互的容器实体 */
     activeContainer: Entity | null = null;
     /** 当前交互的商店实体 */
@@ -221,4 +226,11 @@ export class AttributeComponent implements Component {
     attack: number = 0;
     /** 当前总防御力（基础 + 装备加成） */
     defense: number = 0;
+}
+
+/** 快捷栏组件：存储 4 个方向槽位的物品 ID（0=上, 1=下, 2=左, 3=右） */
+export class HotbarComponent implements Component {
+    readonly type = 'hotbar';
+    /** 槽位物品 ID，null 表示空槽 */
+    slots: (string | null)[] = [null, null, null, null];
 }

@@ -15,6 +15,7 @@ import { DropSystem } from '../systems/DropSystem';
 import { PickupSystem } from '../systems/PickupSystem';
 import { StoreSystem } from '../systems/StoreSystem';
 import { StoreUISystem } from '../systems/StoreUISystem';
+import { HotbarUISystem } from '../systems/HotbarUISystem';
 import { EnemyAISystem } from '../systems/EnemyAISystem';
 import { AttackSystem } from '../systems/AttackSystem';
 import { HitSystem } from '../systems/HitSystem';
@@ -48,6 +49,7 @@ export class GameScene extends Scene {
     private systemMenuSystem!: SystemMenuSystem;
     private storeSystem!: StoreSystem;
     private storeUISystem!: StoreUISystem;
+    private hotbarUISystem!: HotbarUISystem;
     private enemyAISystem!: EnemyAISystem;
     private attackSystem!: AttackSystem;
     private hitSystem!: HitSystem;
@@ -289,6 +291,7 @@ export class GameScene extends Scene {
         this.systemMenuSystem = new SystemMenuSystem(this);
         this.storeSystem = new StoreSystem(this);
         this.storeUISystem = new StoreUISystem(this);
+        this.hotbarUISystem = new HotbarUISystem(this);
         this.enemyAISystem = new EnemyAISystem(this);
         this.attackSystem = new AttackSystem(this);
         this.hitSystem = new HitSystem(this);
@@ -403,6 +406,7 @@ export class GameScene extends Scene {
         this.movementSystem.update(this.entities, delta);
         this.animationSystem.update(this.entities, delta);
         this.inventoryUISystem.update(this.entities, delta);
+        this.hotbarUISystem.update(this.entities, delta);
         this.storeSystem.update(this.entities, delta);
         this.storeUISystem.update(this.entities, delta);
         this.systemMenuSystem.update(this.entities, delta);

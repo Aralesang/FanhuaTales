@@ -1,10 +1,10 @@
-import { Scene, GameObjects, Physics } from 'phaser';
+import { Scene, GameObjects, Physics, Input } from 'phaser';
 import { Entity } from '../ecs/Entity';
 import {
     MovementComponent, AnimationComponent, InputComponent,
     AttackComponent, PlayerComponent, HealthComponent,
     SpriteComponent, VisualComponent, InventoryComponent,
-    EquipmentSlotComponent, AttributeComponent
+    EquipmentSlotComponent, AttributeComponent, HotbarComponent
 } from '../ecs/Component';
 
 export class Player extends Entity {
@@ -46,6 +46,9 @@ export class Player extends Entity {
         // 属性组件
         this.addComponent(new AttributeComponent());
 
+        // 快捷栏组件
+        this.addComponent(new HotbarComponent());
+
         // 生命值组件
         const health = new HealthComponent();
         health.hp = 100;
@@ -59,6 +62,7 @@ export class Player extends Entity {
             input.attackKey = scene.input.keyboard.addKey('X');
             input.shiftKey = scene.input.keyboard.addKey('SHIFT');
             input.inventoryKey = scene.input.keyboard.addKey('B');
+            input.hotbarKey = scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.CTRL);
             this.addComponent(input);
         } else {
             throw new Error('Keyboard input is not available');
