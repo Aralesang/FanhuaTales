@@ -4,35 +4,35 @@ import { Entity } from '../ecs/Entity';
 import { FontConfig } from '../config/FontConfig';
 import {
     InventoryComponent, ItemDefinition, InventoryItem,
-    SettingsComponent, UIStateComponent, StoreComponent,
-    BankComponent
+    SettingsComponent, UIStateComponent, BankComponent
 } from '../ecs/Component';
 import { InventorySystem } from './InventorySystem';
 
-interface SlotRef {
-    source: 'store' | 'player';
-    index: number;
-}
-
-export class StoreUISystem extends System {
+export class BankUISystem extends System {
     private isOpen = false;
     private targetEntity: Entity | null = null;
-    private storeEntity: Entity | null = null;
 
     private panel!: GameObjects.Graphics;
     private itemGraphics!: GameObjects.Graphics;
     private quantityTexts: GameObjects.Text[] = [];
+
+    // 银行面板文本
+    private bankTitleText!: GameObjects.Text;
+    private bankBalanceText!: GameObjects.Text;
+    private withdrawOneText!: GameObjects.Text;
+    private withdrawAllText!: GameObjects.Text;
+    private withdrawOneBg!: GameObjects.Graphics;
+    private withdrawAllBg!: GameObjects.Graphics;
+
+    // 背包面板银行余额显示
+    private playerBankBalanceBg!: GameObjects.Graphics;
+    private playerBankBalanceText!: GameObjects.Text;
 
     // Tooltip
     private tooltipPanel!: GameObjects.Graphics;
     private tooltipName!: GameObjects.Text;
     private tooltipType!: GameObjects.Text;
     private tooltipDesc!: GameObjects.Text;
-    private tooltipStats!: GameObjects.Text;
-
-    // 银行余额显示
-    private bankBalanceBg!: GameObjects.Graphics;
-    private bankBalanceText!: GameObjects.Text;
 
     private readonly COLS = 5;
     private readonly ROWS = 4;
@@ -81,6 +81,60 @@ export class StoreUISystem extends System {
             this.quantityTexts.push(text);
         }
 
+        // 银行面板文本
+        this.bankTitleText = this.createText(0, 0, '银行', {
+            fontSize: FontConfig.large.size, color: '#ffcc44',
+            fontFamily: FontConfig.large.family,
+        });
+        this.bankTitleText.setDepth(1001);
+        this.bankTitleText.setOrigin(0.5, 0);
+        this.bankTitleText.visible = false;
+
+        this.bankBalanceText = this.createText(0, 0, '', {
+            fontSize: FontConfig.large.size, color: '#ffffff',
+            fontFamily: FontConfig.large.family,
+        });
+        this.bankBalanceText.setDepth(1001);
+        this.bankBalanceText.setOrigin(0.5, 0);
+        this.bankBalanceText.visible = false;
+
+        this.withdrawOneBg = this.scene.add.graphics();
+        this.withdrawOneBg.setDepth(1001);
+        this.withdrawOneBg.visible = false;
+
+        this.withdrawOneText = this.createText(0, 0, '取出 1 个', {
+            fontSize: FontConfig.small.size, color: '#ffffff',
+            fontFamily: FontConfig.small.family,
+        });
+        this.withdrawOneText.setDepth(1002);
+        this.withdrawOneText.setOrigin(0.5, 0.5);
+        this.withdrawOneText.visible = false;
+
+        this.withdrawAllBg = this.scene.add.graphics();
+        this.withdrawAllBg.setDepth(1001);
+        this.withdrawAllBg.visible = false;
+
+        this.withdrawAllText = this.createText(0, 0, '取出全部', {
+            fontSize: FontConfig.small.size, color: '#ffffff',
+            fontFamily: FontConfig.small.family,
+        });
+        this.withdrawAllText.setDepth(1002);
+        this.withdrawAllText.setOrigin(0.5, 0.5);
+        this.withdrawAllText.visible = false;
+
+        // 背包面板银行余额显示
+        this.playerBankBalanceBg = this.scene.add.graphics();
+        this.playerBankBalanceBg.setDepth(1000);
+        this.playerBankBalanceBg.visible = false;
+
+        this.playerBankBalanceText = this.createText(0, 0, '', {
+            fontSize: FontConfig.small.size, color: '#ffcc44',
+            fontFamily: FontConfig.small.family,
+        });
+        this.playerBankBalanceText.setDepth(1001);
+        this.playerBankBalanceText.setOrigin(0.5, 0.5);
+        this.playerBankBalanceText.visible = false;
+
         // Tooltip
         this.tooltipPanel = this.scene.add.graphics();
         this.tooltipPanel.setDepth(10000);
@@ -109,48 +163,24 @@ export class StoreUISystem extends System {
         this.tooltipDesc.setDepth(10001);
         this.tooltipDesc.setOrigin(0, 0);
         this.tooltipDesc.visible = false;
-
-        this.tooltipStats = this.createText(0, 0, '', {
-            fontSize: FontConfig.small.size, color: '#88cc88',
-            fontFamily: FontConfig.small.family,
-        });
-        this.tooltipStats.setDepth(10001);
-        this.tooltipStats.setOrigin(0, 0);
-        this.tooltipStats.visible = false;
-
-        // 银行余额显示
-        this.bankBalanceBg = this.scene.add.graphics();
-        this.bankBalanceBg.setDepth(1000);
-        this.bankBalanceBg.visible = false;
-
-        this.bankBalanceText = this.createText(0, 0, '', {
-            fontSize: FontConfig.small.size, color: '#ffcc44',
-            fontFamily: FontConfig.small.family,
-        });
-        this.bankBalanceText.setDepth(1001);
-        this.bankBalanceText.setOrigin(0.5, 0.5);
-        this.bankBalanceText.visible = false;
     }
 
     update(entities: Entity[], _delta: number): void {
         const uistate = this.getUIState(entities);
 
-        // 外部打开（StoreSystem E键交互）
-        if (uistate?.storeOpen && !this.isOpen) {
+        // 外部打开（BankSystem E键交互）
+        if (uistate?.bankOpen && !this.isOpen) {
             const player = entities.find(e => e.hasComponent('inventory') && e.hasComponent('player'));
-            const store = uistate.activeStore;
-            if (player && store) {
+            if (player) {
                 this.isOpen = true;
                 this.targetEntity = player;
-                this.storeEntity = store;
             }
         }
 
         // 外部关闭请求
-        if (uistate && !uistate.storeOpen && this.isOpen) {
+        if (uistate && !uistate.bankOpen && this.isOpen) {
             this.isOpen = false;
             this.targetEntity = null;
-            this.storeEntity = null;
         }
 
         // 读取全局 UI 缩放
@@ -158,7 +188,7 @@ export class StoreUISystem extends System {
         const settings = settingsEntity?.getComponent<SettingsComponent>('settings');
         this.uiScale = settings?.uiScale ?? 1.0;
 
-        if (!this.isOpen || !this.targetEntity || !this.storeEntity) {
+        if (!this.isOpen || !this.targetEntity) {
             this.hideAll();
             return;
         }
@@ -180,7 +210,7 @@ export class StoreUISystem extends System {
 
     private getPanelLayout(): {
         leftGridX: number;
-        rightGridX: number;
+        rightPanelX: number;
         gridY: number;
         panelW: number;
         panelH: number;
@@ -201,22 +231,22 @@ export class StoreUISystem extends System {
         const gapBetween = 24 * scale;
         const totalW = panelW * 2 + gapBetween;
         const leftGridX = cx - totalW / 2;
-        const rightGridX = leftGridX + panelW + gapBetween;
+        const rightPanelX = leftGridX + panelW + gapBetween;
         const gridY = cy - panelH / 2;
         this.panelW = totalW;
         this.panelH = panelH;
 
-        return { leftGridX, rightGridX, gridY, panelW, panelH };
+        return { leftGridX, rightPanelX, gridY, panelW, panelH };
     }
 
     private renderGrid(): void {
-        if (!this.targetEntity || !this.storeEntity) return;
+        if (!this.targetEntity) return;
 
         const playerInventory = this.targetEntity.getComponent<InventoryComponent>('inventory')!;
-        const storeComp = this.storeEntity.getComponent<StoreComponent>('store')!;
+        const bankComp = this.targetEntity.getComponent<BankComponent>('bank');
 
         const scale = this.uiScale;
-        const { leftGridX, rightGridX, gridY, panelW, panelH } = this.getPanelLayout();
+        const { leftGridX, rightPanelX, gridY, panelW, panelH } = this.getPanelLayout();
         const padding = this.BASE_PADDING * scale;
 
         // 绘制背景面板
@@ -228,30 +258,29 @@ export class StoreUISystem extends System {
         this.panel.lineStyle(2 * scale, 0x444466, 1);
         this.panel.strokeRoundedRect(leftGridX - padding, gridY - padding, panelW, panelH, 8 * scale);
 
-        // 商店面板背景（右侧）
-        this.panel.fillStyle(0x1a1a2e, 0.95);
-        this.panel.fillRoundedRect(rightGridX - padding, gridY - padding, panelW, panelH, 8 * scale);
-        this.panel.lineStyle(2 * scale, 0x444466, 1);
-        this.panel.strokeRoundedRect(rightGridX - padding, gridY - padding, panelW, panelH, 8 * scale);
-
         // 银行余额显示（背包面板下方，独立小块）
-        const bankComp = this.targetEntity.getComponent<BankComponent>('bank');
         const bankGold = bankComp?.gold ?? 0;
         const balanceText = `银行: ${bankGold} 金币`;
         const bgW = 88 * scale;
         const bgH = 18 * scale;
         const bgX = leftGridX - padding + 6 * scale;
         const bgY = gridY - padding + panelH + 6 * scale;
-        this.bankBalanceBg.clear();
-        this.bankBalanceBg.fillStyle(0x2a2a3e, 0.9);
-        this.bankBalanceBg.fillRoundedRect(bgX, bgY, bgW, bgH, 4 * scale);
-        this.bankBalanceBg.lineStyle(Math.max(1, scale), 0xaa8844, 1);
-        this.bankBalanceBg.strokeRoundedRect(bgX, bgY, bgW, bgH, 4 * scale);
-        this.bankBalanceBg.visible = true;
-        this.bankBalanceText.setPosition(bgX + bgW / 2, bgY + bgH / 2);
-        this.bankBalanceText.setScale(scale);
-        this.bankBalanceText.setText(balanceText);
-        this.bankBalanceText.visible = true;
+        this.playerBankBalanceBg.clear();
+        this.playerBankBalanceBg.fillStyle(0x2a2a3e, 0.9);
+        this.playerBankBalanceBg.fillRoundedRect(bgX, bgY, bgW, bgH, 4 * scale);
+        this.playerBankBalanceBg.lineStyle(Math.max(1, scale), 0xaa8844, 1);
+        this.playerBankBalanceBg.strokeRoundedRect(bgX, bgY, bgW, bgH, 4 * scale);
+        this.playerBankBalanceBg.visible = true;
+        this.playerBankBalanceText.setPosition(bgX + bgW / 2, bgY + bgH / 2);
+        this.playerBankBalanceText.setScale(scale);
+        this.playerBankBalanceText.setText(balanceText);
+        this.playerBankBalanceText.visible = true;
+
+        // 银行面板背景（右侧）
+        this.panel.fillStyle(0x1a1a2e, 0.95);
+        this.panel.fillRoundedRect(rightPanelX - padding, gridY - padding, panelW, panelH, 8 * scale);
+        this.panel.lineStyle(2 * scale, 0xaa8844, 1);
+        this.panel.strokeRoundedRect(rightPanelX - padding, gridY - padding, panelW, panelH, 8 * scale);
 
         // 绘制格子和物品
         this.itemGraphics.clear();
@@ -259,18 +288,62 @@ export class StoreUISystem extends System {
 
         // 玩家格子（左侧）
         for (let i = 0; i < playerInventory.capacity; i++) {
-            textIdx = this.renderSlot(leftGridX, gridY, i, playerInventory.items[i], scale, textIdx, 'player');
-        }
-
-        // 商店格子（右侧）
-        const storeCount = this.COLS * this.ROWS;
-        for (let i = 0; i < storeCount; i++) {
-            textIdx = this.renderSlot(rightGridX, gridY, i, storeComp.goods[i] ?? null, scale, textIdx, 'store');
+            textIdx = this.renderSlot(leftGridX, gridY, i, playerInventory.items[i], scale, textIdx);
         }
 
         for (let i = textIdx; i < this.quantityTexts.length; i++) {
             this.quantityTexts[i].visible = false;
         }
+
+        // 银行面板内容（右侧）
+        const cellSize = this.BASE_CELL_SIZE * scale;
+        const rightCenterX = rightPanelX + panelW / 2 - padding;
+
+        // 标题
+        this.bankTitleText.setPosition(rightCenterX, gridY + padding);
+        this.bankTitleText.setScale(scale);
+        this.bankTitleText.visible = true;
+
+        // 余额
+        const balance = bankComp?.gold ?? 0;
+        this.bankBalanceText.setPosition(rightCenterX, gridY + padding + 24 * scale);
+        this.bankBalanceText.setScale(scale);
+        this.bankBalanceText.setText(`${balance} 金币`);
+        this.bankBalanceText.visible = true;
+
+        // 操作按钮区域
+        const btnW = panelW - padding * 2;
+        const btnH = cellSize;
+        const btnGap = 8 * scale;
+        const btnX = rightPanelX;
+        const btnOneY = gridY + padding + 60 * scale;
+        const btnAllY = btnOneY + btnH + btnGap;
+
+        // 取出 1 个按钮背景
+        this.withdrawOneBg.clear();
+        this.withdrawOneBg.fillStyle(0x2a3a2e, 1);
+        this.withdrawOneBg.fillRoundedRect(btnX, btnOneY, btnW, btnH, 4 * scale);
+        this.withdrawOneBg.lineStyle(Math.max(1, scale), 0x44aa66, 1);
+        this.withdrawOneBg.strokeRoundedRect(btnX, btnOneY, btnW, btnH, 4 * scale);
+        this.withdrawOneBg.visible = true;
+
+        this.withdrawOneText.setPosition(btnX + btnW / 2, btnOneY + btnH / 2);
+        this.withdrawOneText.setScale(scale);
+        this.withdrawOneText.setColor(balance > 0 ? '#ffffff' : '#666666');
+        this.withdrawOneText.visible = true;
+
+        // 取出全部按钮背景
+        this.withdrawAllBg.clear();
+        this.withdrawAllBg.fillStyle(0x2a3a2e, 1);
+        this.withdrawAllBg.fillRoundedRect(btnX, btnAllY, btnW, btnH, 4 * scale);
+        this.withdrawAllBg.lineStyle(Math.max(1, scale), 0x44aa66, 1);
+        this.withdrawAllBg.strokeRoundedRect(btnX, btnAllY, btnW, btnH, 4 * scale);
+        this.withdrawAllBg.visible = true;
+
+        this.withdrawAllText.setPosition(btnX + btnW / 2, btnAllY + btnH / 2);
+        this.withdrawAllText.setScale(scale);
+        this.withdrawAllText.setColor(balance > 0 ? '#ffffff' : '#666666');
+        this.withdrawAllText.visible = true;
 
         this.panel.visible = true;
         this.itemGraphics.visible = true;
@@ -282,8 +355,7 @@ export class StoreUISystem extends System {
         index: number,
         item: InventoryItem | null,
         scale: number,
-        textIdx: number,
-        source: 'store' | 'player'
+        textIdx: number
     ): number {
         const cellSize = this.BASE_CELL_SIZE * scale;
         const gap = this.BASE_GAP * scale;
@@ -294,12 +366,8 @@ export class StoreUISystem extends System {
         this.itemGraphics.fillStyle(0x2a2a3e, 1);
         this.itemGraphics.fillRect(slotX, slotY, cellSize, cellSize);
 
-        // 格子边框（商店物品用金色边框突出）
-        if (source === 'store' && item) {
-            this.itemGraphics.lineStyle(Math.max(1, scale), 0xaa8844, 1);
-        } else {
-            this.itemGraphics.lineStyle(Math.max(1, scale), 0x555577, 1);
-        }
+        // 格子边框
+        this.itemGraphics.lineStyle(Math.max(1, scale), 0x555577, 1);
         this.itemGraphics.strokeRect(slotX, slotY, cellSize, cellSize);
 
         if (item) {
@@ -326,13 +394,18 @@ export class StoreUISystem extends System {
         for (const text of this.quantityTexts) {
             text.visible = false;
         }
+        this.bankTitleText.visible = false;
+        this.bankBalanceText.visible = false;
+        this.withdrawOneBg.visible = false;
+        this.withdrawOneText.visible = false;
+        this.withdrawAllBg.visible = false;
+        this.withdrawAllText.visible = false;
+        this.playerBankBalanceBg.visible = false;
+        this.playerBankBalanceText.visible = false;
         this.tooltipPanel.visible = false;
         this.tooltipName.visible = false;
         this.tooltipType.visible = false;
         this.tooltipDesc.visible = false;
-        this.tooltipStats.visible = false;
-        this.bankBalanceBg.visible = false;
-        this.bankBalanceText.visible = false;
     }
 
     // ============================================================
@@ -340,133 +413,74 @@ export class StoreUISystem extends System {
     // ============================================================
 
     private onPointerDown(pointer: Input.Pointer): void {
-        if (!this.isOpen || !this.targetEntity || !this.storeEntity) return;
-
-        const slotInfo = this.getSlotAt(pointer.x, pointer.y);
-        if (!slotInfo) return;
+        if (!this.isOpen || !this.targetEntity) return;
 
         const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
         if (!itemsMap) return;
 
-        const { source, index } = slotInfo;
+        // 检测是否点击背包格子
+        const slotIndex = this.getSlotAt(pointer.x, pointer.y);
+        if (slotIndex !== null) {
+            this.handleSlotClick(slotIndex, itemsMap);
+            return;
+        }
 
-        if (source === 'store') {
-            this.handleBuy(index, itemsMap);
-        } else {
-            this.handleSell(index, itemsMap);
+        // 检测是否点击操作按钮
+        const btn = this.getButtonAt(pointer.x, pointer.y);
+        if (btn === 'withdraw_one') {
+            this.withdraw(1, itemsMap);
+        } else if (btn === 'withdraw_all') {
+            const bankComp = this.targetEntity.getComponent<BankComponent>('bank');
+            const amount = bankComp?.gold ?? 0;
+            if (amount > 0) {
+                this.withdraw(amount, itemsMap);
+            }
         }
     }
 
-    private handleBuy(storeIndex: number, itemsMap: Record<string, ItemDefinition>): void {
-        if (!this.storeEntity || !this.targetEntity) return;
-
-        const storeComp = this.storeEntity.getComponent<StoreComponent>('store')!;
-        const goods = storeComp.goods;
-
-        if (storeIndex < 0 || storeIndex >= goods.length || !goods[storeIndex]) return;
-
-        const itemToBuy = goods[storeIndex];
-        const def = itemsMap[itemToBuy.itemId];
-        if (!def || !def.buyPrice) return; // 没有买入价格则不能购买
-
-        const playerInventory = this.targetEntity.getComponent<InventoryComponent>('inventory')!;
-        const bankComp = this.targetEntity.getComponent<BankComponent>('bank');
-
-        // 检查玩家是否有足够货币
-        for (const [currencyId, requiredQty] of Object.entries(def.buyPrice)) {
-            if (currencyId === 'gold_coin') {
-                const bankGold = bankComp?.gold ?? 0;
-                if (bankGold < requiredQty) {
-                    console.log(`[Store] 银行金币不足: 需要 ${requiredQty}, 余额 ${bankGold}`);
-                    return;
-                }
-            } else {
-                const total = this.countItem(playerInventory, currencyId);
-                if (total < requiredQty) {
-                    console.log(`[Store] 货币不足: 需要 ${requiredQty} ${currencyId}, 只有 ${total}`);
-                    return;
-                }
-            }
-        }
-
-        // 扣除货币（金币从银行扣，其他从背包扣）
-        for (const [currencyId, requiredQty] of Object.entries(def.buyPrice)) {
-            if (currencyId === 'gold_coin' && bankComp) {
-                bankComp.gold -= requiredQty;
-            } else {
-                this.removeItem(playerInventory, currencyId, requiredQty);
-            }
-        }
-
-        // 给予商品
-        InventorySystem.addItem(playerInventory, itemsMap, itemToBuy.itemId, 1);
-        console.log(`[Store] 购买 ${def.name} x1`);
-    }
-
-    private handleSell(playerSlot: number, itemsMap: Record<string, ItemDefinition>): void {
+    private handleSlotClick(slotIndex: number, itemsMap: Record<string, ItemDefinition>): void {
         if (!this.targetEntity) return;
 
-        const playerInventory = this.targetEntity.getComponent<InventoryComponent>('inventory')!;
+        const inventory = this.targetEntity.getComponent<InventoryComponent>('inventory')!;
         const bankComp = this.targetEntity.getComponent<BankComponent>('bank');
-        const slotItem = playerInventory.items[playerSlot];
-        if (!slotItem) return;
+        const item = inventory.items[slotIndex];
 
-        const def = itemsMap[slotItem.itemId];
-        if (!def || !def.sellPrice) return; // 没有出售价格则不能出售
+        if (!item || item.itemId !== 'gold_coin') return;
 
-        // 扣除玩家物品（数量1）
-        slotItem.quantity--;
-        if (slotItem.quantity <= 0) {
-            playerInventory.items[playerSlot] = null;
+        // 存入银行：将该格子全部金币存入
+        const amount = item.quantity;
+        inventory.items[slotIndex] = null;
+        if (bankComp) {
+            bankComp.gold += amount;
         }
-
-        // 给予出售货币（金币存入银行，其他存入背包）
-        for (const [currencyId, qty] of Object.entries(def.sellPrice)) {
-            if (currencyId === 'gold_coin' && bankComp) {
-                bankComp.gold += qty;
-            } else {
-                InventorySystem.addItem(playerInventory, itemsMap, currencyId, qty);
-            }
-        }
-
-        console.log(`[Store] 出售 ${def.name} x1`);
+        console.log(`[Bank] 存入 ${amount} 金币，银行余额: ${bankComp?.gold ?? 0}`);
     }
 
-    /** 计算玩家库存中某物品的总数量 */
-    private countItem(inventory: InventoryComponent, itemId: string): number {
-        let total = 0;
-        for (const item of inventory.items) {
-            if (item && item.itemId === itemId) {
-                total += item.quantity;
-            }
-        }
-        return total;
-    }
+    private withdraw(amount: number, itemsMap: Record<string, ItemDefinition>): void {
+        if (!this.targetEntity) return;
 
-    /** 从玩家库存中扣除指定数量的某物品 */
-    private removeItem(inventory: InventoryComponent, itemId: string, quantity: number): void {
-        let remaining = quantity;
-        for (let i = 0; i < inventory.capacity && remaining > 0; i++) {
-            const item = inventory.items[i];
-            if (item && item.itemId === itemId) {
-                const remove = Math.min(item.quantity, remaining);
-                item.quantity -= remove;
-                remaining -= remove;
-                if (item.quantity <= 0) {
-                    inventory.items[i] = null;
-                }
-            }
+        const inventory = this.targetEntity.getComponent<InventoryComponent>('inventory')!;
+        const bankComp = this.targetEntity.getComponent<BankComponent>('bank');
+        if (!bankComp || bankComp.gold <= 0) return;
+
+        const actualAmount = Math.min(amount, bankComp.gold);
+        const success = InventorySystem.addItem(inventory, itemsMap, 'gold_coin', actualAmount);
+
+        if (success) {
+            bankComp.gold -= actualAmount;
+            console.log(`[Bank] 取出 ${actualAmount} 金币，银行余额: ${bankComp.gold}`);
+        } else {
+            console.log('[Bank] 背包已满，无法取出金币');
         }
     }
 
-    private getSlotAt(screenX: number, screenY: number): SlotRef | null {
+    private getSlotAt(screenX: number, screenY: number): number | null {
         const { x: worldX, y: worldY } = this.screenToWorld(screenX, screenY);
         const scale = this.uiScale;
         const cellSize = this.BASE_CELL_SIZE * scale;
         const gap = this.BASE_GAP * scale;
-        const { leftGridX, rightGridX, gridY } = this.getPanelLayout();
+        const { leftGridX, gridY } = this.getPanelLayout();
 
-        // 检测玩家面板（左侧）
         const playerRelX = worldX - leftGridX;
         const playerRelY = worldY - gridY;
         for (let i = 0; i < this.COLS * this.ROWS; i++) {
@@ -476,22 +490,38 @@ export class StoreUISystem extends System {
                 playerRelX >= slotX && playerRelX < slotX + cellSize &&
                 playerRelY >= slotY && playerRelY < slotY + cellSize
             ) {
-                return { source: 'player', index: i };
+                return i;
             }
         }
 
-        // 检测商店面板（右侧）
-        const storeRelX = worldX - rightGridX;
-        const storeRelY = worldY - gridY;
-        for (let i = 0; i < this.COLS * this.ROWS; i++) {
-            const slotX = (i % this.COLS) * (cellSize + gap);
-            const slotY = Math.floor(i / this.COLS) * (cellSize + gap);
-            if (
-                storeRelX >= slotX && storeRelX < slotX + cellSize &&
-                storeRelY >= slotY && storeRelY < slotY + cellSize
-            ) {
-                return { source: 'store', index: i };
-            }
+        return null;
+    }
+
+    private getButtonAt(screenX: number, screenY: number): 'withdraw_one' | 'withdraw_all' | null {
+        const { x: worldX, y: worldY } = this.screenToWorld(screenX, screenY);
+        const scale = this.uiScale;
+        const { rightPanelX, gridY, panelW } = this.getPanelLayout();
+        const padding = this.BASE_PADDING * scale;
+        const cellSize = this.BASE_CELL_SIZE * scale;
+        const btnW = panelW - padding * 2;
+        const btnH = cellSize;
+        const btnGap = 8 * scale;
+        const btnX = rightPanelX;
+        const btnOneY = gridY + padding + 60 * scale;
+        const btnAllY = btnOneY + btnH + btnGap;
+
+        if (
+            worldX >= btnX && worldX < btnX + btnW &&
+            worldY >= btnOneY && worldY < btnOneY + btnH
+        ) {
+            return 'withdraw_one';
+        }
+
+        if (
+            worldX >= btnX && worldX < btnX + btnW &&
+            worldY >= btnAllY && worldY < btnAllY + btnH
+        ) {
+            return 'withdraw_all';
         }
 
         return null;
@@ -502,76 +532,56 @@ export class StoreUISystem extends System {
     // ============================================================
 
     private renderTooltip(): void {
-        if (!this.targetEntity || !this.storeEntity) {
+        if (!this.targetEntity) {
             this.hideTooltip();
             return;
         }
 
         const pointer = this.scene.input.activePointer;
-        const slotInfo = this.getSlotAt(pointer.x, pointer.y);
+        const slotIndex = this.getSlotAt(pointer.x, pointer.y);
+        const btn = this.getButtonAt(pointer.x, pointer.y);
 
-        if (!slotInfo) {
-            this.hideTooltip();
-            return;
-        }
-
-        const { source, index } = slotInfo;
-        const storeComp = this.storeEntity.getComponent<StoreComponent>('store')!;
-        const playerInventory = this.targetEntity.getComponent<InventoryComponent>('inventory')!;
-
-        const item = source === 'store'
-            ? (index < storeComp.goods.length ? storeComp.goods[index] : null)
-            : (index < playerInventory.capacity ? playerInventory.items[index] : null);
-
-        if (!item) {
+        if (slotIndex === null && btn === null) {
             this.hideTooltip();
             return;
         }
 
         const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
-        const def = itemsMap?.[item.itemId];
-        if (!def) {
-            this.hideTooltip();
-            return;
-        }
-
         const { x: worldX, y: worldY } = this.screenToWorld(pointer.x, pointer.y);
         const scale = this.uiScale;
 
-        // 构建 Tooltip 文本
-        const nameText = def.name;
-        const typeText = this.typeLabel(def.type);
-        const descText = def.description;
+        let nameText = '';
+        let typeText = '';
+        let descText = '';
 
-        let priceText = '';
-        if (source === 'store' && def.buyPrice) {
-            const priceEntries = Object.entries(def.buyPrice).map(
-                ([id, qty]) => `${itemsMap?.[id]?.name ?? id} x${qty}`
-            );
-            priceText = `买入: ${priceEntries.join(', ')}`;
-        } else if (source === 'player' && def.sellPrice) {
-            const priceEntries = Object.entries(def.sellPrice).map(
-                ([id, qty]) => `${itemsMap?.[id]?.name ?? id} x${qty}`
-            );
-            priceText = `卖出: ${priceEntries.join(', ')}`;
-        } else if (source === 'player' && !def.sellPrice) {
-            priceText = '不可出售';
-        } else if (source === 'store' && !def.buyPrice) {
-            priceText = '不可购买';
+        if (slotIndex !== null) {
+            const inventory = this.targetEntity.getComponent<InventoryComponent>('inventory')!;
+            const item = inventory.items[slotIndex];
+            if (!item) {
+                this.hideTooltip();
+                return;
+            }
+            const def = itemsMap?.[item.itemId];
+            if (!def) {
+                this.hideTooltip();
+                return;
+            }
+            nameText = def.name;
+            typeText = this.typeLabel(def.type);
+            descText = def.description;
+            if (item.itemId === 'gold_coin') {
+                descText += '（点击存入银行）';
+            }
+        } else if (btn === 'withdraw_one') {
+            nameText = '取出 1 个';
+            typeText = '操作';
+            descText = '从银行取出 1 个金币到背包';
+        } else if (btn === 'withdraw_all') {
+            nameText = '取出全部';
+            typeText = '操作';
+            descText = '从银行取出所有金币到背包';
         }
 
-        let statsText = '';
-        if (def.type === 'equipment' && def.equipment) {
-            const attrs: string[] = [];
-            if (def.equipment.attack) attrs.push(`攻击 +${def.equipment.attack}`);
-            if (def.equipment.defense) attrs.push(`防御 +${def.equipment.defense}`);
-            attrs.push(`部位: ${this.slotLabel(def.equipment.slot)}`);
-            statsText = attrs.join('  ');
-        } else if (def.type === 'consumable' && def.useEffect) {
-            statsText = `效果: ${this.effectLabel(def.useEffect.type)} ${def.useEffect.value}`;
-        }
-
-        // 测量文本尺寸
         const pad = 8 * scale;
         const nameLineH = 18 * scale;
         const bodyLineH = 14 * scale;
@@ -580,14 +590,11 @@ export class StoreUISystem extends System {
         const maxTextW = Math.max(
             nameText.length * nameFontSize,
             typeText.length * bodyFontSize,
-            descText.length * bodyFontSize,
-            priceText.length * bodyFontSize,
-            statsText.length * bodyFontSize
+            descText.length * bodyFontSize
         );
         const tooltipW = Math.max(maxTextW + pad * 2, 140 * scale);
-        const tooltipH = nameLineH + bodyLineH * 3 + (statsText ? bodyLineH : 0) + pad * 2;
+        const tooltipH = nameLineH + bodyLineH * 2 + pad * 2;
 
-        // 边界检查
         let tx = worldX + 16 * scale;
         let ty = worldY + 16 * scale;
         const cam = this.scene.cameras.main;
@@ -600,7 +607,6 @@ export class StoreUISystem extends System {
             ty = worldY - tooltipH - 8 * scale;
         }
 
-        // 绘制背景
         this.tooltipPanel.clear();
         this.tooltipPanel.fillStyle(0x0a0a18, 1);
         this.tooltipPanel.fillRoundedRect(tx, ty, tooltipW, tooltipH, 4 * scale);
@@ -608,31 +614,21 @@ export class StoreUISystem extends System {
         this.tooltipPanel.strokeRoundedRect(tx, ty, tooltipW, tooltipH, 4 * scale);
         this.tooltipPanel.visible = true;
 
-        // 名称
         this.tooltipName.setPosition(tx + pad, ty + pad);
         this.tooltipName.setScale(scale);
         this.tooltipName.setText(nameText);
-        this.tooltipName.setColor(this.getRarityColor(def.type));
+        this.tooltipName.setColor(slotIndex !== null ? this.getRarityColor(itemsMap?.[this.targetEntity.getComponent<InventoryComponent>('inventory')!.items[slotIndex]!.itemId]?.type ?? '') : '#ffffff');
         this.tooltipName.visible = true;
 
-        // 类型
         this.tooltipType.setPosition(tx + pad, ty + pad + nameLineH);
         this.tooltipType.setScale(scale);
         this.tooltipType.setText(`[${typeText}]`);
         this.tooltipType.visible = true;
 
-        // 描述
         this.tooltipDesc.setPosition(tx + pad, ty + pad + nameLineH + bodyLineH);
         this.tooltipDesc.setScale(scale);
         this.tooltipDesc.setText(descText);
         this.tooltipDesc.visible = true;
-
-        // 价格
-        this.tooltipStats.setPosition(tx + pad, ty + pad + nameLineH + bodyLineH * 2);
-        this.tooltipStats.setScale(scale);
-        this.tooltipStats.setColor(priceText.startsWith('不可') ? '#ff6666' : '#ffcc44');
-        this.tooltipStats.setText(priceText);
-        this.tooltipStats.visible = true;
     }
 
     private hideTooltip(): void {
@@ -640,7 +636,6 @@ export class StoreUISystem extends System {
         this.tooltipName.visible = false;
         this.tooltipType.visible = false;
         this.tooltipDesc.visible = false;
-        this.tooltipStats.visible = false;
     }
 
     private typeLabel(type: string): string {
@@ -649,22 +644,6 @@ export class StoreUISystem extends System {
             case 'equipment': return '装备';
             case 'material': return '材料';
             default: return type;
-        }
-    }
-
-    private slotLabel(slot: string): string {
-        switch (slot) {
-            case 'weapon': return '武器';
-            case 'armor': return '护甲';
-            case 'helmet': return '头盔';
-            default: return slot;
-        }
-    }
-
-    private effectLabel(effect: string): string {
-        switch (effect) {
-            case 'heal': return '恢复生命';
-            default: return effect;
         }
     }
 

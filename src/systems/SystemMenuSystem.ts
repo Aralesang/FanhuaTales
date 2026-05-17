@@ -98,12 +98,14 @@ export class SystemMenuSystem extends System {
 
         if (escDown && !this.previousEscDown) {
             // ESC 逻辑：如果有任何 UI 打开，优先关闭全部；否则切换系统菜单
-            if (uistate?.inventoryOpen || uistate?.containerOpen || uistate?.storeOpen) {
+            if (uistate?.inventoryOpen || uistate?.containerOpen || uistate?.storeOpen || uistate?.bankOpen) {
                 uistate.inventoryOpen = false;
                 uistate.containerOpen = false;
                 uistate.storeOpen = false;
+                uistate.bankOpen = false;
                 uistate.activeContainer = null;
                 uistate.activeStore = null;
+                uistate.activeBank = null;
                 this.isOpen = false;
             } else {
                 this.isOpen = !this.isOpen;

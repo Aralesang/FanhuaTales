@@ -243,29 +243,6 @@
                  "y":164.667
                 }, 
                 {
-                 "height":0,
-                 "id":3,
-                 "name":"camera",
-                 "point":true,
-                 "properties":[
-                        {
-                         "name":"camera",
-                         "type":"bool",
-                         "value":true
-                        }, 
-                        {
-                         "name":"zoom",
-                         "type":"float",
-                         "value":3
-                        }],
-                 "rotation":0,
-                 "type":"Camera",
-                 "visible":true,
-                 "width":0,
-                 "x":230.909,
-                 "y":162.182
-                }, 
-                {
                  "height":9.9375,
                  "id":5,
                  "name":"\u95e8",
@@ -301,8 +278,8 @@
                  "type":"Enemy",
                  "visible":true,
                  "width":0,
-                 "x":232.727,
-                 "y":47.4545
+                 "x":119.272454545455,
+                 "y":72.1817727272727
                 }, 
                 {
                  "height":0,
@@ -398,6 +375,18 @@
                  "width":0,
                  "x":248.363636363636,
                  "y":202.363636363636
+                }, 
+                {
+                 "height":0,
+                 "id":12,
+                 "name":"\u94f6\u884c",
+                 "point":true,
+                 "rotation":0,
+                 "type":"Bank",
+                 "visible":true,
+                 "width":0,
+                 "x":297.75,
+                 "y":164.25
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -406,7 +395,7 @@
          "y":0
         }],
  "nextlayerid":12,
- "nextobjectid":12,
+ "nextobjectid":13,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",

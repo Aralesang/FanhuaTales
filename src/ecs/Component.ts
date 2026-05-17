@@ -44,10 +44,17 @@ export class AnimationComponent implements Component {
 export class InputComponent implements Component {
     readonly type = 'input';
     cursors!: Types.Input.Keyboard.CursorKeys;
-    attackKey!: Input.Keyboard.Key;
+    upKey!: Input.Keyboard.Key;      // W
+    downKey!: Input.Keyboard.Key;    // S
+    leftKey!: Input.Keyboard.Key;    // A
+    rightKey!: Input.Keyboard.Key;   // D
     shiftKey!: Input.Keyboard.Key;
     inventoryKey!: Input.Keyboard.Key;
     hotbarKey!: Input.Keyboard.Key;
+    /** 鼠标世界坐标 X */
+    mouseX: number = 0;
+    /** 鼠标世界坐标 Y */
+    mouseY: number = 0;
 }
 
 /** 攻击状态数据组件 */
@@ -161,6 +168,10 @@ export class UIStateComponent implements Component {
     activeContainer: Entity | null = null;
     /** 当前交互的商店实体 */
     activeStore: Entity | null = null;
+    /** 银行 UI 是否打开 */
+    bankOpen = false;
+    /** 当前交互的银行实体 */
+    activeBank: Entity | null = null;
 }
 
 /** 容器标记组件 */
@@ -233,4 +244,22 @@ export class HotbarComponent implements Component {
     readonly type = 'hotbar';
     /** 槽位物品 ID，null 表示空槽 */
     slots: (string | null)[] = [null, null, null, null];
+}
+
+/** 银行组件：存储玩家存入银行的金币 */
+export class BankComponent implements Component {
+    readonly type = 'bank';
+    /** 银行金币余额 */
+    gold: number = 0;
+}
+
+/** 银行 NPC 标记组件 */
+export class BankNPCComponent implements Component {
+    readonly type = 'bank_npc';
+    /** NPC 名称 */
+    name: string;
+
+    constructor(name: string = '银行职员') {
+        this.name = name;
+    }
 }

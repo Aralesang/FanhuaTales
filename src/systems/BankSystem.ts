@@ -2,9 +2,9 @@ import { Scene, Input, GameObjects } from 'phaser';
 import { System } from '../ecs/System';
 import { Entity } from '../ecs/Entity';
 import { FontConfig } from '../config/FontConfig';
-import { SpriteComponent, StoreComponent, UIStateComponent, VisualComponent, AnimationComponent } from '../ecs/Component';
+import { SpriteComponent, UIStateComponent, VisualComponent, AnimationComponent } from '../ecs/Component';
 
-export class StoreSystem extends System {
+export class BankSystem extends System {
     private eKey!: Input.Keyboard.Key;
     private previousEDown = false;
 
@@ -26,7 +26,7 @@ export class StoreSystem extends System {
         this.promptBg.setDepth(200);
         this.promptBg.visible = false;
 
-        this.promptText = this.createText(0, 0, '按 E 交易', {
+        this.promptText = this.createText(0, 0, '按 E 办理银行业务', {
             fontSize: FontConfig.small.size,
             color: '#ffffff',
             fontFamily: FontConfig.small.family,
@@ -46,49 +46,49 @@ export class StoreSystem extends System {
         const uistate = this.getUIState(entities);
         if (!uistate) return;
 
-        // 找到距离最近的商店
-        let nearestStore: Entity | null = null;
+        // 找到距离最近的银行 NPC
+        let nearestBank: Entity | null = null;
         let nearestDist = Infinity;
 
         for (const entity of entities) {
-            if (!entity.hasComponent('store')) continue;
+            if (!entity.hasComponent('bank_npc')) continue;
 
-            const storeSprite = entity.getComponent<SpriteComponent>('sprite')?.sprite;
-            if (!storeSprite) continue;
+            const bankSprite = entity.getComponent<SpriteComponent>('sprite')?.sprite;
+            if (!bankSprite) continue;
 
-            const dx = playerSprite.x - storeSprite.x;
-            const dy = playerSprite.y - storeSprite.y;
+            const dx = playerSprite.x - bankSprite.x;
+            const dy = playerSprite.y - bankSprite.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
 
             if (dist < nearestDist) {
                 nearestDist = dist;
-                nearestStore = entity;
+                nearestBank = entity;
             }
         }
 
-        // 更新交互提示：必须距离足够近且玩家面向商店
-        const isFacingStore = nearestStore ? this.isFacing(player, nearestStore) : false;
-        const canInteract = !!nearestStore && nearestDist <= this.INTERACT_DISTANCE && isFacingStore && !uistate.storeOpen && !uistate.containerOpen && !uistate.bankOpen;
-        this.updatePrompt(nearestStore, canInteract);
+        // 更新交互提示：必须距离足够近且玩家面向银行 NPC
+        const isFacingBank = nearestBank ? this.isFacing(player, nearestBank) : false;
+        const canInteract = !!nearestBank && nearestDist <= this.INTERACT_DISTANCE && isFacingBank && !uistate.storeOpen && !uistate.containerOpen && !uistate.bankOpen;
+        this.updatePrompt(nearestBank, canInteract);
 
         // 检测 E 键按下
         const eDown = this.eKey.isDown;
         if (eDown && !this.previousEDown && canInteract) {
-            uistate.storeOpen = true;
-            uistate.activeStore = nearestStore;
+            uistate.bankOpen = true;
+            uistate.activeBank = nearestBank;
         }
         this.previousEDown = eDown;
     }
 
-    private updatePrompt(store: Entity | null, visible: boolean): void {
-        if (!visible || !store) {
+    private updatePrompt(bank: Entity | null, visible: boolean): void {
+        if (!visible || !bank) {
             this.promptBg.visible = false;
             this.promptText.visible = false;
             return;
         }
 
-        const spriteComp = store.getComponent<SpriteComponent>('sprite');
-        const visualComp = store.getComponent<VisualComponent>('visual');
+        const spriteComp = bank.getComponent<SpriteComponent>('sprite');
+        const visualComp = bank.getComponent<VisualComponent>('visual');
         if (!spriteComp) return;
 
         const sprite = spriteComp.sprite;

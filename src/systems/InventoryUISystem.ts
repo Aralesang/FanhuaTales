@@ -5,7 +5,7 @@ import { FontConfig } from '../config/FontConfig';
 import {
     InventoryComponent, ItemDefinition, InventoryItem,
     SettingsComponent, UIStateComponent, EquipmentSlotComponent,
-    AttributeComponent, HotbarComponent
+    AttributeComponent, HotbarComponent, BankComponent
 } from '../ecs/Component';
 
 interface SlotRef {
@@ -38,6 +38,10 @@ export class InventoryUISystem extends System {
     // 快捷栏
     private hotbarLabel!: GameObjects.Text;
     private hotbarSlotLabels: GameObjects.Text[] = [];
+
+    // 银行余额显示
+    private bankBalanceBg!: GameObjects.Graphics;
+    private bankBalanceText!: GameObjects.Text;
 
     // Tooltip 元素
     private tooltipPanel!: GameObjects.Graphics;
@@ -148,6 +152,19 @@ export class InventoryUISystem extends System {
             text.visible = false;
             this.hotbarSlotLabels.push(text);
         }
+
+        // 银行余额显示
+        this.bankBalanceBg = this.scene.add.graphics();
+        this.bankBalanceBg.setDepth(1000);
+        this.bankBalanceBg.visible = false;
+
+        this.bankBalanceText = this.createText(0, 0, '', {
+            fontSize: FontConfig.small.size, color: '#ffcc44',
+            fontFamily: FontConfig.small.family,
+        });
+        this.bankBalanceText.setDepth(1001);
+        this.bankBalanceText.setOrigin(0.5, 0.5);
+        this.bankBalanceText.visible = false;
 
         // Tooltip（depth 高于血条 9998）
         this.tooltipPanel = this.scene.add.graphics();
@@ -406,6 +423,25 @@ export class InventoryUISystem extends System {
         this.panel.fillRoundedRect(leftGridX - padding, gridY - padding, panelW, leftPanelH, 8 * scale);
         this.panel.lineStyle(2 * scale, 0x444466, 1);
         this.panel.strokeRoundedRect(leftGridX - padding, gridY - padding, panelW, leftPanelH, 8 * scale);
+
+        // 银行余额显示（背包面板下方，独立小块）
+        const bankComp = this.targetEntity?.getComponent<BankComponent>('bank');
+        const bankGold = bankComp?.gold ?? 0;
+        const balanceText = `银行: ${bankGold} 金币`;
+        const bgW = 88 * scale;
+        const bgH = 18 * scale;
+        const bgX = leftGridX - padding + 6 * scale;
+        const bgY = gridY - padding + leftPanelH + 6 * scale;
+        this.bankBalanceBg.clear();
+        this.bankBalanceBg.fillStyle(0x2a2a3e, 0.9);
+        this.bankBalanceBg.fillRoundedRect(bgX, bgY, bgW, bgH, 4 * scale);
+        this.bankBalanceBg.lineStyle(Math.max(1, scale), 0xaa8844, 1);
+        this.bankBalanceBg.strokeRoundedRect(bgX, bgY, bgW, bgH, 4 * scale);
+        this.bankBalanceBg.visible = true;
+        this.bankBalanceText.setPosition(bgX + bgW / 2, bgY + bgH / 2);
+        this.bankBalanceText.setScale(scale);
+        this.bankBalanceText.setText(balanceText);
+        this.bankBalanceText.visible = true;
 
         if (this.isContainerMode) {
             // 容器面板背景（右侧）
@@ -675,6 +711,8 @@ export class InventoryUISystem extends System {
         for (const text of this.hotbarSlotLabels) {
             text.visible = false;
         }
+        this.bankBalanceBg.visible = false;
+        this.bankBalanceText.visible = false;
         this.tooltipPanel.visible = false;
         this.tooltipName.visible = false;
         this.tooltipType.visible = false;

@@ -6,6 +6,7 @@ import { Player } from '../entity/Player';
 import { Enemy } from '../entity/Enemy';
 import { Container } from '../entity/Container';
 import { Store } from '../entity/Store';
+import { Bank } from '../entity/Bank';
 import { InputSystem } from '../systems/InputSystem';
 import { InventorySystem } from '../systems/InventorySystem';
 import { InventoryUISystem } from '../systems/InventoryUISystem';
@@ -15,6 +16,8 @@ import { DropSystem } from '../systems/DropSystem';
 import { PickupSystem } from '../systems/PickupSystem';
 import { StoreSystem } from '../systems/StoreSystem';
 import { StoreUISystem } from '../systems/StoreUISystem';
+import { BankSystem } from '../systems/BankSystem';
+import { BankUISystem } from '../systems/BankUISystem';
 import { HotbarUISystem } from '../systems/HotbarUISystem';
 import { EnemyAISystem } from '../systems/EnemyAISystem';
 import { AttackSystem } from '../systems/AttackSystem';
@@ -49,6 +52,8 @@ export class GameScene extends Scene {
     private systemMenuSystem!: SystemMenuSystem;
     private storeSystem!: StoreSystem;
     private storeUISystem!: StoreUISystem;
+    private bankSystem!: BankSystem;
+    private bankUISystem!: BankUISystem;
     private hotbarUISystem!: HotbarUISystem;
     private enemyAISystem!: EnemyAISystem;
     private attackSystem!: AttackSystem;
@@ -166,6 +171,11 @@ export class GameScene extends Scene {
                     const store = new Store(this, obj.x, obj.y, storeName, storeGoods);
                     this.entities.push(store);
                 }
+                if (obj.type === 'Bank' && obj.x != null && obj.y != null) {
+                    const bankName = obj.name || '银行职员';
+                    const bank = new Bank(this, obj.x, obj.y, bankName);
+                    this.entities.push(bank);
+                }
                 if (obj.type === 'camera' && obj.properties) {
                     const props = obj.properties as Array<{ name: string; value: number }>;
                     const zoomProp = props.find(p => p.name === 'zoom');
@@ -247,6 +257,20 @@ export class GameScene extends Scene {
             }
         }
 
+        // 银行 NPC 与所有其他有精灵的实体碰撞（防止穿过）
+        for (const entity of this.entities) {
+            if (!entity.hasComponent('bank_npc')) continue;
+            const bankSprite = entity.getComponent<SpriteComponent>('sprite')?.sprite;
+            if (!bankSprite) continue;
+            for (const other of this.entities) {
+                if (other === entity) continue;
+                const otherSprite = other.getComponent<SpriteComponent>('sprite')?.sprite;
+                if (otherSprite) {
+                    this.physics.add.collider(bankSprite, otherSprite);
+                }
+            }
+        }
+
         // 为所有拥有生命值的实体创建血条
         for (const entity of this.entities) {
             if (entity.hasComponent('health')) {
@@ -291,6 +315,8 @@ export class GameScene extends Scene {
         this.systemMenuSystem = new SystemMenuSystem(this);
         this.storeSystem = new StoreSystem(this);
         this.storeUISystem = new StoreUISystem(this);
+        this.bankSystem = new BankSystem(this);
+        this.bankUISystem = new BankUISystem(this);
         this.hotbarUISystem = new HotbarUISystem(this);
         this.enemyAISystem = new EnemyAISystem(this);
         this.attackSystem = new AttackSystem(this);
@@ -409,6 +435,8 @@ export class GameScene extends Scene {
         this.hotbarUISystem.update(this.entities, delta);
         this.storeSystem.update(this.entities, delta);
         this.storeUISystem.update(this.entities, delta);
+        this.bankSystem.update(this.entities, delta);
+        this.bankUISystem.update(this.entities, delta);
         this.systemMenuSystem.update(this.entities, delta);
 
         // 清理已销毁实体的血条

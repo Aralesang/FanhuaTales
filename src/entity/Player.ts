@@ -1,10 +1,11 @@
-import { Scene, GameObjects, Physics, Input } from 'phaser';
+import { Scene, Physics, Input } from 'phaser';
 import { Entity } from '../ecs/Entity';
 import {
     MovementComponent, AnimationComponent, InputComponent,
     AttackComponent, PlayerComponent, HealthComponent,
     SpriteComponent, VisualComponent, InventoryComponent,
-    EquipmentSlotComponent, AttributeComponent, HotbarComponent
+    EquipmentSlotComponent, AttributeComponent, HotbarComponent,
+    BankComponent
 } from '../ecs/Component';
 
 export class Player extends Entity {
@@ -49,6 +50,9 @@ export class Player extends Entity {
         // 快捷栏组件
         this.addComponent(new HotbarComponent());
 
+        // 银行组件
+        this.addComponent(new BankComponent());
+
         // 生命值组件
         const health = new HealthComponent();
         health.hp = 100;
@@ -59,7 +63,10 @@ export class Player extends Entity {
         if (scene.input.keyboard) {
             const input = new InputComponent();
             input.cursors = scene.input.keyboard.createCursorKeys();
-            input.attackKey = scene.input.keyboard.addKey('X');
+            input.upKey = scene.input.keyboard.addKey('W');
+            input.downKey = scene.input.keyboard.addKey('S');
+            input.leftKey = scene.input.keyboard.addKey('A');
+            input.rightKey = scene.input.keyboard.addKey('D');
             input.shiftKey = scene.input.keyboard.addKey('SHIFT');
             input.inventoryKey = scene.input.keyboard.addKey('B');
             input.hotbarKey = scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.CTRL);

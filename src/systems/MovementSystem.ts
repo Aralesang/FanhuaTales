@@ -1,7 +1,7 @@
 import { Scene, Physics } from 'phaser';
 import { System } from '../ecs/System';
 import { Entity } from '../ecs/Entity';
-import { MovementComponent, AnimationComponent, HitStunComponent, AttackComponent } from '../ecs/Component';
+import { MovementComponent, AnimationComponent, HitStunComponent, AttackComponent, InputComponent } from '../ecs/Component';
 
 export class MovementSystem extends System {
     update(entities: Entity[], _delta: number): void {
@@ -41,17 +41,27 @@ export class MovementSystem extends System {
             if (entity.hasComponent('animation')) {
                 const anim = entity.getComponent<AnimationComponent>('animation')!;
 
-                if (movement.dy < 0 && Math.abs(movement.dy) >= Math.abs(movement.dx)) {
+                let facingDx = movement.dx;
+                let facingDy = movement.dy;
+
+                // 有输入组件的实体（玩家）面向鼠标位置
+                if (entity.hasComponent('input')) {
+                    const input = entity.getComponent<InputComponent>('input')!;
+                    facingDx = input.mouseX - sprite.x;
+                    facingDy = input.mouseY - sprite.y;
+                }
+
+                if (facingDy < 0 && Math.abs(facingDy) >= Math.abs(facingDx)) {
                     anim.facing = 'up';
-                } else if (movement.dy > 0 && Math.abs(movement.dy) >= Math.abs(movement.dx)) {
+                } else if (facingDy > 0 && Math.abs(facingDy) >= Math.abs(facingDx)) {
                     anim.facing = 'down';
-                } else if (movement.dx !== 0) {
+                } else if (facingDx !== 0 || facingDy !== 0) {
                     anim.facing = 'right';
                 }
 
-                if (movement.dx < 0) {
+                if (facingDx < 0) {
                     sprite.setFlipX(true);
-                } else if (movement.dx > 0) {
+                } else if (facingDx > 0) {
                     sprite.setFlipX(false);
                 }
             }
