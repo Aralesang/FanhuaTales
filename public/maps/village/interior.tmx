@@ -234,7 +234,7 @@
    </properties>
    <point/>
   </object>
-  <object id="4" name="门" type="Door" x="255.869" y="360.594" width="16" height="7.6875">
+  <object id="4" name="门" type="Door" x="255.869" y="353" width="16" height="15.2815">
    <properties>
     <property name="target_scene" value="village"/>
    </properties>

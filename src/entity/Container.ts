@@ -3,6 +3,13 @@ import { Entity } from '../ecs/Entity';
 import { SpriteComponent, InventoryComponent, ContainerComponent, VisualComponent, ItemDefinition } from '../ecs/Component';
 import { InventorySystem } from '../systems/InventorySystem';
 
+// === 容器（宝箱）碰撞体可调参数 ===
+// 宝箱1 sprite 16x32，上半部分透明，下半 16x16 为可见箱体
+const CONTAINER_BODY_WIDTH = 16;
+const CONTAINER_BODY_HEIGHT = 16;
+const CONTAINER_BODY_OFFSET_X = 0;
+const CONTAINER_BODY_OFFSET_Y = 16;
+
 export class Container extends Entity {
     constructor(
         scene: Scene,
@@ -18,15 +25,13 @@ export class Container extends Entity {
         scene.physics.add.existing(sprite);
         const body = sprite.body as Physics.Arcade.Body;
         body.setImmovable(true);
-        // 碰撞体大小与视觉匹配（16x32）
-        body.setSize(16, 16);
-        body.setOffset(0, 16);
         this.addComponent(new SpriteComponent(sprite));
+        this.applyBodyConfig(CONTAINER_BODY_WIDTH, CONTAINER_BODY_HEIGHT, CONTAINER_BODY_OFFSET_X, CONTAINER_BODY_OFFSET_Y);
 
-        // 视觉大小：图片为 16x32，但上半部分透明，实际可见箱体为 16x16
+        // 视觉大小：与碰撞体保持一致
         const visual = new VisualComponent();
-        visual.width = 16;
-        visual.height = 16;
+        visual.width = CONTAINER_BODY_WIDTH;
+        visual.height = CONTAINER_BODY_HEIGHT;
         this.addComponent(visual);
 
         // 容器标记
@@ -44,3 +49,4 @@ export class Container extends Entity {
         }
     }
 }
+

@@ -8,6 +8,28 @@ import {
     BankComponent
 } from '../ecs/Component';
 
+// ============================================================
+// 玩家碰撞体可调参数（自由修改）
+// ------------------------------------------------------------
+// Player sprite 来自 human_idle，单帧尺寸 80x80 像素，origin 默认 (0.5, 0.5)
+// 即 sprite.x / sprite.y 是 sprite 的中心坐标。
+//
+// body（物理碰撞体）相对 sprite 左上角 (0, 0) 定位。
+//   - 让 body 居中在 sprite：OFFSET_X = (80 - BODY_WIDTH) / 2 = 35
+//   - 让 body 落到脚底位置：增大 OFFSET_Y（如 50、55）
+//   - 让 body 更窄：减小 BODY_WIDTH 并相应调大 OFFSET_X
+// 调整后 body 视觉位置可按 F9 打开 Debug 模式查看（红框）
+// ============================================================
+
+/** 碰撞体宽度（像素） */
+const PLAYER_BODY_WIDTH = 10;
+/** 碰撞体高度（像素） */
+const PLAYER_BODY_HEIGHT = 5;
+/** 碰撞体相对 sprite 左上角的 X 偏移 */
+const PLAYER_BODY_OFFSET_X = 35;
+/** 碰撞体相对 sprite 左上角的 Y 偏移 */
+const PLAYER_BODY_OFFSET_Y = 42;
+
 export class Player extends Entity {
     constructor(scene: Scene, x: number, y: number) {
         super(scene);
@@ -17,11 +39,15 @@ export class Player extends Entity {
         scene.physics.add.existing(sprite);
         const body = sprite.body as Physics.Arcade.Body;
         body.setCollideWorldBounds(true);
-        body.setSize(10, 10, true);
         this.addComponent(new SpriteComponent(sprite));
+        // 通过 BodyConfigComponent 配置碰撞体（数据与 body 同时设置，方便调试/未来动态调整）
+        this.applyBodyConfig(PLAYER_BODY_WIDTH, PLAYER_BODY_HEIGHT, PLAYER_BODY_OFFSET_X, PLAYER_BODY_OFFSET_Y);
 
-        // 视觉大小组件：角色实际视觉尺寸 10x10
-        this.addComponent(new VisualComponent());
+        // 视觉大小组件：与碰撞体保持一致，用于距离/范围计算
+        const visual = new VisualComponent();
+        visual.width = PLAYER_BODY_WIDTH;
+        visual.height = PLAYER_BODY_HEIGHT;
+        this.addComponent(visual);
 
         // 移动组件
         const movement = new MovementComponent();
@@ -75,3 +101,4 @@ export class Player extends Entity {
         }
     }
 }
+

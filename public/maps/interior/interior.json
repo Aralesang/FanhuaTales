@@ -296,7 +296,7 @@
                  "y":340.2614
                 }, 
                 {
-                 "height":7.6875,
+                 "height":15.2815,
                  "id":4,
                  "name":"\u95e8",
                  "properties":[
@@ -315,7 +315,7 @@
                  "visible":true,
                  "width":16,
                  "x":255.86932,
-                 "y":360.594
+                 "y":353
                 }],
          "opacity":1,
          "type":"objectgroup",

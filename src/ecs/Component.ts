@@ -22,6 +22,27 @@ export class VisualComponent implements Component {
     height: number = 10;
 }
 
+/**
+ * 物理碰撞体配置组件：描述 body 相对 sprite 左上角的尺寸与偏移。
+ * 由 Entity.applyBodyConfig() 创建并立即写入到 Phaser body 上。
+ */
+export class BodyConfigComponent implements Component {
+    readonly type = 'body_config';
+    width: number;
+    height: number;
+    /** body 相对 sprite 左上角的 X 偏移（像素） */
+    offsetX: number;
+    /** body 相对 sprite 左上角的 Y 偏移（像素） */
+    offsetY: number;
+
+    constructor(width: number, height: number, offsetX: number, offsetY: number) {
+        this.width = width;
+        this.height = height;
+        this.offsetX = offsetX;
+        this.offsetY = offsetY;
+    }
+}
+
 /** 移动数据组件 */
 export class MovementComponent implements Component {
     readonly type = 'movement';

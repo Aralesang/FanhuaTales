@@ -6,6 +6,13 @@ import {
     InventoryItem
 } from '../ecs/Component';
 
+// === 商店 NPC 碰撞体可调参数 ===
+// human_idle 80x80，居中：offset = (80 - 10) / 2 = 35
+const STORE_BODY_WIDTH = 10;
+const STORE_BODY_HEIGHT = 5;
+const STORE_BODY_OFFSET_X = 35;
+const STORE_BODY_OFFSET_Y = 42;
+
 export class Store extends Entity {
     constructor(
         scene: Scene,
@@ -22,13 +29,13 @@ export class Store extends Entity {
         scene.physics.add.existing(sprite);
         const body = sprite.body as Physics.Arcade.Body;
         body.setImmovable(true);
-        body.setSize(10, 10, true);
         this.addComponent(new SpriteComponent(sprite));
+        this.applyBodyConfig(STORE_BODY_WIDTH, STORE_BODY_HEIGHT, STORE_BODY_OFFSET_X, STORE_BODY_OFFSET_Y);
 
-        // 视觉大小（与角色相同）
+        // 视觉大小（与碰撞体一致）
         const visual = new VisualComponent();
-        visual.width = 10;
-        visual.height = 10;
+        visual.width = STORE_BODY_WIDTH;
+        visual.height = STORE_BODY_HEIGHT;
         this.addComponent(visual);
 
         // 商店组件
@@ -40,3 +47,4 @@ export class Store extends Entity {
         this.addComponent(new InventoryComponent(20));
     }
 }
+

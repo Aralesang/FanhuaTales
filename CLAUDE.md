@@ -242,6 +242,7 @@ private cursors: Types.Input.Keyboard.CursorKeys;
 |------|------|-----------|
 | `SpriteComponent` | sprite (GameObjects.Sprite) | 所有需要渲染的实体 |
 | `VisualComponent` | width, height (视觉尺寸,用于距离判定) | EnemyAI/Pickup/Container 交互距离 |
+| `BodyConfigComponent` | width, height, offsetX, offsetY (碰撞体相对 sprite 左上角的尺寸与偏移) | 实体构造时通过 `this.applyBodyConfig(...)` 配置 |
 | `MovementComponent` | dx, dy, speed, walkSpeed, runSpeed, isRunning | InputSystem, MovementSystem, AnimationSystem |
 | `AnimationComponent` | currentState, facing | MovementSystem, AttackSystem, AnimationSystem |
 | `InputComponent` | cursors, WASD keys, shiftKey, inventoryKey, mouseX/Y | InputSystem |
