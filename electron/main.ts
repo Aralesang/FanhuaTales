@@ -46,6 +46,18 @@ function createWindow(): void {
         mainWindow.loadFile(indexPath);
     }
 
+    // Ctrl+Shift+I 切换开发者工具（开发调试用）
+    mainWindow.webContents.on('before-input-event', (_event, input) => {
+        const isToggleDevTools = input.control && input.shift && input.key.toLowerCase() === 'i';
+        if (isToggleDevTools) {
+            if (mainWindow?.webContents.isDevToolsOpened()) {
+                mainWindow.webContents.closeDevTools();
+            } else {
+                mainWindow?.webContents.openDevTools({ mode: 'detach' });
+            }
+        }
+    });
+
     mainWindow.on('closed', () => {
         mainWindow = null;
     });

@@ -13,6 +13,26 @@
         {
             "color": "#ffa0a0a4",
             "drawFill": true,
+            "id": 12,
+            "members": [
+            ],
+            "name": "Bank",
+            "type": "class",
+            "useAs": [
+                "property",
+                "map",
+                "layer",
+                "object",
+                "tile",
+                "tileset",
+                "wangcolor",
+                "wangset",
+                "project"
+            ]
+        },
+        {
+            "color": "#ffa0a0a4",
+            "drawFill": true,
             "id": 1,
             "members": [
                 {
@@ -69,16 +89,6 @@
                     "name": "target_scene",
                     "type": "string",
                     "value": ""
-                },
-                {
-                    "name": "target_spawn_x",
-                    "type": "float",
-                    "value": 0
-                },
-                {
-                    "name": "target_spawn_y",
-                    "type": "float",
-                    "value": 0
                 }
             ],
             "name": "Door",
@@ -188,10 +198,15 @@
         {
             "color": "#ffa0a0a4",
             "drawFill": true,
-            "id": 11,
+            "id": 13,
             "members": [
+                {
+                    "name": "id",
+                    "type": "int",
+                    "value": 1
+                }
             ],
-            "name": "Store",
+            "name": "Spawn",
             "type": "class",
             "useAs": [
                 "property",
@@ -208,10 +223,10 @@
         {
             "color": "#ffa0a0a4",
             "drawFill": true,
-            "id": 12,
+            "id": 11,
             "members": [
             ],
-            "name": "Bank",
+            "name": "Store",
             "type": "class",
             "useAs": [
                 "property",

@@ -10,8 +10,9 @@ export class Entity {
         this.scene = scene;
     }
 
-    /** 快捷获取精灵引用 */
+    /** 快捷获取精灵引用。实体被销毁后返回 undefined，防止访问已销毁的 sprite。 */
     get sprite(): GameObjects.Sprite | undefined {
+        if (!this.active) return undefined;
         return this.getComponent<SpriteComponent>('sprite')?.sprite;
     }
 

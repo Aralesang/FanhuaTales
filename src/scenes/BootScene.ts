@@ -74,10 +74,6 @@ export class BootScene extends Scene {
         this.soundsMap = this.cache.json.get('soundsMap') as SoundsMap;
         this.itemsMap = this.cache.json.get('itemsMap') as ItemsMap;
 
-        // 获取默认场景（maps-map.json 的第一个条目）
-        const defaultMapKey = Object.keys(this.mapsMap)[0];
-        const mapPath = this.mapsMap[defaultMapKey].replace('.tmx', '.json');
-
         // 加载角色 spritesheets
         for (const [key, config] of Object.entries(this.imagesMap)) {
             this.load.spritesheet(key, config.path, {
@@ -98,12 +94,15 @@ export class BootScene extends Scene {
             }
         });
 
-        // 加载地图 JSON（需要先从 Tiled 导出为同名 .json）
-        this.load.tilemapTiledJSON(defaultMapKey, mapPath);
+        // 加载所有地图 JSON（支持场景切换）
+        for (const [key, path] of Object.entries(this.mapsMap)) {
+            this.load.tilemapTiledJSON(key, path.replace('.tmx', '.json'));
+        }
 
-        // 预加载 tileset 图片（key 与 tileset name 对应）
+        // 预加载所有地图可能用到的 tileset 图片（key 与 Tiled 中 tileset name 对应）
         this.load.image('surface', 'images/map/village/FDR_Ground_Tiles.png');
         this.load.image('building', 'images/map/village/FDR_Village.png');
+        this.load.image('interior', 'images/map/village/FG_Interior.png');
         this.load.image('solid', 'images/map/solid.png');
 
         // 加载音效

@@ -54,8 +54,10 @@ export class AttackSystem extends System {
             }
         }
 
-        const body = sprite.body as Physics.Arcade.Body;
-        body.setVelocity(0, 0);
+        const body = sprite.body as Physics.Arcade.Body | undefined;
+        if (body) {
+            body.setVelocity(0, 0);
+        }
 
         const attackAnimKey = `human_sword_${anim.facing}`;
         sprite.play(attackAnimKey);
@@ -100,7 +102,8 @@ export class AttackSystem extends System {
     private checkAttackHit(attacker: Entity, entities: Entity[]): void {
         const attackerSprite = attacker.sprite;
         if (!attackerSprite) return;
-        const attackerBody = attackerSprite.body as Physics.Arcade.Body;
+        const attackerBody = attackerSprite.body as Physics.Arcade.Body | undefined;
+        if (!attackerBody) return;
 
         // 玩家中心坐标（判定区以此为中心，再根据方向偏移）
         const cx = attackerBody.x + attackerBody.width / 2;
@@ -160,7 +163,8 @@ export class AttackSystem extends System {
 
             const targetSprite = target.sprite;
             if (!targetSprite) continue;
-            const targetBody = targetSprite.body as Physics.Arcade.Body;
+            const targetBody = targetSprite.body as Physics.Arcade.Body | undefined;
+            if (!targetBody) continue;
             const tx = targetBody.x + targetBody.width / 2;
             const ty = targetBody.y + targetBody.height / 2;
 

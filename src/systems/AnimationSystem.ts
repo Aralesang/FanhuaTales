@@ -39,7 +39,8 @@ export class AnimationSystem extends System {
 
             if (entity.hasComponent('movement')) {
                 const movement = entity.getComponent<MovementComponent>('movement')!;
-                const body = sprite.body as Physics.Arcade.Body;
+                const body = sprite.body as Physics.Arcade.Body | undefined;
+                if (!body) continue;
                 const velocityX = body.velocity.x;
                 const velocityY = body.velocity.y;
                 const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);

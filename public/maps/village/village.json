@@ -248,19 +248,14 @@
                  "name":"\u95e8",
                  "properties":[
                         {
+                         "name":"id",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
                          "name":"target_scene",
                          "type":"string",
                          "value":"interior"
-                        }, 
-                        {
-                         "name":"target_spawn_x",
-                         "type":"float",
-                         "value":0
-                        }, 
-                        {
-                         "name":"target_spawn_y",
-                         "type":"float",
-                         "value":0
                         }],
                  "rotation":0,
                  "type":"Door",
@@ -385,8 +380,26 @@
                  "type":"Bank",
                  "visible":true,
                  "width":0,
-                 "x":297.75,
-                 "y":164.25
+                 "x":284.386363636364,
+                 "y":201.340909090909
+                }, 
+                {
+                 "height":0,
+                 "id":13,
+                 "name":"\u623f\u5c4b\u51fa\u53e3",
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"int",
+                         "value":0
+                        }],
+                 "rotation":0,
+                 "type":"Spawn",
+                 "visible":true,
+                 "width":0,
+                 "x":312.363636363636,
+                 "y":149.636363636364
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -395,7 +408,7 @@
          "y":0
         }],
  "nextlayerid":12,
- "nextobjectid":13,
+ "nextobjectid":14,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",

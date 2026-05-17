@@ -12,7 +12,8 @@ export class MovementSystem extends System {
 
             const sprite = entity.sprite;
             if (!sprite) continue;
-            const body = sprite.body as Physics.Arcade.Body;
+            const body = sprite.body as Physics.Arcade.Body | undefined;
+            if (!body) continue;
 
             const movement = entity.getComponent<MovementComponent>('movement')!;
 

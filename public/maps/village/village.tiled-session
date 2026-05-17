@@ -19,11 +19,11 @@
             "expandedObjectLayers": [
                 6
             ],
-            "scale": 5.5,
+            "scale": 8,
             "selectedLayer": 6,
             "viewCenter": {
-                "x": -0.09090909090908639,
-                "y": -0.09090909090909349
+                "x": 275.5,
+                "y": 302.6875
             }
         },
         "interior.tsx": {
@@ -31,17 +31,18 @@
             "scaleInEditor": 1
         },
         "solid.tsx": {
-            "scaleInDock": 2
+            "scaleInDock": 2,
+            "scaleInEditor": 23
         },
         "village.json": {
             "expandedObjectLayers": [
                 3
             ],
-            "scale": 5.5,
-            "selectedLayer": 7,
+            "scale": 8,
+            "selectedLayer": 6,
             "viewCenter": {
-                "x": 240.0909090909091,
-                "y": 159.90909090909093
+                "x": 327.5,
+                "y": 79.1875
             }
         },
         "village.json#building": {
@@ -79,7 +80,7 @@
             "scaleInEditor": 1
         }
     },
-    "last.exportedFilePath": "D:/MyProjects/Phaser/FanhuaTales/public/maps/village",
+    "last.exportedFilePath": "D:/MyProjects/Phaser/FanhuaTales/public/maps/interior",
     "last.externalTilesetPath": "D:/MyProjects/Excalibur/FanhuaTales/public/map/village",
     "last.imagePath": "D:/MyProjects/Excalibur/FanhuaTales/public/images/map/village",
     "map.fixedSize": false,
@@ -92,14 +93,16 @@
         "interior.tmx"
     ],
     "project": "village.tiled-project",
-    "property.type": "Item",
+    "property.type": "int",
     "recentFiles": [
+        "solid.tsx",
         "interior.tmx",
         "village.json",
         "interior.tsx",
         "village.tmx",
         "building.tsx"
     ],
+    "resizeMap.removeObjects": false,
     "tileset.embedInMap": true,
     "tileset.lastUsedFormat": "tsx",
     "tileset.tileSize": {

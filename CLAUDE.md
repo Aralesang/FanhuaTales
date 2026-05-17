@@ -323,21 +323,20 @@ Phaser 无法解析外部 `.tsx` 文件。Tiled 导出 JSON 时**必须选择内
 
 ### Tileset Name ↔ Cache Key
 
+**GameScene 已改为动态加载 tileset**：遍历 Tiled JSON 中的 `tilesets` 数组，对每个 tileset 调用 `addTilesetImage(name, name)`，再统一传入 `createLayer(..., allTilesets, ...)` 自动匹配 GID。因此不同地图可用完全不同的 tileset 组合。
+
+当前预加载的 tileset 图片（BootScene）：
+
 | Tileset Name | 加载路径 | 用途 |
 |-------------|---------|------|
-| `surface` | `images/map/village/FDR_Ground_Tiles.png` | 地面、土壤、草地 |
-| `building` | `images/map/village/FDR_Village.png` | 建筑、装饰、flower |
-| `solid` | `images/map/solid.png` | 碰撞层(纯色,仅用于碰撞检测) |
+| `surface` | `images/map/village/FDR_Ground_Tiles.png` | 地面、土壤、草地（village） |
+| `building` | `images/map/village/FDR_Village.png` | 建筑、装饰（village） |
+| `interior` | `images/map/village/FG_Interior.png` | 室内家具、墙壁、地板（interior） |
+| `solid` | `images/map/solid.png` | 碰撞层（纯色，仅用于碰撞检测） |
 
-### 图层绘制顺序(自下而上)
+### 图层绘制顺序
 
-1. `soil` (surface)
-2. `grass` (surface)
-3. `flower` (**building** — flower GID 在 building tileset 范围内)
-4. `building` (building)
-5. `building2` (building)
-6. `building3` (building)
-7. `solid` (solid) — 碰撞层,`setAlpha(0)` 隐藏 + `setCollisionByExclusion([-1])`
+图层按 Tiled JSON 中的顺序**自下而上**创建。`solid` 图层名固定作为碰撞层：`setAlpha(0)` 隐藏 + `setCollisionByExclusion([-1])`。其他图层名由 Tiled 决定（如 village 的 `soil`/`grass`/`flower`/`building`…，interior 的 `地板`/`地毯`/`墙壁`/`家具`…）。
 
 ### Object Layer(`Objects`)
 
@@ -351,6 +350,8 @@ Phaser 无法解析外部 `.tsx` 文件。Tiled 导出 JSON 时**必须选择内
 | `Store` | 商店 NPC | `name` = 商店名;`properties` 中"物品 ID → 数量"作为商品 |
 | `Bank` | 银行 NPC | `name` = NPC 名 |
 | `camera` | 相机参数 | `properties` 数组中读取 `zoom`(默认 3) |
+| `Door` | 传送门 | `properties` 读取 `target_scene`(目标地图 key) 和 `id`(目标 Spawn 的 id);玩家进入矩形区域后调用 `loadMap()` 切换地图,在目标地图查找匹配 id 的 `Spawn` 对象,找不到则抛错 |
+| `Spawn` | 出生点 | `properties` 读取 `id`(任意字符串);Door 通过该 id 找到对应的 Spawn 进行传送 |
 
 容器/商店的 properties 兼容三种格式:数组 `[{name, value}]`、对象 `{key: number}`、嵌套对象 `{key: {quantity: number}}`(Tiled 1.10+ 自定义类)。
 
@@ -412,8 +413,8 @@ this.cameras.main.startFollow(targetSprite, true, 0.1, 0.1);  // 线性插值 0.
    - 解决:重新导出 JSON,内嵌 tileset
 
 2. **某图层不显示**
-   - 原因:图层 tile GID 属于某 tileset,但 `createLayer()` 绑定了错误的 tileset
-   - 解决:检查 Tiled 中该图层实际使用的 tileset,确保 `addTilesetImage` 和 `createLayer` 的 key 匹配(例如 flower 层实际使用 building tileset)
+   - 原因:BootScene 没有预加载该地图使用的 tileset 图片
+   - 解决:在 BootScene 的 `create()` 中为该 tileset name 添加 `this.load.image(name, path)`
 
 3. **碰撞框偏移(紫色框在左上角)**
    - 原因:`super(scene, x, y, 'xxx')` 传入了动画 key 而非 texture key,Phaser 创建了 32x32 缺失纹理
@@ -455,12 +456,14 @@ this.cameras.main.startFollow(targetSprite, true, 0.1, 0.1);  // 线性插值 0.
 |---------|--------|
 | `MovementComponent.walkSpeed/runSpeed` | `AnimationSystem` 中的速度阈值判定 |
 | 新增精灵表 | `images-map.json` 加条目,遵循 3 行 × N 列布局 |
-| 新增/修改地图 | `maps-map.json` 加映射;Tiled JSON 中 tileset 已内嵌;`createLayer` 绑定的 tileset 正确 |
+| 新增/修改地图 | `maps-map.json` 加映射;Tiled JSON 中 tileset 已内嵌;BootScene 中预加载新 tileset 图片;图层名按需调整 |
 | 修改物理体大小 | 实体构造函数中 `body.setSize(w, h)` 同步,匹配视觉尺寸 |
 | 修改相机 zoom | 在 Tiled 的 `camera` 对象 `properties` 中调整 `zoom`,无需改代码 |
 | 新增组件 | `Component.ts` 加类(纯数据);更新本文件 §8 的组件清单 |
 | 新增系统 | 继承 `System`,加入 `GameScene.update()` **正确位置**(参考 §8 更新顺序);更新本文件 §4 项目结构 |
 | 新增 Object Layer 类型 | `GameScene.create()` 中加 `obj.type === '...'` 分支;更新本文件 §10 |
+| 新增地图 | `maps-map.json` 加映射;BootScene 会自动加载所有地图 JSON |
+| 新增传送门(Door) | Tiled 中放置 Door 对象,配置 `target_scene` 和 `id`;目标地图中放置 `Spawn` 对象,`id` 与 Door 的 `id` 对应 |
 | 改 Electron 主进程行为 | 改 `electron/main.ts`,跑 `npm run build:electron`(dev 模式下 `dev:electron` 会自动重编) |
 | 改打包行为 | 暂未集成 electron-builder。需要发行 `.exe` / `.dmg` 时再加 |
 
