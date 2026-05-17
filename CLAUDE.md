@@ -63,7 +63,8 @@ D:\MyProjects\Phaser\FanhuaTales\
 │   │   ├── maps-map.json           # 场景 key → Tiled JSON 路径
 │   │   ├── sounds-map.json         # 音效 key → 文件路径
 │   │   ├── items-map.json          # 道具定义(类型/价格/装备属性)
-│   │   └── drops-map.json          # 敌人掉落表
+│   │   ├── drops-map.json          # 敌人掉落表
+│   │   └── buffs-map.json          # Buff 定义(效果/间隔/持续时间)
 │   ├── fonts/                      # 像素位图字体(VonwaonBitmap-12/16px)
 │   ├── images/
 │   │   ├── human/                  # 角色精灵表(idle/walk/run/sword,均 3 行)
@@ -92,6 +93,8 @@ D:\MyProjects\Phaser\FanhuaTales\
 │   │   ├── EnemyAISystem.ts        # AI 巡逻/追击/攻击
 │   │   ├── AttackSystem.ts         # 攻击行为执行 + 命中判定
 │   │   ├── HitSystem.ts            # 硬直/扣血/死亡
+│   │   ├── BuffSystem.ts           # Buff 持续效果（每 interval tick 触发，按 duration 自动移除）
+│   │   ├── BuffUISystem.ts         # 屏幕右上角 buff 色块 + 剩余时间 + hover tooltip
 │   │   ├── MovementSystem.ts       # 数据→物理速度
 │   │   ├── AnimationSystem.ts      # 速度+状态→动画切换
 │   │   ├── DropSystem.ts           # 敌人死亡→生成掉落物
@@ -212,7 +215,18 @@ private cursors: Types.Input.Keyboard.CursorKeys;
 |------|------|----------|
 | **Entity** | 继承 `Entity` 基类,负责组件的组装与挂载,**本质上是组件工厂** | 包含业务逻辑、存储状态数据 |
 | **Component** | 纯数据结构,仅存储实体的属性与状态 | 包含任何方法、逻辑、输入检测、动画调用 |
-| **System** | 遍历所有实体,根据组件数据执行逻辑,**纯数据驱动** | 直接持有实体引用、关心实体的具体身份 |
+| **System** | 遍历所有实体,根据组件数据执行逻辑,**纯数据驱动** | 直接持有实体引用、关心实体的具体身份;**对外暴露任何方法供外部调用**(包括静态/实例方法) |
+
+### 系统独立原则(严格执行,新功能必须遵循)
+
+**不允许从任何位置(包括其他系统、Scene、UI、Entity)直接调用某个 System 的方法。** 系统是封闭单元,只通过两个出入口与外部协作:
+
+- **入口**:外部修改组件中的"待处理数据"(纯字符串/数字标记),系统在自己的 `update` 里轮询并响应
+- **出口**:系统在 `update` 中读写组件数据,其他系统在下一次 `update` 中看到变化
+
+参考示例:`BuffSystem` —— 外部加 buff 不调用 `addBuff()`,而是 push 一条 `{buffId, duration}` 到 `BuffComponent.pendingBuffs`;`BuffSystem.update` 自己扫描 pendingBuffs 并实例化为 `BuffInstance`。
+
+任何新增系统必须按此模式开发。历史遗留的静态工具方法(如 `InventorySystem.addItem`)在重构时也应迁移到"组件标记 + 系统轮询"模式。
 
 ### 关键设计原则
 
@@ -223,13 +237,14 @@ private cursors: Types.Input.Keyboard.CursorKeys;
    → ContainerSystem / StoreSystem / BankSystem (交互检测,可能设置 UIState)
    → InventorySystem
    → EnemyAISystem
+   → BuffSystem (按 interval tick 触发 buff 效果,如回血/中毒)
    → HitSystem (扣血/硬直/死亡处理)
    → DropSystem (死亡后生成掉落物,需在 HitSystem 之后)
    → PickupSystem
    → AttackSystem (执行攻击,速度归零)
    → MovementSystem (应用速度,如果攻击中会被锁住)
    → AnimationSystem (根据物理速度+状态切动画)
-   → 各 UI 系统 (InventoryUI / HotbarUI / StoreUI / BankUI / SystemMenu)
+   → 各 UI 系统 (InventoryUI / HotbarUI / BuffUI / StoreUI / BankUI / SystemMenu)
    ```
 3. **实体通过组件组合区分行为**:Player(input+attack)、Enemy(ai+movement+drop)、Container(container+inventory)、Store(store)、Bank(bank_npc)。给 Enemy 加 `attack` 组件即可让其攻击,无需改 AttackSystem。
 4. **系统之间只通过组件数据通信**,禁止直接调用方法或持有对方引用。
@@ -252,6 +267,7 @@ private cursors: Types.Input.Keyboard.CursorKeys;
 | `RenderComponent` | tint | GameScene 外观初始化 |
 | `HealthComponent` | hp, maxHp | HitSystem,血条渲染 |
 | `HitStunComponent` | isHit, damage, knockbackX/Y, stunTimer, flashTimer, hitAnimTimer | HitSystem, MovementSystem |
+| `BuffComponent` | buffs[] (生效中), pendingBuffs[] ({buffId,duration} 待添加), removeBuffIds[] (待移除) | BuffSystem 轮询处理 pending,推进 tick 与持续时间 |
 | `InventoryComponent` | capacity, items[] | InventorySystem, InventoryUISystem |
 | `EquipmentSlotComponent` | weapon, armor, helmet | InventoryUISystem,装备加成结算 |
 | `AttributeComponent` | baseAttack, baseDefense, attack, defense (含装备加成) | AttackSystem, HitSystem |
@@ -465,6 +481,7 @@ this.cameras.main.startFollow(targetSprite, true, 0.1, 0.1);  // 线性插值 0.
 | 新增 Object Layer 类型 | `GameScene.create()` 中加 `obj.type === '...'` 分支;更新本文件 §10 |
 | 新增地图 | `maps-map.json` 加映射;BootScene 会自动加载所有地图 JSON |
 | 新增传送门(Door) | Tiled 中放置 Door 对象,配置 `target_scene` 和 `id`;目标地图中放置 `Spawn` 对象,`id` 与 Door 的 `id` 对应 |
+| 新增 buff | `buffs-map.json` 加条目(id/name/description/effect.{type,value,interval},**不含 duration**);如需新增 effect 类型,在 `BuffSystem.applyBuffEffect` 中加 case;**给实体加 buff 只能通过 `buffComp.pendingBuffs.push({buffId, duration})`,duration 在附加时决定,同名 buff 自动累加持续时间,严禁直接调用 BuffSystem 方法** |
 | 改 Electron 主进程行为 | 改 `electron/main.ts`,跑 `npm run build:electron`(dev 模式下 `dev:electron` 会自动重编) |
 | 改打包行为 | 暂未集成 electron-builder。需要发行 `.exe` / `.dmg` 时再加 |
 

@@ -141,7 +141,18 @@ export interface ItemDefinition {
     width: number;
     height: number;
     usable?: boolean;
-    useEffect?: { type: string; value: number; target: string };
+    /**
+     * 使用效果。支持多种 type:
+     * - `heal`: 立即恢复 `value` 点生命
+     * - `apply_buff`: 施加 `buffId` 指定的 buff，持续 `duration` 毫秒
+     */
+    useEffect?: {
+        type: string;
+        value?: number;
+        target?: string;
+        buffId?: string;
+        duration?: number;
+    };
     equipment?: { slot: string; attack?: number; defense?: number };
     value?: number;
     /** 购买价格：物品ID → 数量（为空则不能购买） */
@@ -282,4 +293,61 @@ export class BankNPCComponent implements Component {
     constructor(name: string = '银行职员') {
         this.name = name;
     }
+}
+
+// ============================================================
+// Buff 系统
+// ============================================================
+
+/** Buff 效果配置 */
+export interface BuffEffect {
+    /** 效果类型 */
+    type: 'heal_over_time' | 'damage_over_time';
+    /** 每次 tick 的数值 */
+    value: number;
+    /** tick 间隔（ms），决定多久触发一次效果 */
+    interval: number;
+}
+
+/** Buff 定义（来自 buffs-map.json）。持续时间不在配置里，由附加 buff 时传入 */
+export interface BuffDefinition {
+    id: string;
+    name: string;
+    description: string;
+    effect: BuffEffect;
+}
+
+/** Buff 实例：实体身上正在生效的 buff 运行时状态（由 BuffSystem 实例化和维护） */
+export interface BuffInstance {
+    /** 对应 buffs-map.json 中的 id */
+    buffId: string;
+    /** 剩余持续时间（ms），-1 表示永久 */
+    remainingDuration: number;
+    /** 距离下一次 tick 触发的剩余时间（ms） */
+    nextTickIn: number;
+}
+
+/**
+ * 待添加 buff 请求（纯数据：字符串 + 数字）。
+ * 外部代码只允许通过往 BuffComponent.pendingBuffs 推入这种数据来"请求"添加 buff，
+ * 真正的 BuffInstance 由 BuffSystem 在 update 中根据 buffsMap 实例化。
+ */
+export interface PendingBuff {
+    /** 对应 buffs-map.json 中的 id */
+    buffId: string;
+    /** 持续时间（ms），-1 表示永久 */
+    duration: number;
+}
+
+/**
+ * Buff 组件：实体的 buff 数据（纯数据，无方法）。
+ * - buffs：当前生效的 buff 实例，仅由 BuffSystem 写入/读取
+ * - pendingBuffs：外部 push 即可申请添加 buff（id+duration），BuffSystem 下一帧处理
+ * - removeBuffIds：外部 push buffId 即可申请移除，BuffSystem 下一帧处理
+ */
+export class BuffComponent implements Component {
+    readonly type = 'buff';
+    buffs: BuffInstance[] = [];
+    pendingBuffs: PendingBuff[] = [];
+    removeBuffIds: string[] = [];
 }

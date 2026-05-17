@@ -4,7 +4,7 @@ import { Entity } from '../ecs/Entity';
 import { FontConfig } from '../config/FontConfig';
 import {
     UIStateComponent, HotbarComponent, HealthComponent,
-    ItemDefinition, SettingsComponent, InventoryItem
+    ItemDefinition, SettingsComponent, InventoryItem, BuffComponent
 } from '../ecs/Component';
 
 /**
@@ -174,7 +174,7 @@ export class HotbarUISystem extends System {
         }
 
         if (def.type === 'consumable' && def.useEffect) {
-            this.applyEffect(player, def.useEffect.type, def.useEffect.value);
+            this.applyEffect(player, def.useEffect);
             slot.quantity--;
             console.log(`[Hotbar] 使用 ${def.name}，剩余 ${slot.quantity} 个`);
             if (slot.quantity <= 0) {
@@ -186,19 +186,34 @@ export class HotbarUISystem extends System {
         }
     }
 
-    private applyEffect(entity: Entity, effectType: string, value: number): void {
-        switch (effectType) {
+    private applyEffect(entity: Entity, effect: NonNullable<ItemDefinition['useEffect']>): void {
+        switch (effect.type) {
             case 'heal': {
+                if (effect.value === undefined) return;
                 const health = entity.getComponent<HealthComponent>('health');
                 if (health) {
                     const oldHp = health.hp;
-                    health.hp = Math.min(health.maxHp, health.hp + value);
+                    health.hp = Math.min(health.maxHp, health.hp + effect.value);
                     console.log(`[Effect] 恢复 ${health.hp - oldHp} 点生命 (${oldHp} → ${health.hp})`);
                 }
                 break;
             }
+            case 'apply_buff': {
+                if (!effect.buffId || effect.duration === undefined) {
+                    console.warn('[Effect] apply_buff 缺少 buffId 或 duration');
+                    return;
+                }
+                const buffComp = entity.getComponent<BuffComponent>('buff');
+                if (!buffComp) {
+                    console.warn('[Effect] 目标实体没有 BuffComponent，无法施加 buff');
+                    return;
+                }
+                buffComp.pendingBuffs.push({ buffId: effect.buffId, duration: effect.duration });
+                console.log(`[Effect] 申请 buff: ${effect.buffId} (${effect.duration}ms)`);
+                break;
+            }
             default:
-                console.log(`[Effect] 未知效果类型: ${effectType}`);
+                console.log(`[Effect] 未知效果类型: ${effect.type}`);
         }
     }
 

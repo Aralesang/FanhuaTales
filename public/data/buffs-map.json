@@ -1,0 +1,12 @@
+{
+    "regen": {
+        "id": "regen",
+        "name": "生命恢复",
+        "description": "每秒恢复 5 点生命值",
+        "effect": {
+            "type": "heal_over_time",
+            "value": 5,
+            "interval": 1000
+        }
+    }
+}

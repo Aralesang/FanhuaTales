@@ -63,6 +63,7 @@ export class BootScene extends Scene {
         this.load.json('soundsMap', 'data/sounds-map.json');
         this.load.json('itemsMap', 'data/items-map.json');
         this.load.json('dropsMap', 'data/drops-map.json');
+        this.load.json('buffsMap', 'data/buffs-map.json');
     }
 
     async create(): Promise<void> {

@@ -580,7 +580,12 @@ export class StoreUISystem extends System {
             attrs.push(`部位: ${this.slotLabel(def.equipment.slot)}`);
             statsText = attrs.join('  ');
         } else if (def.type === 'consumable' && def.useEffect) {
-            statsText = `效果: ${this.effectLabel(def.useEffect.type)} ${def.useEffect.value}`;
+            const eff = def.useEffect;
+            if (eff.type === 'apply_buff' && eff.duration !== undefined) {
+                statsText = `持续 ${Math.floor(eff.duration / 1000)} 秒`;
+            } else if (eff.value !== undefined) {
+                statsText = `效果: ${this.effectLabel(eff.type)} ${eff.value}`;
+            }
         }
 
         // 测量文本尺寸
