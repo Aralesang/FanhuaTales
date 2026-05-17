@@ -14,6 +14,7 @@ export class BankUISystem extends System {
 
     private panel!: GameObjects.Graphics;
     private itemGraphics!: GameObjects.Graphics;
+    private itemSprites: GameObjects.Sprite[] = [];
     private quantityTexts: GameObjects.Text[] = [];
 
     // 银行面板文本
@@ -42,14 +43,6 @@ export class BankUISystem extends System {
 
     private uiScale = 1.0;
 
-    private readonly itemColors: Record<string, number> = {
-        health_potion: 0xcc3333,
-        iron_sword: 0x888888,
-        gold_coin: 0xffcc00,
-        leather_armor: 0x8b5a2b,
-        wooden_helmet: 0xa0522d,
-    };
-
     constructor(scene: Scene) {
         super(scene);
         this.initUI();
@@ -65,12 +58,21 @@ export class BankUISystem extends System {
         this.itemGraphics.setDepth(1001);
         this.itemGraphics.visible = false;
 
+        // 道具图标精灵池：玩家库存 20 个槽位
+        for (let i = 0; i < 20; i++) {
+            const sprite = this.scene.add.sprite(0, 0, 'item_notfind');
+            sprite.setDepth(1001);
+            sprite.setOrigin(0, 0);
+            sprite.visible = false;
+            this.itemSprites.push(sprite);
+        }
+
         for (let i = 0; i < 40; i++) {
             const text = this.createText(0, 0, '', {
                 fontSize: FontConfig.small.size, color: '#ffffff',
                 fontFamily: FontConfig.small.family,
             });
-            text.setDepth(1001);
+            text.setDepth(1002);
             text.setOrigin(1, 1);
             text.visible = false;
             this.quantityTexts.push(text);
@@ -278,14 +280,18 @@ export class BankUISystem extends System {
         // 绘制格子和物品
         this.itemGraphics.clear();
         let textIdx = 0;
+        let spriteIdx = 0;
 
         // 玩家格子（左侧）
         for (let i = 0; i < playerInventory.capacity; i++) {
-            textIdx = this.renderSlot(leftGridX, gridY, i, playerInventory.items[i], scale, textIdx);
+            ({ textIdx, spriteIdx } = this.renderSlot(leftGridX, gridY, i, playerInventory.items[i], scale, textIdx, spriteIdx));
         }
 
         for (let i = textIdx; i < this.quantityTexts.length; i++) {
             this.quantityTexts[i].visible = false;
+        }
+        for (let i = spriteIdx; i < this.itemSprites.length; i++) {
+            this.itemSprites[i].visible = false;
         }
 
         // 银行面板内容（右侧）
@@ -348,8 +354,9 @@ export class BankUISystem extends System {
         index: number,
         item: InventoryItem | null,
         scale: number,
-        textIdx: number
-    ): number {
+        textIdx: number,
+        spriteIdx: number
+    ): { textIdx: number; spriteIdx: number } {
         const cellSize = this.BASE_CELL_SIZE * scale;
         const gap = this.BASE_GAP * scale;
         const slotX = gridX + (index % this.COLS) * (cellSize + gap);
@@ -364,9 +371,17 @@ export class BankUISystem extends System {
         this.itemGraphics.strokeRect(slotX, slotY, cellSize, cellSize);
 
         if (item) {
-            const color = this.itemColors[item.itemId] ?? 0xaaaaaa;
-            this.itemGraphics.fillStyle(color, 1);
-            this.itemGraphics.fillRect(slotX + 4 * scale, slotY + 4 * scale, cellSize - 8 * scale, cellSize - 8 * scale);
+            // 道具图标
+            if (spriteIdx < this.itemSprites.length) {
+                const sprite = this.itemSprites[spriteIdx];
+                const iconSize = cellSize - 8 * scale;
+                sprite.setTexture(this.getItemTextureKey(item.itemId));
+                sprite.setDisplaySize(iconSize, iconSize);
+                sprite.setPosition(slotX + 4 * scale, slotY + 4 * scale);
+                sprite.setAlpha(1);
+                sprite.visible = true;
+                spriteIdx++;
+            }
 
             if (textIdx < this.quantityTexts.length) {
                 const text = this.quantityTexts[textIdx];
@@ -378,12 +393,15 @@ export class BankUISystem extends System {
             }
         }
 
-        return textIdx;
+        return { textIdx, spriteIdx };
     }
 
     private hideAll(): void {
         this.panel.visible = false;
         this.itemGraphics.visible = false;
+        for (const sprite of this.itemSprites) {
+            sprite.visible = false;
+        }
         for (const text of this.quantityTexts) {
             text.visible = false;
         }

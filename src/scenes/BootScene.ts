@@ -25,10 +25,15 @@ interface SoundsMap {
     [key: string]: string;
 }
 
+interface ItemsMap {
+    [key: string]: { id: string };
+}
+
 export class BootScene extends Scene {
     private imagesMap!: ImagesMap;
     private mapsMap!: MapsMap;
     private soundsMap!: SoundsMap;
+    private itemsMap!: ItemsMap;
 
     constructor() {
         super({ key: 'BootScene' });
@@ -67,6 +72,7 @@ export class BootScene extends Scene {
         this.imagesMap = this.cache.json.get('imagesMap') as ImagesMap;
         this.mapsMap = this.cache.json.get('mapsMap') as MapsMap;
         this.soundsMap = this.cache.json.get('soundsMap') as SoundsMap;
+        this.itemsMap = this.cache.json.get('itemsMap') as ItemsMap;
 
         // 获取默认场景（maps-map.json 的第一个条目）
         const defaultMapKey = Object.keys(this.mapsMap)[0];
@@ -79,6 +85,18 @@ export class BootScene extends Scene {
                 frameHeight: config.grid.spriteHeight
             });
         }
+
+        // 加载道具图标：item_<id> → public/images/item/<id>.png；缺图回退 item_notfind
+        this.load.image('item_notfind', 'images/item/notfind.png');
+        for (const itemId of Object.keys(this.itemsMap)) {
+            this.load.image(`item_${itemId}`, `images/item/${itemId}.png`);
+        }
+        // 加载失败时记录警告，渲染层会自动回退到 item_notfind
+        this.load.on('loaderror', (file: { key: string }) => {
+            if (file.key.startsWith('item_')) {
+                console.warn(`[BootScene] 道具图标缺失: ${file.key}，将使用 notfind 占位`);
+            }
+        });
 
         // 加载地图 JSON（需要先从 Tiled 导出为同名 .json）
         this.load.tilemapTiledJSON(defaultMapKey, mapPath);

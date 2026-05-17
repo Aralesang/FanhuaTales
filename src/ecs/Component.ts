@@ -50,7 +50,6 @@ export class InputComponent implements Component {
     rightKey!: Input.Keyboard.Key;   // D
     shiftKey!: Input.Keyboard.Key;
     inventoryKey!: Input.Keyboard.Key;
-    hotbarKey!: Input.Keyboard.Key;
     /** 鼠标世界坐标 X */
     mouseX: number = 0;
     /** 鼠标世界坐标 Y */
@@ -160,10 +159,10 @@ export class UIStateComponent implements Component {
     inventoryOpen = false;
     containerOpen = false;
     storeOpen = false;
-    /** 快捷栏是否打开（按住 Ctrl） */
-    hotbarOpen = false;
-    /** 需要使用的快捷栏槽位索引（0=上,1=下,2=左,3=右），使用完后由 HotbarUISystem 重置为 null */
-    hotbarUseIndex: number | null = null;
+    /** 鼠标是否悬停在左下角快捷栏区域（用于 InputSystem 跳过攻击） */
+    pointerInHotbar = false;
+    /** 快捷栏 4 个槽位的世界坐标矩形（由 HotbarUISystem 每帧写入，供 InventoryUISystem 拖放命中检测） */
+    hotbarSlotRects: { x: number; y: number; size: number }[] = [];
     /** 当前交互的容器实体 */
     activeContainer: Entity | null = null;
     /** 当前交互的商店实体 */
@@ -239,11 +238,11 @@ export class AttributeComponent implements Component {
     defense: number = 0;
 }
 
-/** 快捷栏组件：存储 4 个方向槽位的物品 ID（0=上, 1=下, 2=左, 3=右） */
+/** 快捷栏组件：4 个槽位，独立存储物品（语义同 InventoryComponent.items，仅容量 4） */
 export class HotbarComponent implements Component {
     readonly type = 'hotbar';
-    /** 槽位物品 ID，null 表示空槽 */
-    slots: (string | null)[] = [null, null, null, null];
+    /** 槽位物品，null 表示空槽 */
+    slots: (InventoryItem | null)[] = [null, null, null, null];
 }
 
 /** 银行组件：存储玩家存入银行的金币 */

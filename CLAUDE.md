@@ -98,7 +98,7 @@ D:\MyProjects\Phaser\FanhuaTales\
 │   │   ├── PickupSystem.ts         # 玩家拾取地面物品
 │   │   ├── InventorySystem.ts      # 库存操作(addItem/removeItem 静态方法)
 │   │   ├── InventoryUISystem.ts    # 库存/装备/快捷栏 UI
-│   │   ├── HotbarUISystem.ts       # 4 方向快捷栏(按住 Ctrl 显示)
+│   │   ├── HotbarUISystem.ts       # 屏幕左下角固定快捷栏(鼠标点击使用)
 │   │   ├── ContainerSystem.ts      # 容器交互(E 键打开)
 │   │   ├── StoreSystem.ts          # 商店交互(E 键打开)
 │   │   ├── StoreUISystem.ts        # 商店买卖 UI
@@ -244,7 +244,7 @@ private cursors: Types.Input.Keyboard.CursorKeys;
 | `VisualComponent` | width, height (视觉尺寸,用于距离判定) | EnemyAI/Pickup/Container 交互距离 |
 | `MovementComponent` | dx, dy, speed, walkSpeed, runSpeed, isRunning | InputSystem, MovementSystem, AnimationSystem |
 | `AnimationComponent` | currentState, facing | MovementSystem, AttackSystem, AnimationSystem |
-| `InputComponent` | cursors, WASD keys, shiftKey, inventoryKey, hotbarKey, mouseX/Y | InputSystem |
+| `InputComponent` | cursors, WASD keys, shiftKey, inventoryKey, mouseX/Y | InputSystem |
 | `AttackComponent` | isAttacking, hitCheckDelay/Duration, attackDuration | AttackSystem, MovementSystem, AnimationSystem |
 | `AIComponent` | patrolCenter, patrolRadius, chaseRange, attackRange | EnemyAISystem |
 | `PlayerComponent` | (空标记) | GameScene 相机目标查找 |
@@ -254,9 +254,9 @@ private cursors: Types.Input.Keyboard.CursorKeys;
 | `InventoryComponent` | capacity, items[] | InventorySystem, InventoryUISystem |
 | `EquipmentSlotComponent` | weapon, armor, helmet | InventoryUISystem,装备加成结算 |
 | `AttributeComponent` | baseAttack, baseDefense, attack, defense (含装备加成) | AttackSystem, HitSystem |
-| `HotbarComponent` | slots[4] (上/下/左/右方向槽位) | HotbarUISystem, InventoryUISystem |
+| `HotbarComponent` | slots[4] (屏幕左下角 4 个槽位) | HotbarUISystem, InventoryUISystem |
 | `SettingsComponent` | uiScale | SystemMenuSystem,各 UI 系统读取缩放 |
-| `UIStateComponent` | inventoryOpen, containerOpen, storeOpen, hotbarOpen, bankOpen, hotbarUseIndex, activeContainer/Store/Bank | 全部 UI 系统协调 |
+| `UIStateComponent` | inventoryOpen, containerOpen, storeOpen, bankOpen, pointerInHotbar, activeContainer/Store/Bank | 全部 UI 系统协调 |
 | `ContainerComponent` | promptText | ContainerSystem,容器标记 |
 | `DropComponent` | dropTable (drops-map.json 中的 key) | DropSystem |
 | `GroundItemComponent` | itemId, quantity | PickupSystem |

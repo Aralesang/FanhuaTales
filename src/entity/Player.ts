@@ -1,4 +1,4 @@
-import { Scene, Physics, Input } from 'phaser';
+import { Scene, Physics } from 'phaser';
 import { Entity } from '../ecs/Entity';
 import {
     MovementComponent, AnimationComponent, InputComponent,
@@ -69,7 +69,6 @@ export class Player extends Entity {
             input.rightKey = scene.input.keyboard.addKey('D');
             input.shiftKey = scene.input.keyboard.addKey('SHIFT');
             input.inventoryKey = scene.input.keyboard.addKey('B');
-            input.hotbarKey = scene.input.keyboard.addKey(Input.Keyboard.KeyCodes.CTRL);
             this.addComponent(input);
         } else {
             throw new Error('Keyboard input is not available');
