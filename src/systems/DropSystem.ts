@@ -1,4 +1,4 @@
-import { Scene, GameObjects } from 'phaser';
+import { Scene } from 'phaser';
 import { System } from '../ecs/System';
 import { Entity } from '../ecs/Entity';
 import { HealthComponent, SpriteComponent, VisualComponent, DropComponent, GroundItemComponent } from '../ecs/Component';
@@ -70,7 +70,7 @@ export class DropSystem extends System {
         // 生成掉落物纹理（首次使用时创建）
         const textureKey = `drop_${itemId}`;
         if (!this.scene.textures.exists(textureKey)) {
-            const gfx = this.scene.make.graphics({ x: 0, y: 0, add: false });
+            const gfx = this.scene.make.graphics({ x: 0, y: 0 }, false);
             gfx.fillStyle(this.itemColors[itemId] ?? 0xaaaaaa, 1);
             gfx.fillRect(0, 0, 6, 6);
             gfx.generateTexture(textureKey, 6, 6);

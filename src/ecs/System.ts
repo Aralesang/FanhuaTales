@@ -1,4 +1,4 @@
-import { Scene, GameObjects } from 'phaser';
+import { Scene, GameObjects, Types } from 'phaser';
 import { Entity } from './Entity';
 
 export abstract class System {
@@ -19,11 +19,11 @@ export abstract class System {
         x: number,
         y: number,
         content: string,
-        style: Partial<GameObjects.Text.TextStyle> = {}
+        style: Partial<Types.GameObjects.Text.TextStyle> = {}
     ): GameObjects.Text {
         return this.scene.add.text(x, y, content, {
             ...style,
             resolution: 3
-        } as GameObjects.Text.TextStyle);
+        } as Types.GameObjects.Text.TextStyle);
     }
 }

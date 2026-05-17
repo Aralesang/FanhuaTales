@@ -41,8 +41,6 @@ export class StoreUISystem extends System {
     private readonly BASE_PADDING = 12;
 
     private uiScale = 1.0;
-    private panelW = 0;
-    private panelH = 0;
 
     private readonly itemColors: Record<string, number> = {
         health_potion: 0xcc3333,
@@ -59,8 +57,6 @@ export class StoreUISystem extends System {
     }
 
     private initUI(): void {
-        this.panelW = this.COLS * this.BASE_CELL_SIZE + (this.COLS - 1) * this.BASE_GAP + this.BASE_PADDING * 2;
-        this.panelH = this.ROWS * this.BASE_CELL_SIZE + (this.ROWS - 1) * this.BASE_GAP + this.BASE_PADDING * 2;
 
         this.panel = this.scene.add.graphics();
         this.panel.setDepth(1000);
@@ -203,8 +199,6 @@ export class StoreUISystem extends System {
         const leftGridX = cx - totalW / 2;
         const rightGridX = leftGridX + panelW + gapBetween;
         const gridY = cy - panelH / 2;
-        this.panelW = totalW;
-        this.panelH = panelH;
 
         return { leftGridX, rightGridX, gridY, panelW, panelH };
     }

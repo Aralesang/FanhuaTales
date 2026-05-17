@@ -2,7 +2,7 @@ import { Scene, Input, GameObjects } from 'phaser';
 import { System } from '../ecs/System';
 import { Entity } from '../ecs/Entity';
 import { FontConfig } from '../config/FontConfig';
-import { SpriteComponent, ContainerComponent, UIStateComponent, VisualComponent, AnimationComponent } from '../ecs/Component';
+import { SpriteComponent, UIStateComponent, VisualComponent, AnimationComponent } from '../ecs/Component';
 
 export class ContainerSystem extends System {
     private eKey!: Input.Keyboard.Key;

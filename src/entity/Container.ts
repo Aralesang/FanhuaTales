@@ -1,6 +1,6 @@
-import { Scene, GameObjects, Physics } from 'phaser';
+import { Scene, Physics } from 'phaser';
 import { Entity } from '../ecs/Entity';
-import { SpriteComponent, InventoryComponent, ContainerComponent, VisualComponent, ItemDefinition, InventoryItem } from '../ecs/Component';
+import { SpriteComponent, InventoryComponent, ContainerComponent, VisualComponent, ItemDefinition } from '../ecs/Component';
 import { InventorySystem } from '../systems/InventorySystem';
 
 export class Container extends Entity {

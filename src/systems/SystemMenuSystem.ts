@@ -222,7 +222,7 @@ export class SystemMenuSystem extends System {
         this.valueText.visible = true;
     }
 
-    private handleSliderInput(currentScale: number, settings: SettingsComponent | undefined): void {
+    private handleSliderInput(_currentScale: number, settings: SettingsComponent | undefined): void {
         const pointer = this.scene.input.activePointer;
 
         if (pointer.isDown) {

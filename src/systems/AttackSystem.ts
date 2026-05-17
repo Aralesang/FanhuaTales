@@ -1,4 +1,4 @@
-import { Scene, Physics, GameObjects } from 'phaser';
+import { Physics, GameObjects } from 'phaser';
 import { System } from '../ecs/System';
 import { Entity } from '../ecs/Entity';
 import { AttackComponent, AnimationComponent, HitStunComponent, AttributeComponent } from '../ecs/Component';
@@ -38,7 +38,7 @@ export class AttackSystem extends System {
         }
     }
 
-    private startAttack(entity: Entity, entities: Entity[]): void {
+    private startAttack(entity: Entity, _entities: Entity[]): void {
         const attack = entity.getComponent<AttackComponent>('attack')!;
         const anim = entity.getComponent<AnimationComponent>('animation')!;
         const sprite = entity.sprite;

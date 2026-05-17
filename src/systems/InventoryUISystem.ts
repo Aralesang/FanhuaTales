@@ -57,8 +57,6 @@ export class InventoryUISystem extends System {
     private readonly BASE_PADDING = 12;
 
     private uiScale = 1.0;
-    private panelW = 0;
-    private panelH = 0;
 
     private readonly itemColors: Record<string, number> = {
         health_potion: 0xcc3333,
@@ -76,9 +74,6 @@ export class InventoryUISystem extends System {
     }
 
     private initUI(): void {
-        this.panelW = this.COLS * this.BASE_CELL_SIZE + (this.COLS - 1) * this.BASE_GAP + this.BASE_PADDING * 2;
-        this.panelH = this.ROWS * this.BASE_CELL_SIZE + (this.ROWS - 1) * this.BASE_GAP + this.BASE_PADDING * 2;
-
         this.panel = this.scene.add.graphics();
         this.panel.setDepth(1000);
         this.panel.visible = false;
@@ -357,8 +352,6 @@ export class InventoryUISystem extends System {
             leftGridX = cx - totalW / 2;
             rightGridX = leftGridX + panelW + gapBetween;
             gridY = cy - leftPanelH / 2;
-            this.panelW = totalW;
-            this.panelH = leftPanelH;
         } else {
             // 普通背包模式：左侧背包 + 右侧装备栏 + 快捷栏
             const gapBetween = 24 * scale;
@@ -386,9 +379,6 @@ export class InventoryUISystem extends System {
             hotbarGridY = hotbarY;
             const hotbarSlotTotalW = 4 * cellSize + 3 * (gap * 3);
             hotbarGridX = rightGridX + (panelW - padding * 2 - hotbarSlotTotalW) / 2;
-
-            this.panelW = totalW;
-            this.panelH = maxH;
         }
 
         return {

@@ -1,4 +1,3 @@
-import { Scene } from 'phaser';
 import { System } from '../ecs/System';
 import { Entity } from '../ecs/Entity';
 import { InputComponent, MovementComponent, AttackComponent, UIStateComponent } from '../ecs/Component';

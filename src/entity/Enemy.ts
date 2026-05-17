@@ -1,4 +1,4 @@
-import { Scene, GameObjects, Physics } from 'phaser';
+import { Scene, Physics } from 'phaser';
 import { Entity } from '../ecs/Entity';
 import {
     MovementComponent, AnimationComponent, AIComponent,
