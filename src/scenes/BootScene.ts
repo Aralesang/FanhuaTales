@@ -36,9 +36,10 @@ export class BootScene extends Scene {
 
     /** 等待 CSS @font-face 字体加载完成 */
     private async loadFonts(): Promise<void> {
+        // 使用相对路径，确保在 file:// 协议下（Electron 生产模式）也能正确解析
         const fonts: FontFace[] = [
-            new FontFace('VonwaonBitmap12', 'url(/fonts/VonwaonBitmap-12px.ttf)'),
-            new FontFace('VonwaonBitmap16', 'url(/fonts/VonwaonBitmap-16px.ttf)'),
+            new FontFace('VonwaonBitmap12', 'url(fonts/VonwaonBitmap-12px.ttf)'),
+            new FontFace('VonwaonBitmap16', 'url(fonts/VonwaonBitmap-16px.ttf)'),
         ];
         for (const font of fonts) {
             try {
