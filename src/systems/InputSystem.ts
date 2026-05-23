@@ -7,6 +7,12 @@ export class InputSystem extends System {
 
     update(entities: Entity[], _delta: number): void {
         const uistate = this.getUIState(entities);
+
+        // 调试控制台打开时，跳过所有游戏输入处理
+        if (uistate?.debugConsoleOpen) {
+            return;
+        }
+
         const pointer = this.scene.input.activePointer;
         const cam = this.scene.cameras.main;
 

@@ -1,7 +1,7 @@
 import { Scene, Input, Physics, Tilemaps, GameObjects } from 'phaser';
 import { Entity } from '../ecs/Entity';
 import { FontConfig } from '../config/FontConfig';
-import { RenderComponent, HealthComponent, SpriteComponent, VisualComponent, InventoryComponent, ItemDefinition, SettingsComponent, UIStateComponent } from '../ecs/Component';
+import { RenderComponent, HealthComponent, SpriteComponent, VisualComponent, ItemDefinition, SettingsComponent, UIStateComponent } from '../ecs/Component';
 import { Player } from '../entity/Player';
 import { Enemy } from '../entity/Enemy';
 import { Container } from '../entity/Container';
@@ -28,6 +28,7 @@ import { BuffSystem } from '../systems/BuffSystem';
 import { BuffUISystem } from '../systems/BuffUISystem';
 import { NeedsSystem } from '../systems/NeedsSystem';
 import { NeedsUISystem } from '../systems/NeedsUISystem';
+import { DebugConsoleSystem } from '../systems/DebugConsoleSystem';
 
 interface DoorData {
     x: number;
@@ -83,6 +84,7 @@ export class GameScene extends Scene {
     private buffUISystem!: BuffUISystem;
     private needsSystem!: NeedsSystem;
     private needsUISystem!: NeedsUISystem;
+    private debugConsoleSystem!: DebugConsoleSystem;
 
     constructor() {
         super({ key: 'GameScene' });
@@ -94,7 +96,6 @@ export class GameScene extends Scene {
      */
     create(data: { mapKey?: string }): void {
         const initialMapKey = data.mapKey || 'village';
-        const itemsMap = this.cache.json.get('itemsMap') as Record<string, ItemDefinition>;
 
         // 全局设置实体（持久，不随地图切换销毁）
         const settingsEntity = new Entity(this);
@@ -145,6 +146,7 @@ export class GameScene extends Scene {
         this.buffUISystem = new BuffUISystem(this);
         this.needsSystem = new NeedsSystem(this);
         this.needsUISystem = new NeedsUISystem(this);
+        this.debugConsoleSystem = new DebugConsoleSystem(this);
 
         // Debug 开关：按 F9 切换碰撞器可视化
         this.debugKey = this.input.keyboard!.addKey(Input.Keyboard.KeyCodes.F9);
@@ -155,15 +157,6 @@ export class GameScene extends Scene {
 
         // 加载初始地图（首次进入会创建玩家）
         this.loadMap(initialMapKey);
-
-        // 给玩家初始道具（仅首次进入）
-        const player = this.entities.find(e => e.hasComponent('player'));
-        if (player) {
-            const playerInventory = player.getComponent<InventoryComponent>('inventory')!;
-            InventorySystem.addItem(playerInventory, itemsMap, 'gold_coin', 5);
-            InventorySystem.addItem(playerInventory, itemsMap, 'health_potion', 1);
-            InventorySystem.addItem(playerInventory, itemsMap, 'iron_sword', 1);
-        }
     }
 
     /**
@@ -599,6 +592,7 @@ export class GameScene extends Scene {
         this.bankSystem.update(this.entities, delta);
         this.bankUISystem.update(this.entities, delta);
         this.systemMenuSystem.update(this.entities, delta);
+        this.debugConsoleSystem.update(this.entities, delta);
 
         // 清理已销毁实体的血条
         for (const [entity, bar] of this.healthBars) {

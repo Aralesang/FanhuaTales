@@ -19,9 +19,9 @@ export class NeedsUISystem extends System {
 
     // 渲染参数（与玩家血条一致以保持对齐）
     private readonly PAD = 10;
-    private readonly BAR_W = 100;
-    private readonly BAR_H = 10;
-    private readonly BAR_GAP = 4;
+    private readonly BAR_W = 50;
+    private readonly BAR_H = 5;
+    private readonly BAR_GAP = 2;
 
     constructor(scene: Scene) {
         super(scene);
@@ -66,8 +66,8 @@ export class NeedsUISystem extends System {
         const worldOrigin = cam.getWorldPoint(0, 0);
 
         const x = worldOrigin.x + this.PAD;
-        // 血条占据 (PAD, PAD)~(PAD+BAR_W, PAD+BAR_H)，饥饿条/口渴条向下依次排列
-        const hungerY = worldOrigin.y + this.PAD + this.BAR_H + this.BAR_GAP;
+        // 血条高度固定为 10，底部在 PAD+10；饥饿条/口渴条依次向下排列
+        const hungerY = worldOrigin.y + this.PAD + 10 + this.BAR_GAP;
         const thirstY = hungerY + this.BAR_H + this.BAR_GAP;
 
         this.renderBar(this.hungerBar, this.hungerText, x, hungerY, needs.hunger, needs.maxHunger, 0xcc8844);

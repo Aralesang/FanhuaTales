@@ -205,6 +205,8 @@ export class UIStateComponent implements Component {
     bankOpen = false;
     /** 当前交互的银行实体 */
     activeBank: Entity | null = null;
+    /** 调试控制台是否打开 */
+    debugConsoleOpen = false;
 }
 
 /** 容器标记组件 */
