@@ -145,6 +145,7 @@ export interface ItemDefinition {
      * 使用效果。支持多种 type:
      * - `heal`: 立即恢复 `value` 点生命
      * - `apply_buff`: 施加 `buffId` 指定的 buff，持续 `duration` 毫秒
+     * - `restore_needs`: 恢复 `needsType` 指定的需求值 `value` 点（如饥饿/口渴）
      */
     useEffect?: {
         type: string;
@@ -152,6 +153,7 @@ export interface ItemDefinition {
         target?: string;
         buffId?: string;
         duration?: number;
+        needsType?: 'hunger' | 'thirst';
     };
     equipment?: { slot: string; attack?: number; defense?: number };
     value?: number;
@@ -350,4 +352,31 @@ export class BuffComponent implements Component {
     buffs: BuffInstance[] = [];
     pendingBuffs: PendingBuff[] = [];
     removeBuffIds: string[] = [];
+}
+
+// ============================================================
+// 需求系统（饥饿 / 口渴）
+// ============================================================
+
+/**
+ * 需求变化请求（纯数据），外部 push 到 NeedsComponent.pendingDeltas 即可申请变化。
+ * 字段值正数为恢复、负数为消耗；缺失的字段不变化。
+ */
+export interface NeedsDelta {
+    hunger?: number;
+    thirst?: number;
+}
+
+/**
+ * 需求组件：玩家的基础需求值（饥饿、口渴等）。
+ * - hunger/maxHunger、thirst/maxThirst：运行时数值，仅由 NeedsSystem 写入
+ * - pendingDeltas：外部 push 即可申请变化（如吃面包恢复 30 饥饿）
+ */
+export class NeedsComponent implements Component {
+    readonly type = 'needs';
+    hunger: number = 100;
+    maxHunger: number = 100;
+    thirst: number = 100;
+    maxThirst: number = 100;
+    pendingDeltas: NeedsDelta[] = [];
 }

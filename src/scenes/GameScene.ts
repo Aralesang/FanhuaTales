@@ -26,6 +26,8 @@ import { MovementSystem } from '../systems/MovementSystem';
 import { AnimationSystem } from '../systems/AnimationSystem';
 import { BuffSystem } from '../systems/BuffSystem';
 import { BuffUISystem } from '../systems/BuffUISystem';
+import { NeedsSystem } from '../systems/NeedsSystem';
+import { NeedsUISystem } from '../systems/NeedsUISystem';
 
 interface DoorData {
     x: number;
@@ -79,6 +81,8 @@ export class GameScene extends Scene {
     private animationSystem!: AnimationSystem;
     private buffSystem!: BuffSystem;
     private buffUISystem!: BuffUISystem;
+    private needsSystem!: NeedsSystem;
+    private needsUISystem!: NeedsUISystem;
 
     constructor() {
         super({ key: 'GameScene' });
@@ -139,6 +143,8 @@ export class GameScene extends Scene {
         this.animationSystem = new AnimationSystem(this);
         this.buffSystem = new BuffSystem(this);
         this.buffUISystem = new BuffUISystem(this);
+        this.needsSystem = new NeedsSystem(this);
+        this.needsUISystem = new NeedsUISystem(this);
 
         // Debug 开关：按 F9 切换碰撞器可视化
         this.debugKey = this.input.keyboard!.addKey(Input.Keyboard.KeyCodes.F9);
@@ -574,6 +580,7 @@ export class GameScene extends Scene {
         this.inventorySystem.update(this.entities, delta);
         this.enemyAISystem.update(this.entities, delta);
         this.buffSystem.update(this.entities, delta);
+        this.needsSystem.update(this.entities, delta);
         this.hitSystem.update(this.entities, delta);
         this.dropSystem.update(this.entities, delta);
         this.pickupSystem.update(this.entities, delta);
@@ -586,6 +593,7 @@ export class GameScene extends Scene {
         this.inventoryUISystem.update(this.entities, delta);
         this.hotbarUISystem.update(this.entities, delta);
         this.buffUISystem.update(this.entities, delta);
+        this.needsUISystem.update(this.entities, delta);
         this.storeSystem.update(this.entities, delta);
         this.storeUISystem.update(this.entities, delta);
         this.bankSystem.update(this.entities, delta);

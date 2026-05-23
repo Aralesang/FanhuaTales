@@ -4,7 +4,7 @@ import { Entity } from '../ecs/Entity';
 import { FontConfig } from '../config/FontConfig';
 import {
     UIStateComponent, HotbarComponent, HealthComponent,
-    ItemDefinition, SettingsComponent, InventoryItem, BuffComponent
+    ItemDefinition, SettingsComponent, InventoryItem, BuffComponent, NeedsComponent
 } from '../ecs/Component';
 
 /**
@@ -210,6 +210,24 @@ export class HotbarUISystem extends System {
                 }
                 buffComp.pendingBuffs.push({ buffId: effect.buffId, duration: effect.duration });
                 console.log(`[Effect] 申请 buff: ${effect.buffId} (${effect.duration}ms)`);
+                break;
+            }
+            case 'restore_needs': {
+                if (effect.value === undefined || !effect.needsType) {
+                    console.warn('[Effect] restore_needs 缺少 value 或 needsType');
+                    return;
+                }
+                const needs = entity.getComponent<NeedsComponent>('needs');
+                if (!needs) {
+                    console.warn('[Effect] 目标实体没有 NeedsComponent');
+                    return;
+                }
+                if (effect.needsType === 'hunger') {
+                    needs.pendingDeltas.push({ hunger: effect.value });
+                } else if (effect.needsType === 'thirst') {
+                    needs.pendingDeltas.push({ thirst: effect.value });
+                }
+                console.log(`[Effect] 申请恢复 ${effect.needsType} +${effect.value}`);
                 break;
             }
             default:

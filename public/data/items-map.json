@@ -90,5 +90,49 @@
     "maxStack": 999,
     "width": 1,
     "height": 1
+  },
+  "bread": {
+    "id": "bread",
+    "name": "面包",
+    "description": "一块普通的面包，可以充饥",
+    "type": "consumable",
+    "stackable": true,
+    "maxStack": 99,
+    "width": 1,
+    "height": 1,
+    "usable": true,
+    "useEffect": {
+      "type": "restore_needs",
+      "needsType": "hunger",
+      "value": 30
+    },
+    "buyPrice": {
+      "gold_coin": 2
+    },
+    "sellPrice": {
+      "gold_coin": 1
+    }
+  },
+  "water": {
+    "id": "water",
+    "name": "清水",
+    "description": "一瓶清水，可以解渴",
+    "type": "consumable",
+    "stackable": true,
+    "maxStack": 99,
+    "width": 1,
+    "height": 1,
+    "usable": true,
+    "useEffect": {
+      "type": "restore_needs",
+      "needsType": "thirst",
+      "value": 30
+    },
+    "buyPrice": {
+      "gold_coin": 2
+    },
+    "sellPrice": {
+      "gold_coin": 1
+    }
   }
 }

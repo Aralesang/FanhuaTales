@@ -5,7 +5,7 @@ import {
     AttackComponent, PlayerComponent, HealthComponent,
     SpriteComponent, VisualComponent, InventoryComponent,
     EquipmentSlotComponent, AttributeComponent, HotbarComponent,
-    BankComponent, BuffComponent
+    BankComponent, BuffComponent, NeedsComponent
 } from '../ecs/Component';
 
 // ============================================================
@@ -81,6 +81,9 @@ export class Player extends Entity {
 
         // Buff 组件（默认挂载，玩家可接收任何 buff；通过 pendingBuffs 申请添加）
         this.addComponent(new BuffComponent());
+
+        // 需求组件（饥饿/口渴，默认满值；通过 pendingDeltas 申请变化）
+        this.addComponent(new NeedsComponent());
 
         // 生命值组件
         const health = new HealthComponent();

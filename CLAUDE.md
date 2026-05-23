@@ -95,6 +95,8 @@ D:\MyProjects\Phaser\FanhuaTales\
 │   │   ├── HitSystem.ts            # 硬直/扣血/死亡
 │   │   ├── BuffSystem.ts           # Buff 持续效果（每 interval tick 触发，按 duration 自动移除）
 │   │   ├── BuffUISystem.ts         # 屏幕右上角 buff 色块 + 剩余时间 + hover tooltip
+│   │   ├── NeedsSystem.ts          # 玩家饥饿/口渴值变化（应用 pendingDeltas，自然消耗待加）
+│   │   ├── NeedsUISystem.ts        # 左上角血条下方渲染饥饿/口渴条
 │   │   ├── MovementSystem.ts       # 数据→物理速度
 │   │   ├── AnimationSystem.ts      # 速度+状态→动画切换
 │   │   ├── DropSystem.ts           # 敌人死亡→生成掉落物
@@ -238,13 +240,14 @@ private cursors: Types.Input.Keyboard.CursorKeys;
    → InventorySystem
    → EnemyAISystem
    → BuffSystem (按 interval tick 触发 buff 效果,如回血/中毒)
+   → NeedsSystem (应用饥饿/口渴 pendingDeltas;后续自然消耗也在此实现)
    → HitSystem (扣血/硬直/死亡处理)
    → DropSystem (死亡后生成掉落物,需在 HitSystem 之后)
    → PickupSystem
    → AttackSystem (执行攻击,速度归零)
    → MovementSystem (应用速度,如果攻击中会被锁住)
    → AnimationSystem (根据物理速度+状态切动画)
-   → 各 UI 系统 (InventoryUI / HotbarUI / BuffUI / StoreUI / BankUI / SystemMenu)
+   → 各 UI 系统 (InventoryUI / HotbarUI / BuffUI / NeedsUI / StoreUI / BankUI / SystemMenu)
    ```
 3. **实体通过组件组合区分行为**:Player(input+attack)、Enemy(ai+movement+drop)、Container(container+inventory)、Store(store)、Bank(bank_npc)。给 Enemy 加 `attack` 组件即可让其攻击,无需改 AttackSystem。
 4. **系统之间只通过组件数据通信**,禁止直接调用方法或持有对方引用。
@@ -268,6 +271,7 @@ private cursors: Types.Input.Keyboard.CursorKeys;
 | `HealthComponent` | hp, maxHp | HitSystem,血条渲染 |
 | `HitStunComponent` | isHit, damage, knockbackX/Y, stunTimer, flashTimer, hitAnimTimer | HitSystem, MovementSystem |
 | `BuffComponent` | buffs[] (生效中), pendingBuffs[] ({buffId,duration} 待添加), removeBuffIds[] (待移除) | BuffSystem 轮询处理 pending,推进 tick 与持续时间 |
+| `NeedsComponent` | hunger/maxHunger, thirst/maxThirst, pendingDeltas[] ({hunger?,thirst?} 增减请求) | NeedsSystem 应用 pendingDeltas,NeedsUISystem 渲染条 |
 | `InventoryComponent` | capacity, items[] | InventorySystem, InventoryUISystem |
 | `EquipmentSlotComponent` | weapon, armor, helmet | InventoryUISystem,装备加成结算 |
 | `AttributeComponent` | baseAttack, baseDefense, attack, defense (含装备加成) | AttackSystem, HitSystem |
@@ -285,7 +289,7 @@ private cursors: Types.Input.Keyboard.CursorKeys;
 
 | 实体 | 组件组合 | 来源 |
 |------|---------|------|
-| `Player` | sprite, visual, movement, animation, input, attack, health, hitstun, attribute, inventory, equipment_slots, hotbar, player, render | GameScene 在 Tiled `Player` Object 位置实例化 |
+| `Player` | sprite, visual, body_config, movement, animation, input, attack, health, hitstun, attribute, inventory, equipment_slots, hotbar, bank, buff, needs, player, render | GameScene 在 Tiled `Player` Object 位置实例化(地图切换时实体保留) |
 | `Enemy` | sprite, visual, movement, animation, ai, attack, health, hitstun, attribute, drop, render | Tiled `Enemy` Object |
 | `Container` | sprite, visual, container, inventory | Tiled `Container` Object(物品通过 properties 配置) |
 | `Store` | sprite, visual, store, inventory | Tiled `Store` Object(商品通过 properties 配置) |

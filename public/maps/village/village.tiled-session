@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "village.json",
+    "activeFile": "interior.tmx",
     "expandedProjectPaths": [
     ],
     "file.lastUsedOpenFilter": "全部文件 (*)",
@@ -22,8 +22,8 @@
             "scale": 8,
             "selectedLayer": 6,
             "viewCenter": {
-                "x": 275.5,
-                "y": 302.6875
+                "x": 263.875,
+                "y": 364.4375
             }
         },
         "interior.tsx": {
@@ -95,9 +95,9 @@
     "project": "village.tiled-project",
     "property.type": "int",
     "recentFiles": [
-        "solid.tsx",
-        "interior.tmx",
         "village.json",
+        "interior.tmx",
+        "solid.tsx",
         "interior.tsx",
         "village.tmx",
         "building.tsx"
