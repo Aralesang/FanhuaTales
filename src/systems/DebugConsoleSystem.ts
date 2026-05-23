@@ -16,8 +16,8 @@ import { InventorySystem } from './InventorySystem';
  * 按 ~ 键打开/关闭一个类似浏览器控制台的 DOM overlay，功能包括：
  * - 显示游戏日志（拦截 console.log/warn/error）
  * - 命令输入框，支持以下命令：
- *   get_item_all                    将所有物品添加到背包
- *   get_item <id> [数量]            获取指定物品
+ *   add_item_all                    将所有物品添加到背包
+ *   add_item <id> [数量]            添加指定物品
  *   add_buff <buffid> <持续时间ms>  添加指定 buff
  *   set_hp <数值>                   设置当前生命值
  *   set_hunger <数值>               设置饥饿值
@@ -214,10 +214,10 @@ export class DebugConsoleSystem extends System {
         const command = parts[0].toLowerCase();
 
         switch (command) {
-            case 'get_item_all':
+            case 'add_item_all':
                 this.cmdGetAllItems();
                 break;
-            case 'get_item':
+            case 'add_item':
                 this.cmdGetItem(parts);
                 break;
             case 'add_buff':
@@ -267,7 +267,7 @@ export class DebugConsoleSystem extends System {
 
     private cmdGetItem(parts: string[]): void {
         if (parts.length < 2) {
-            console.warn('[DebugConsole] 用法: get_item <物品ID> [数量]');
+            console.warn('[DebugConsole] 用法: add_item <物品ID> [数量]');
             return;
         }
 
@@ -406,8 +406,8 @@ export class DebugConsoleSystem extends System {
     private printHelp(): void {
         const helpText = [
             '可用命令:',
-            '  get_item_all                              将所有物品添加到背包（可堆叠给上限，不可堆叠给1）',
-            '  get_item <物品ID> [数量]                   添加指定物品',
+            '  add_item_all                              将所有物品添加到背包（可堆叠给上限，不可堆叠给1）',
+            '  add_item <物品ID> [数量]                   添加指定物品',
             '  add_buff <buffID> <持续时间(ms)>           添加指定 buff（如 add_buff regen 10000）',
             '  set_hp <数值>                             设置当前生命值',
             '  set_hunger <数值>                         设置饥饿值',

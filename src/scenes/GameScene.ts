@@ -28,6 +28,7 @@ import { BuffSystem } from '../systems/BuffSystem';
 import { BuffUISystem } from '../systems/BuffUISystem';
 import { NeedsSystem } from '../systems/NeedsSystem';
 import { NeedsUISystem } from '../systems/NeedsUISystem';
+import { TooltipSystem } from '../systems/TooltipSystem';
 import { DebugConsoleSystem } from '../systems/DebugConsoleSystem';
 
 interface DoorData {
@@ -84,6 +85,7 @@ export class GameScene extends Scene {
     private buffUISystem!: BuffUISystem;
     private needsSystem!: NeedsSystem;
     private needsUISystem!: NeedsUISystem;
+    private tooltipSystem!: TooltipSystem;
     private debugConsoleSystem!: DebugConsoleSystem;
 
     constructor() {
@@ -146,6 +148,7 @@ export class GameScene extends Scene {
         this.buffUISystem = new BuffUISystem(this);
         this.needsSystem = new NeedsSystem(this);
         this.needsUISystem = new NeedsUISystem(this);
+        this.tooltipSystem = new TooltipSystem(this);
         this.debugConsoleSystem = new DebugConsoleSystem(this);
 
         // Debug 开关：按 F9 切换碰撞器可视化
@@ -592,6 +595,7 @@ export class GameScene extends Scene {
         this.bankSystem.update(this.entities, delta);
         this.bankUISystem.update(this.entities, delta);
         this.systemMenuSystem.update(this.entities, delta);
+        this.tooltipSystem.update(this.entities, delta);
         this.debugConsoleSystem.update(this.entities, delta);
 
         // 清理已销毁实体的血条

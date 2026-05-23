@@ -29,12 +29,6 @@ export class BankUISystem extends System {
     private playerBankBalanceBg!: GameObjects.Graphics;
     private playerBankBalanceText!: GameObjects.Text;
 
-    // Tooltip
-    private tooltipPanel!: GameObjects.Graphics;
-    private tooltipName!: GameObjects.Text;
-    private tooltipType!: GameObjects.Text;
-    private tooltipDesc!: GameObjects.Text;
-
     private readonly COLS = 5;
     private readonly ROWS = 4;
     private readonly BASE_CELL_SIZE = 40;
@@ -131,35 +125,6 @@ export class BankUISystem extends System {
         this.playerBankBalanceText.setDepth(1001);
         this.playerBankBalanceText.setOrigin(0.5, 0.5);
         this.playerBankBalanceText.visible = false;
-
-        // Tooltip
-        this.tooltipPanel = this.scene.add.graphics();
-        this.tooltipPanel.setDepth(10000);
-        this.tooltipPanel.visible = false;
-
-        this.tooltipName = this.createText(0, 0, '', {
-            fontSize: FontConfig.large.size, color: '#ffffff',
-            fontFamily: FontConfig.large.family,
-        });
-        this.tooltipName.setDepth(10001);
-        this.tooltipName.setOrigin(0, 0);
-        this.tooltipName.visible = false;
-
-        this.tooltipType = this.createText(0, 0, '', {
-            fontSize: FontConfig.small.size, color: '#aaaaaa',
-            fontFamily: FontConfig.small.family,
-        });
-        this.tooltipType.setDepth(10001);
-        this.tooltipType.setOrigin(0, 0);
-        this.tooltipType.visible = false;
-
-        this.tooltipDesc = this.createText(0, 0, '', {
-            fontSize: FontConfig.small.size, color: '#cccccc',
-            fontFamily: FontConfig.small.family,
-        });
-        this.tooltipDesc.setDepth(10001);
-        this.tooltipDesc.setOrigin(0, 0);
-        this.tooltipDesc.visible = false;
     }
 
     update(entities: Entity[], _delta: number): void {
@@ -191,7 +156,7 @@ export class BankUISystem extends System {
         }
 
         this.renderGrid();
-        this.renderTooltip();
+        this.checkHoverAndSetTooltip(uistate);
     }
 
     private getUIState(entities: Entity[]): UIStateComponent | undefined {
@@ -413,10 +378,6 @@ export class BankUISystem extends System {
         this.withdrawAllText.visible = false;
         this.playerBankBalanceBg.visible = false;
         this.playerBankBalanceText.visible = false;
-        this.tooltipPanel.visible = false;
-        this.tooltipName.visible = false;
-        this.tooltipType.visible = false;
-        this.tooltipDesc.visible = false;
     }
 
     // ============================================================
@@ -542,47 +503,36 @@ export class BankUISystem extends System {
     // Tooltip
     // ============================================================
 
-    private renderTooltip(): void {
-        if (!this.targetEntity) {
-            this.hideTooltip();
-            return;
-        }
+    private checkHoverAndSetTooltip(uistate: UIStateComponent | undefined): void {
+        if (!uistate || !this.targetEntity) return;
 
         const pointer = this.scene.input.activePointer;
         const slotIndex = this.getSlotAt(pointer.x, pointer.y);
         const btn = this.getButtonAt(pointer.x, pointer.y);
 
-        if (slotIndex === null && btn === null) {
-            this.hideTooltip();
-            return;
-        }
+        if (slotIndex === null && btn === null) return;
 
         const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
         const { x: worldX, y: worldY } = this.screenToWorld(pointer.x, pointer.y);
-        const scale = this.uiScale;
 
         let nameText = '';
         let typeText = '';
         let descText = '';
+        let nameColor = '#ffffff';
 
         if (slotIndex !== null) {
             const inventory = this.targetEntity.getComponent<InventoryComponent>('inventory')!;
             const item = inventory.items[slotIndex];
-            if (!item) {
-                this.hideTooltip();
-                return;
-            }
+            if (!item) return;
             const def = itemsMap?.[item.itemId];
-            if (!def) {
-                this.hideTooltip();
-                return;
-            }
+            if (!def) return;
             nameText = def.name;
             typeText = this.typeLabel(def.type);
             descText = def.description;
             if (item.itemId === 'gold_coin') {
                 descText += '（点击存入银行）';
             }
+            nameColor = this.getRarityColor(def.type);
         } else if (btn === 'withdraw_one') {
             nameText = '取出 1 个';
             typeText = '操作';
@@ -593,60 +543,14 @@ export class BankUISystem extends System {
             descText = '从银行取出所有金币到背包';
         }
 
-        const pad = 8 * scale;
-        const nameLineH = 18 * scale;
-        const bodyLineH = 14 * scale;
-        const nameFontSize = 16 * scale;
-        const bodyFontSize = 12 * scale;
-        const maxTextW = Math.max(
-            nameText.length * nameFontSize,
-            typeText.length * bodyFontSize,
-            descText.length * bodyFontSize
-        );
-        const tooltipW = Math.max(maxTextW + pad * 2, 140 * scale);
-        const tooltipH = nameLineH + bodyLineH * 2 + pad * 2;
-
-        let tx = worldX + 16 * scale;
-        let ty = worldY + 16 * scale;
-        const cam = this.scene.cameras.main;
-        const camRight = cam.midPoint.x + (cam.width / 2 / (cam.zoom || 1));
-        const camBottom = cam.midPoint.y + (cam.height / 2 / (cam.zoom || 1));
-        if (tx + tooltipW > camRight) {
-            tx = worldX - tooltipW - 8 * scale;
-        }
-        if (ty + tooltipH > camBottom) {
-            ty = worldY - tooltipH - 8 * scale;
-        }
-
-        this.tooltipPanel.clear();
-        this.tooltipPanel.fillStyle(0x0a0a18, 1);
-        this.tooltipPanel.fillRoundedRect(tx, ty, tooltipW, tooltipH, 4 * scale);
-        this.tooltipPanel.lineStyle(Math.max(1, scale), 0x444466, 1);
-        this.tooltipPanel.strokeRoundedRect(tx, ty, tooltipW, tooltipH, 4 * scale);
-        this.tooltipPanel.visible = true;
-
-        this.tooltipName.setPosition(tx + pad, ty + pad);
-        this.tooltipName.setScale(scale);
-        this.tooltipName.setText(nameText);
-        this.tooltipName.setColor(slotIndex !== null ? this.getRarityColor(itemsMap?.[this.targetEntity.getComponent<InventoryComponent>('inventory')!.items[slotIndex]!.itemId]?.type ?? '') : '#ffffff');
-        this.tooltipName.visible = true;
-
-        this.tooltipType.setPosition(tx + pad, ty + pad + nameLineH);
-        this.tooltipType.setScale(scale);
-        this.tooltipType.setText(`[${typeText}]`);
-        this.tooltipType.visible = true;
-
-        this.tooltipDesc.setPosition(tx + pad, ty + pad + nameLineH + bodyLineH);
-        this.tooltipDesc.setScale(scale);
-        this.tooltipDesc.setText(descText);
-        this.tooltipDesc.visible = true;
-    }
-
-    private hideTooltip(): void {
-        this.tooltipPanel.visible = false;
-        this.tooltipName.visible = false;
-        this.tooltipType.visible = false;
-        this.tooltipDesc.visible = false;
+        uistate.tooltip = {
+            x: worldX,
+            y: worldY,
+            name: nameText,
+            nameColor,
+            typeText,
+            description: descText,
+        };
     }
 
     private typeLabel(type: string): string {

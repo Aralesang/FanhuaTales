@@ -128,6 +128,7 @@ export class HotbarUISystem extends System {
         // 渲染同时把槽位矩形写入 uistate（供 InventoryUI 拖放命中）
         this.renderHotbar(entities, uistate);
         this.renderHeldItem();
+        this.checkHoverAndSetTooltip(entities, uistate);
 
         // 数字键触发：仅在所有主 UI 关闭时生效
         const anyUIOpen = uistate?.inventoryOpen || uistate?.containerOpen || uistate?.storeOpen || uistate?.bankOpen;
@@ -542,6 +543,57 @@ export class HotbarUISystem extends System {
             }
         }
         return null;
+    }
+
+    // ============================================================
+    // Tooltip（通过 UIStateComponent 写入，由 TooltipSystem 统一渲染）
+    // ============================================================
+
+    private checkHoverAndSetTooltip(entities: Entity[], uistate: UIStateComponent | undefined): void {
+        if (!uistate) return;
+
+        const pointer = this.scene.input.activePointer;
+        const slotIndex = this.getSlotIndexAt(pointer.x, pointer.y);
+        if (slotIndex === null || this.heldItem) return;
+
+        const player = entities.find(e => e.hasComponent('player'));
+        const hotbar = player?.getComponent<HotbarComponent>('hotbar');
+        const slot = hotbar?.slots[slotIndex] ?? null;
+        if (!slot) return;
+
+        const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
+        const def = itemsMap?.[slot.itemId];
+        if (!def) return;
+
+        const cam = this.scene.cameras.main;
+        const world = cam.getWorldPoint(pointer.x, pointer.y);
+
+        uistate.tooltip = {
+            x: world.x,
+            y: world.y,
+            name: def.name,
+            nameColor: this.getRarityColor(def.type),
+            typeText: this.typeLabel(def.type),
+            description: def.description,
+        };
+    }
+
+    private typeLabel(type: string): string {
+        switch (type) {
+            case 'consumable': return '消耗品';
+            case 'equipment': return '装备';
+            case 'material': return '材料';
+            default: return type;
+        }
+    }
+
+    private getRarityColor(type: string): string {
+        switch (type) {
+            case 'equipment': return '#ffaa44';
+            case 'consumable': return '#44aaff';
+            case 'material': return '#aaaaaa';
+            default: return '#ffffff';
+        }
     }
 
     /** 使用最近一次 update 缓存的 entities 读取 uistate */

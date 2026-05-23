@@ -24,13 +24,6 @@ export class StoreUISystem extends System {
     private itemSprites: GameObjects.Sprite[] = [];
     private quantityTexts: GameObjects.Text[] = [];
 
-    // Tooltip
-    private tooltipPanel!: GameObjects.Graphics;
-    private tooltipName!: GameObjects.Text;
-    private tooltipType!: GameObjects.Text;
-    private tooltipDesc!: GameObjects.Text;
-    private tooltipStats!: GameObjects.Text;
-
     // 银行余额显示
     private bankBalanceBg!: GameObjects.Graphics;
     private bankBalanceText!: GameObjects.Text;
@@ -79,43 +72,6 @@ export class StoreUISystem extends System {
             this.quantityTexts.push(text);
         }
 
-        // Tooltip
-        this.tooltipPanel = this.scene.add.graphics();
-        this.tooltipPanel.setDepth(10000);
-        this.tooltipPanel.visible = false;
-
-        this.tooltipName = this.createText(0, 0, '', {
-            fontSize: FontConfig.large.size, color: '#ffffff',
-            fontFamily: FontConfig.large.family,
-        });
-        this.tooltipName.setDepth(10001);
-        this.tooltipName.setOrigin(0, 0);
-        this.tooltipName.visible = false;
-
-        this.tooltipType = this.createText(0, 0, '', {
-            fontSize: FontConfig.small.size, color: '#aaaaaa',
-            fontFamily: FontConfig.small.family,
-        });
-        this.tooltipType.setDepth(10001);
-        this.tooltipType.setOrigin(0, 0);
-        this.tooltipType.visible = false;
-
-        this.tooltipDesc = this.createText(0, 0, '', {
-            fontSize: FontConfig.small.size, color: '#cccccc',
-            fontFamily: FontConfig.small.family,
-        });
-        this.tooltipDesc.setDepth(10001);
-        this.tooltipDesc.setOrigin(0, 0);
-        this.tooltipDesc.visible = false;
-
-        this.tooltipStats = this.createText(0, 0, '', {
-            fontSize: FontConfig.small.size, color: '#88cc88',
-            fontFamily: FontConfig.small.family,
-        });
-        this.tooltipStats.setDepth(10001);
-        this.tooltipStats.setOrigin(0, 0);
-        this.tooltipStats.visible = false;
-
         // 银行余额显示
         this.bankBalanceBg = this.scene.add.graphics();
         this.bankBalanceBg.setDepth(1000);
@@ -162,7 +118,7 @@ export class StoreUISystem extends System {
         }
 
         this.renderGrid();
-        this.renderTooltip();
+        this.checkHoverAndSetTooltip(uistate);
     }
 
     private getUIState(entities: Entity[]): UIStateComponent | undefined {
@@ -338,11 +294,6 @@ export class StoreUISystem extends System {
         for (const text of this.quantityTexts) {
             text.visible = false;
         }
-        this.tooltipPanel.visible = false;
-        this.tooltipName.visible = false;
-        this.tooltipType.visible = false;
-        this.tooltipDesc.visible = false;
-        this.tooltipStats.visible = false;
         this.bankBalanceBg.visible = false;
         this.bankBalanceText.visible = false;
     }
@@ -513,19 +464,12 @@ export class StoreUISystem extends System {
     // Tooltip
     // ============================================================
 
-    private renderTooltip(): void {
-        if (!this.targetEntity || !this.storeEntity) {
-            this.hideTooltip();
-            return;
-        }
+    private checkHoverAndSetTooltip(uistate: UIStateComponent | undefined): void {
+        if (!uistate || !this.targetEntity || !this.storeEntity) return;
 
         const pointer = this.scene.input.activePointer;
         const slotInfo = this.getSlotAt(pointer.x, pointer.y);
-
-        if (!slotInfo) {
-            this.hideTooltip();
-            return;
-        }
+        if (!slotInfo) return;
 
         const { source, index } = slotInfo;
         const storeComp = this.storeEntity.getComponent<StoreComponent>('store')!;
@@ -534,130 +478,67 @@ export class StoreUISystem extends System {
         const item = source === 'store'
             ? (index < storeComp.goods.length ? storeComp.goods[index] : null)
             : (index < playerInventory.capacity ? playerInventory.items[index] : null);
-
-        if (!item) {
-            this.hideTooltip();
-            return;
-        }
+        if (!item) return;
 
         const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
         const def = itemsMap?.[item.itemId];
-        if (!def) {
-            this.hideTooltip();
-            return;
-        }
+        if (!def) return;
 
         const { x: worldX, y: worldY } = this.screenToWorld(pointer.x, pointer.y);
-        const scale = this.uiScale;
 
-        // 构建 Tooltip 文本
-        const nameText = def.name;
-        const typeText = this.typeLabel(def.type);
-        const descText = def.description;
-
-        let priceText = '';
+        let stats = '';
+        let statsColor = '#88cc88';
         if (source === 'store' && def.buyPrice) {
             const priceEntries = Object.entries(def.buyPrice).map(
                 ([id, qty]) => `${itemsMap?.[id]?.name ?? id} x${qty}`
             );
-            priceText = `买入: ${priceEntries.join(', ')}`;
+            stats = `买入: ${priceEntries.join(', ')}`;
+            statsColor = '#ffcc44';
         } else if (source === 'player' && def.sellPrice) {
             const priceEntries = Object.entries(def.sellPrice).map(
                 ([id, qty]) => `${itemsMap?.[id]?.name ?? id} x${qty}`
             );
-            priceText = `卖出: ${priceEntries.join(', ')}`;
+            stats = `卖出: ${priceEntries.join(', ')}`;
+            statsColor = '#ffcc44';
         } else if (source === 'player' && !def.sellPrice) {
-            priceText = '不可出售';
+            stats = '不可出售';
+            statsColor = '#ff6666';
         } else if (source === 'store' && !def.buyPrice) {
-            priceText = '不可购买';
+            stats = '不可购买';
+            statsColor = '#ff6666';
         }
 
-        let statsText = '';
         if (def.type === 'equipment' && def.equipment) {
             const attrs: string[] = [];
             if (def.equipment.attack) attrs.push(`攻击 +${def.equipment.attack}`);
             if (def.equipment.defense) attrs.push(`防御 +${def.equipment.defense}`);
             attrs.push(`部位: ${this.slotLabel(def.equipment.slot)}`);
-            statsText = attrs.join('  ');
+            if (stats) stats += '  |  ';
+            stats += attrs.join('  ');
         } else if (def.type === 'consumable' && def.useEffect) {
             const eff = def.useEffect;
+            let effectText = '';
             if (eff.type === 'apply_buff' && eff.duration !== undefined) {
-                statsText = `持续 ${Math.floor(eff.duration / 1000)} 秒`;
+                effectText = `持续 ${Math.floor(eff.duration / 1000)} 秒`;
             } else if (eff.value !== undefined) {
-                statsText = `效果: ${this.effectLabel(eff.type)} ${eff.value}`;
+                effectText = `效果: ${this.effectLabel(eff.type)} ${eff.value}`;
+            }
+            if (effectText) {
+                if (stats) stats += '  |  ';
+                stats += effectText;
             }
         }
 
-        // 测量文本尺寸
-        const pad = 8 * scale;
-        const nameLineH = 18 * scale;
-        const bodyLineH = 14 * scale;
-        const nameFontSize = 16 * scale;
-        const bodyFontSize = 12 * scale;
-        const maxTextW = Math.max(
-            nameText.length * nameFontSize,
-            typeText.length * bodyFontSize,
-            descText.length * bodyFontSize,
-            priceText.length * bodyFontSize,
-            statsText.length * bodyFontSize
-        );
-        const tooltipW = Math.max(maxTextW + pad * 2, 140 * scale);
-        const tooltipH = nameLineH + bodyLineH * 3 + (statsText ? bodyLineH : 0) + pad * 2;
-
-        // 边界检查
-        let tx = worldX + 16 * scale;
-        let ty = worldY + 16 * scale;
-        const cam = this.scene.cameras.main;
-        const camRight = cam.midPoint.x + (cam.width / 2 / (cam.zoom || 1));
-        const camBottom = cam.midPoint.y + (cam.height / 2 / (cam.zoom || 1));
-        if (tx + tooltipW > camRight) {
-            tx = worldX - tooltipW - 8 * scale;
-        }
-        if (ty + tooltipH > camBottom) {
-            ty = worldY - tooltipH - 8 * scale;
-        }
-
-        // 绘制背景
-        this.tooltipPanel.clear();
-        this.tooltipPanel.fillStyle(0x0a0a18, 1);
-        this.tooltipPanel.fillRoundedRect(tx, ty, tooltipW, tooltipH, 4 * scale);
-        this.tooltipPanel.lineStyle(Math.max(1, scale), 0x444466, 1);
-        this.tooltipPanel.strokeRoundedRect(tx, ty, tooltipW, tooltipH, 4 * scale);
-        this.tooltipPanel.visible = true;
-
-        // 名称
-        this.tooltipName.setPosition(tx + pad, ty + pad);
-        this.tooltipName.setScale(scale);
-        this.tooltipName.setText(nameText);
-        this.tooltipName.setColor(this.getRarityColor(def.type));
-        this.tooltipName.visible = true;
-
-        // 类型
-        this.tooltipType.setPosition(tx + pad, ty + pad + nameLineH);
-        this.tooltipType.setScale(scale);
-        this.tooltipType.setText(`[${typeText}]`);
-        this.tooltipType.visible = true;
-
-        // 描述
-        this.tooltipDesc.setPosition(tx + pad, ty + pad + nameLineH + bodyLineH);
-        this.tooltipDesc.setScale(scale);
-        this.tooltipDesc.setText(descText);
-        this.tooltipDesc.visible = true;
-
-        // 价格
-        this.tooltipStats.setPosition(tx + pad, ty + pad + nameLineH + bodyLineH * 2);
-        this.tooltipStats.setScale(scale);
-        this.tooltipStats.setColor(priceText.startsWith('不可') ? '#ff6666' : '#ffcc44');
-        this.tooltipStats.setText(priceText);
-        this.tooltipStats.visible = true;
-    }
-
-    private hideTooltip(): void {
-        this.tooltipPanel.visible = false;
-        this.tooltipName.visible = false;
-        this.tooltipType.visible = false;
-        this.tooltipDesc.visible = false;
-        this.tooltipStats.visible = false;
+        uistate.tooltip = {
+            x: worldX,
+            y: worldY,
+            name: def.name,
+            nameColor: this.getRarityColor(def.type),
+            typeText: this.typeLabel(def.type),
+            description: def.description,
+            stats,
+            statsColor,
+        };
     }
 
     private typeLabel(type: string): string {

@@ -187,6 +187,18 @@ export class SettingsComponent implements Component {
     uiScale: number = 0.5;
 }
 
+/** Tooltip 请求数据：各 UI 系统检测到 hover 时写入，由 TooltipSystem 统一渲染 */
+export interface TooltipData {
+    x: number;
+    y: number;
+    name: string;
+    nameColor: string;
+    typeText?: string;
+    description?: string;
+    stats?: string;
+    statsColor?: string;
+}
+
 /** 全局 UI 状态组件：用于各 UI 系统之间协调 */
 export class UIStateComponent implements Component {
     readonly type = 'uistate';
@@ -207,6 +219,8 @@ export class UIStateComponent implements Component {
     activeBank: Entity | null = null;
     /** 调试控制台是否打开 */
     debugConsoleOpen = false;
+    /** Tooltip 请求：各系统检测到 hover 时写入，TooltipSystem 每帧消费 */
+    tooltip: TooltipData | null = null;
 }
 
 /** 容器标记组件 */
@@ -381,4 +395,16 @@ export class NeedsComponent implements Component {
     thirst: number = 100;
     maxThirst: number = 100;
     pendingDeltas: NeedsDelta[] = [];
+
+    // 自然消耗配置（每消耗 1 点需要的毫秒数）
+    /** 饥饿每消耗 1 点需要的毫秒数（默认 120 秒） */
+    hungerDecayMs: number = 120000;
+    /** 口渴每消耗 1 点需要的毫秒数（默认 60 秒） */
+    thirstDecayMs: number = 60000;
+
+    // 内部计时器（由 NeedsSystem 维护，不需手动设置）
+    /** 距离下一次饥饿消耗的剩余毫秒数 */
+    hungerTimer: number = 120000;
+    /** 距离下一次口渴消耗的剩余毫秒数 */
+    thirstTimer: number = 60000;
 }

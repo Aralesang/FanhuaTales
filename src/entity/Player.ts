@@ -83,7 +83,12 @@ export class Player extends Entity {
         this.addComponent(new BuffComponent());
 
         // 需求组件（饥饿/口渴，默认满值；通过 pendingDeltas 申请变化）
-        this.addComponent(new NeedsComponent());
+        const needs = new NeedsComponent();
+        needs.hunger = 100;
+        needs.thirst = 100;
+        needs.hungerTimer = needs.hungerDecayMs;
+        needs.thirstTimer = needs.thirstDecayMs;
+        this.addComponent(needs);
 
         // 生命值组件
         const health = new HealthComponent();

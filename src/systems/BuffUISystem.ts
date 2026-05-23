@@ -28,11 +28,6 @@ export class BuffUISystem extends System {
     // 当前帧每个 buff 色块的世界坐标矩形，用于 hover 命中
     private buffRects: BuffRect[] = [];
 
-    // Tooltip
-    private tooltipPanel!: GameObjects.Graphics;
-    private tooltipName!: GameObjects.Text;
-    private tooltipDesc!: GameObjects.Text;
-
     private buffsMap!: Record<string, BuffDefinition>;
 
     private readonly BASE_SIZE = 16;
@@ -51,29 +46,6 @@ export class BuffUISystem extends System {
         // 色块层级 65：高于快捷栏（60-64），低于 tooltip（10000）
         this.slotGraphics = this.scene.add.graphics();
         this.slotGraphics.setDepth(65);
-
-        // Tooltip
-        this.tooltipPanel = this.scene.add.graphics();
-        this.tooltipPanel.setDepth(10000);
-        this.tooltipPanel.visible = false;
-
-        this.tooltipName = this.createText(0, 0, '', {
-            fontSize: FontConfig.large.size,
-            color: '#ffffff',
-            fontFamily: FontConfig.large.family,
-        });
-        this.tooltipName.setDepth(10001);
-        this.tooltipName.setOrigin(0, 0);
-        this.tooltipName.visible = false;
-
-        this.tooltipDesc = this.createText(0, 0, '', {
-            fontSize: FontConfig.small.size,
-            color: '#cccccc',
-            fontFamily: FontConfig.small.family,
-        });
-        this.tooltipDesc.setDepth(10001);
-        this.tooltipDesc.setOrigin(0, 0);
-        this.tooltipDesc.visible = false;
     }
 
     update(entities: Entity[], _delta: number): void {
@@ -81,6 +53,8 @@ export class BuffUISystem extends System {
         const settingsEntity = entities.find(e => e.hasComponent('settings'));
         const settings = settingsEntity?.getComponent<SettingsComponent>('settings');
         this.uiScale = settings?.uiScale ?? 1.0;
+
+        const uistate = this.getUIState(entities);
 
         const player = entities.find(e => e.hasComponent('player'));
         const buffComp = player?.getComponent<BuffComponent>('buff');
@@ -90,7 +64,7 @@ export class BuffUISystem extends System {
         }
 
         this.renderBuffs(buffComp);
-        this.renderTooltip();
+        this.checkHoverAndSetTooltip(uistate);
     }
 
     private renderBuffs(buffComp: BuffComponent): void {
@@ -159,12 +133,17 @@ export class BuffUISystem extends System {
         return text;
     }
 
-    private renderTooltip(): void {
+    // ============================================================
+    // Tooltip（通过 UIStateComponent 写入，由 TooltipSystem 统一渲染）
+    // ============================================================
+
+    private checkHoverAndSetTooltip(uistate: import('../ecs/Component').UIStateComponent | undefined): void {
+        if (!uistate) return;
+
         const pointer = this.scene.input.activePointer;
         const cam = this.scene.cameras.main;
         const world = cam.getWorldPoint(pointer.x, pointer.y);
 
-        // hover 检测
         let hoveredBuffId: string | null = null;
         for (const rect of this.buffRects) {
             if (
@@ -176,71 +155,18 @@ export class BuffUISystem extends System {
             }
         }
 
-        if (!hoveredBuffId) {
-            this.hideTooltip();
-            return;
-        }
+        if (!hoveredBuffId) return;
 
         const def = this.buffsMap?.[hoveredBuffId];
-        if (!def) {
-            this.hideTooltip();
-            return;
-        }
+        if (!def) return;
 
-        const scale = this.uiScale;
-        const pad = 8 * scale;
-        const nameLineH = 18 * scale;
-        const bodyLineH = 14 * scale;
-        const nameFontSize = 16 * scale;
-        const bodyFontSize = 12 * scale;
-
-        const nameText = def.name;
-        const descText = def.description;
-
-        // 简单估算文本宽度（位图字体字符宽度 ≈ fontSize）
-        const maxTextW = Math.max(
-            nameText.length * nameFontSize,
-            descText.length * bodyFontSize
-        );
-        const tooltipW = Math.max(maxTextW + pad * 2, 140 * scale);
-        const tooltipH = nameLineH + bodyLineH + pad * 2;
-
-        // tooltip 默认显示在鼠标左下方（buff 在右上角）
-        const zoom = cam.zoom || 1;
-        const viewLeft = cam.midPoint.x - cam.width / 2 / zoom;
-        const viewBottom = cam.midPoint.y + cam.height / 2 / zoom;
-
-        let tx = world.x - tooltipW - 8 * scale;
-        let ty = world.y + 8 * scale;
-        if (tx < viewLeft) {
-            tx = world.x + 8 * scale;   // 撞到左边则改放右下
-        }
-        if (ty + tooltipH > viewBottom) {
-            ty = world.y - tooltipH - 8 * scale;
-        }
-
-        this.tooltipPanel.clear();
-        this.tooltipPanel.fillStyle(0x0a0a18, 1);
-        this.tooltipPanel.fillRoundedRect(tx, ty, tooltipW, tooltipH, 4 * scale);
-        this.tooltipPanel.lineStyle(Math.max(1, scale), 0x444466, 1);
-        this.tooltipPanel.strokeRoundedRect(tx, ty, tooltipW, tooltipH, 4 * scale);
-        this.tooltipPanel.visible = true;
-
-        this.tooltipName.setPosition(tx + pad, ty + pad);
-        this.tooltipName.setScale(scale);
-        this.tooltipName.setText(nameText);
-        this.tooltipName.visible = true;
-
-        this.tooltipDesc.setPosition(tx + pad, ty + pad + nameLineH);
-        this.tooltipDesc.setScale(scale);
-        this.tooltipDesc.setText(descText);
-        this.tooltipDesc.visible = true;
-    }
-
-    private hideTooltip(): void {
-        this.tooltipPanel.visible = false;
-        this.tooltipName.visible = false;
-        this.tooltipDesc.visible = false;
+        uistate.tooltip = {
+            x: world.x,
+            y: world.y,
+            name: def.name,
+            nameColor: '#ffaa44',
+            description: def.description,
+        };
     }
 
     private hideAll(): void {
@@ -249,7 +175,11 @@ export class BuffUISystem extends System {
             text.visible = false;
         }
         this.buffRects = [];
-        this.hideTooltip();
+    }
+
+    private getUIState(entities: Entity[]): import('../ecs/Component').UIStateComponent | undefined {
+        const entity = entities.find(e => e.hasComponent('uistate'));
+        return entity?.getComponent<import('../ecs/Component').UIStateComponent>('uistate');
     }
 
     /** buff 暂无图标，根据 effect.type 给一个默认色块色 */
