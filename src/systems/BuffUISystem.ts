@@ -38,7 +38,7 @@ export class BuffUISystem extends System {
 
     constructor(scene: Scene) {
         super(scene);
-        this.buffsMap = scene.cache.json.get('buffsMap') as Record<string, BuffDefinition>;
+        this.buffsMap = scene.cache.json.get('buffs') as Record<string, BuffDefinition>;
         this.initUI();
     }
 

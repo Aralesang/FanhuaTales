@@ -308,7 +308,7 @@ export class StoreUISystem extends System {
         const slotInfo = this.getSlotAt(pointer.x, pointer.y);
         if (!slotInfo) return;
 
-        const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
+        const itemsMap = this.scene.cache.json.get('items') as Record<string, ItemDefinition> | undefined;
         if (!itemsMap) return;
 
         const { source, index } = slotInfo;
@@ -480,7 +480,7 @@ export class StoreUISystem extends System {
             : (index < playerInventory.capacity ? playerInventory.items[index] : null);
         if (!item) return;
 
-        const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
+        const itemsMap = this.scene.cache.json.get('items') as Record<string, ItemDefinition> | undefined;
         const def = itemsMap?.[item.itemId];
         if (!def) return;
 

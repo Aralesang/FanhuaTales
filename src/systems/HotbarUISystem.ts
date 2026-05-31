@@ -167,7 +167,7 @@ export class HotbarUISystem extends System {
             return;
         }
 
-        const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
+        const itemsMap = this.scene.cache.json.get('items') as Record<string, ItemDefinition> | undefined;
         const def = itemsMap?.[slot.itemId];
         if (!def) {
             console.log(`[Hotbar] 未知道具: ${slot.itemId}`);
@@ -380,7 +380,7 @@ export class HotbarUISystem extends System {
         const hotbar = player.getComponent<HotbarComponent>('hotbar');
         if (!hotbar) return;
 
-        const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
+        const itemsMap = this.scene.cache.json.get('items') as Record<string, ItemDefinition> | undefined;
 
         if (pointer.button === 0) {
             this.handleLeftClick(hotbar.slots, itemsMap, slotIndex);
@@ -561,7 +561,7 @@ export class HotbarUISystem extends System {
         const slot = hotbar?.slots[slotIndex] ?? null;
         if (!slot) return;
 
-        const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
+        const itemsMap = this.scene.cache.json.get('items') as Record<string, ItemDefinition> | undefined;
         const def = itemsMap?.[slot.itemId];
         if (!def) return;
 

@@ -7,14 +7,15 @@ interface GridConfig {
     spriteHeight: number;
 }
 
-interface ImageConfig {
+interface AnimationConfig {
     path: string;
+    skins: string[];
     grid: GridConfig;
     animationStrategy: 'loop' | 'freeze';
 }
 
-interface ImagesMap {
-    [key: string]: ImageConfig;
+interface AnimationMap {
+    [key: string]: AnimationConfig;
 }
 
 interface MapsMap {
@@ -30,7 +31,7 @@ interface ItemsMap {
 }
 
 export class BootScene extends Scene {
-    private imagesMap!: ImagesMap;
+    private animationMap!: AnimationMap;
     private mapsMap!: MapsMap;
     private soundsMap!: SoundsMap;
     private itemsMap!: ItemsMap;
@@ -58,33 +59,44 @@ export class BootScene extends Scene {
 
     preload(): void {
         // 加载资源映射表
-        this.load.json('imagesMap', 'data/images-map.json');
-        this.load.json('mapsMap', 'data/maps-map.json');
-        this.load.json('soundsMap', 'data/sounds-map.json');
-        this.load.json('itemsMap', 'data/items-map.json');
-        this.load.json('dropsMap', 'data/drops-map.json');
-        this.load.json('buffsMap', 'data/buffs-map.json');
+        this.load.json('animation', 'data/animation.json');
+        this.load.json('maps', 'data/maps.json');
+        this.load.json('sounds', 'data/sounds.json');
+        this.load.json('items', 'data/items.json');
+        this.load.json('drops', 'data/drops.json');
+        this.load.json('buffs', 'data/buffs.json');
     }
 
     async create(): Promise<void> {
         // 等待自定义位图字体加载完成
         await this.loadFonts();
 
-        this.imagesMap = this.cache.json.get('imagesMap') as ImagesMap;
-        this.mapsMap = this.cache.json.get('mapsMap') as MapsMap;
-        this.soundsMap = this.cache.json.get('soundsMap') as SoundsMap;
-        this.itemsMap = this.cache.json.get('itemsMap') as ItemsMap;
+        this.animationMap = this.cache.json.get('animation') as AnimationMap;
+        this.mapsMap = this.cache.json.get('maps') as MapsMap;
+        this.soundsMap = this.cache.json.get('sounds') as SoundsMap;
+        this.itemsMap = this.cache.json.get('items') as ItemsMap;
 
-        // 加载角色 spritesheets
-        for (const [key, config] of Object.entries(this.imagesMap)) {
-            this.load.spritesheet(key, config.path, {
-                frameWidth: config.grid.spriteWidth,
-                frameHeight: config.grid.spriteHeight
-            });
+        // 加载角色 spritesheets（支持多皮肤）
+        for (const [key, config] of Object.entries(this.animationMap)) {
+            const basePath = config.path;
+            // 规范化路径：确保以 / 结尾
+            const normalizedPath = basePath.endsWith('/') ? basePath : basePath + '/';
+
+            for (const skin of config.skins) {
+                const skinName = skin.replace(/\.png$/i, '');
+                const isDefault = skinName === 'default';
+                const textureKey = isDefault ? key : `${key}_${skinName}`;
+                const filePath = normalizedPath + skin;
+
+                this.load.spritesheet(textureKey, filePath, {
+                    frameWidth: config.grid.spriteWidth,
+                    frameHeight: config.grid.spriteHeight,
+                });
+            }
         }
 
-        // 加载道具图标：item_<id> → public/images/item/<id>.png；缺图回退 item_notfind
-        this.load.image('item_notfind', 'images/item/notfind.png');
+        // 加载缺图回退占位符：所有未找到纹理的统一回退
+        this.load.image('item_notfind', 'images/notfind.png');
         for (const itemId of Object.keys(this.itemsMap)) {
             this.load.image(`item_${itemId}`, `images/item/${itemId}.png`);
         }
@@ -117,26 +129,49 @@ export class BootScene extends Scene {
 
     private onLoadComplete(): void {
         // 自动创建动画：仅对 3 行精灵表创建方向性动画（right / down / up）
-        for (const [key, config] of Object.entries(this.imagesMap)) {
+        for (const [key, config] of Object.entries(this.animationMap)) {
             const { rows, columns } = config.grid;
             if (rows !== 3) continue;
 
             const directions = [
                 { suffix: 'right', start: 0, end: columns - 1 },
                 { suffix: 'down', start: columns, end: 2 * columns - 1 },
-                { suffix: 'up', start: 2 * columns, end: 3 * columns - 1 }
+                { suffix: 'up', start: 2 * columns, end: 3 * columns - 1 },
             ];
 
-            for (const dir of directions) {
-                this.anims.create({
-                    key: `${key}_${dir.suffix}`,
-                    frames: this.anims.generateFrameNumbers(key, {
-                        start: dir.start,
-                        end: dir.end
-                    }),
-                    frameRate: 10,
-                    repeat: config.animationStrategy === 'loop' ? -1 : 0
-                });
+            // 为 default 皮肤创建动画（兼容现有代码，使用原始 key）
+            const hasDefault = config.skins.some(s => s.replace(/\.png$/i, '') === 'default');
+            if (hasDefault) {
+                for (const dir of directions) {
+                    this.anims.create({
+                        key: `${key}_${dir.suffix}`,
+                        frames: this.anims.generateFrameNumbers(key, {
+                            start: dir.start,
+                            end: dir.end,
+                        }),
+                        frameRate: 10,
+                        repeat: config.animationStrategy === 'loop' ? -1 : 0,
+                    });
+                }
+            }
+
+            // 为其他皮肤创建动画
+            for (const skin of config.skins) {
+                const skinName = skin.replace(/\.png$/i, '');
+                if (skinName === 'default') continue;
+
+                const textureKey = `${key}_${skinName}`;
+                for (const dir of directions) {
+                    this.anims.create({
+                        key: `${textureKey}_${dir.suffix}`,
+                        frames: this.anims.generateFrameNumbers(textureKey, {
+                            start: dir.start,
+                            end: dir.end,
+                        }),
+                        frameRate: 10,
+                        repeat: config.animationStrategy === 'loop' ? -1 : 0,
+                    });
+                }
             }
         }
 

@@ -29,7 +29,7 @@ export abstract class System {
 
     /**
      * 获取道具图标纹理 key。
-     * 约定：BootScene 加载道具图标到纹理 `item_<id>`，找不到时回退到 `item_notfind`。
+     * 约定：BootScene 加载道具图标到纹理 `item_<id>`，找不到时回退到通用占位符 `item_notfind`。
      */
     protected getItemTextureKey(itemId: string): string {
         const key = `item_${itemId}`;

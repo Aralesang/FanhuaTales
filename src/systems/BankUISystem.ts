@@ -387,7 +387,7 @@ export class BankUISystem extends System {
     private onPointerDown(pointer: Input.Pointer): void {
         if (!this.isOpen || !this.targetEntity) return;
 
-        const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
+        const itemsMap = this.scene.cache.json.get('items') as Record<string, ItemDefinition> | undefined;
         if (!itemsMap) return;
 
         // 检测是否点击背包格子
@@ -512,7 +512,7 @@ export class BankUISystem extends System {
 
         if (slotIndex === null && btn === null) return;
 
-        const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
+        const itemsMap = this.scene.cache.json.get('items') as Record<string, ItemDefinition> | undefined;
         const { x: worldX, y: worldY } = this.screenToWorld(pointer.x, pointer.y);
 
         let nameText = '';

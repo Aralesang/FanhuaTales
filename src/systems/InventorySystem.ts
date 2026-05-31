@@ -40,7 +40,7 @@ export class InventorySystem extends System {
      */
     private printInventory(entity: Entity): void {
         const inventory = entity.getComponent<InventoryComponent>('inventory')!;
-        const itemsMap = this.scene.cache.json.get('itemsMap') as
+        const itemsMap = this.scene.cache.json.get('items') as
             Record<string, ItemDefinition> | undefined;
 
         const entityName = entity.hasComponent('player') ? '玩家' : '实体';

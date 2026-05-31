@@ -1,11 +1,13 @@
 import { Physics, GameObjects } from 'phaser';
 import { System } from '../ecs/System';
 import { Entity } from '../ecs/Entity';
-import { AttackComponent, AnimationComponent, HitStunComponent, AttributeComponent } from '../ecs/Component';
+import { AttackComponent, AnimationComponent, HitStunComponent, AttributeComponent, SpriteComponent, EquipmentSlotComponent } from '../ecs/Component';
 
 export class AttackSystem extends System {
     private previousAttackState: WeakMap<Entity, boolean> = new WeakMap();
     private hitTargets: WeakMap<Entity, Set<Entity>> = new WeakMap();
+    /** 武器叠加 sprite：entity → 武器精灵 */
+    private weaponSprites: Map<Entity, GameObjects.Sprite> = new Map();
 
     update(entities: Entity[], delta: number): void {
         for (const entity of entities) {
@@ -24,6 +26,7 @@ export class AttackSystem extends System {
             // 攻击持续期间处理判定计时器与攻击结束
             if (attack.isAttacking) {
                 this.processHitCheck(entity, entities, delta);
+                this.syncWeaponSprite(entity);
 
                 attack.attackDuration -= delta;
                 if (attack.attackDuration <= 0) {
@@ -31,7 +34,11 @@ export class AttackSystem extends System {
                     attack.hitCheckDelay = 0;
                     attack.hitCheckDuration = 0;
                     attack.attackDuration = 0;
+                    this.hideWeaponSprite(entity);
                 }
+            } else if (!attack.isAttacking && prev) {
+                // 攻击结束上升沿：确保武器隐藏
+                this.hideWeaponSprite(entity);
             }
 
             this.previousAttackState.set(entity, attack.isAttacking);
@@ -59,8 +66,13 @@ export class AttackSystem extends System {
             body.setVelocity(0, 0);
         }
 
-        const attackAnimKey = `human_sword_${anim.facing}`;
+        const spriteComp = entity.getComponent<SpriteComponent>('sprite');
+        const skinSuffix = spriteComp?.skin ? `_${spriteComp.skin}` : '';
+        const attackAnimKey = this.resolveAnimKey('human_sword', skinSuffix, anim.facing);
         sprite.play(attackAnimKey);
+
+        // 武器叠加动画：如果装备了有动画的武器，同时播放武器精灵
+        this.startWeaponAnimation(entity, sprite, anim.facing);
 
         try {
             this.scene.sound.play('human_atk_sword_1');
@@ -73,6 +85,47 @@ export class AttackSystem extends System {
         attack.hitCheckDuration = 250;
         attack.attackDuration = 600;   // 与动画时长匹配（6帧 @ 10fps = 600ms）
         this.hitTargets.set(entity, new Set());
+    }
+
+    private startWeaponAnimation(entity: Entity, ownerSprite: GameObjects.Sprite, facing: string): void {
+        if (!entity.hasComponent('equipment_slots')) return;
+        const equipComp = entity.getComponent<EquipmentSlotComponent>('equipment_slots')!;
+        if (!equipComp.weaponAnimKey) return;
+
+        const skinSuffix = equipComp.weaponSkin ? `_${equipComp.weaponSkin}` : '';
+        const weaponAnimKey = this.resolveAnimKey(equipComp.weaponAnimKey, skinSuffix, facing);
+        if (!this.scene.anims.exists(weaponAnimKey)) return;
+
+        let weaponSprite = this.weaponSprites.get(entity);
+        if (!weaponSprite) {
+            weaponSprite = this.scene.add.sprite(ownerSprite.x, ownerSprite.y, equipComp.weaponAnimKey);
+            weaponSprite.setDepth(ownerSprite.depth + 1);
+            this.weaponSprites.set(entity, weaponSprite);
+        }
+
+        weaponSprite.setPosition(ownerSprite.x, ownerSprite.y);
+        weaponSprite.setFlipX(ownerSprite.flipX);
+        weaponSprite.setVisible(true);
+        weaponSprite.play(weaponAnimKey);
+    }
+
+    private syncWeaponSprite(entity: Entity): void {
+        const weaponSprite = this.weaponSprites.get(entity);
+        if (!weaponSprite || !weaponSprite.visible) return;
+
+        const sprite = entity.sprite;
+        if (!sprite) return;
+
+        weaponSprite.setPosition(sprite.x, sprite.y);
+        weaponSprite.setFlipX(sprite.flipX);
+    }
+
+    private hideWeaponSprite(entity: Entity): void {
+        const weaponSprite = this.weaponSprites.get(entity);
+        if (weaponSprite) {
+            weaponSprite.setVisible(false);
+            weaponSprite.stop();
+        }
     }
 
     private processHitCheck(attacker: Entity, entities: Entity[], dt: number): void {
@@ -205,5 +258,14 @@ export class AttackSystem extends System {
                 }
             }
         }
+    }
+
+    /** 如果带 skin 的动画不存在，回退到 default */
+    private resolveAnimKey(base: string, skinSuffix: string, facing: string): string {
+        const skinned = `${base}${skinSuffix}_${facing}`;
+        if (this.scene.anims.exists(skinned)) {
+            return skinned;
+        }
+        return `${base}_${facing}`;
     }
 }

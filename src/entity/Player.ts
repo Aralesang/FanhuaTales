@@ -34,12 +34,12 @@ export class Player extends Entity {
     constructor(scene: Scene, x: number, y: number) {
         super(scene);
 
-        // 创建精灵并挂载到 SpriteComponent
-        const sprite = scene.add.sprite(x, y, 'human_idle');
+        // 创建精灵并挂载到 SpriteComponent（使用 '肉' 皮肤）
+        const sprite = scene.add.sprite(x, y, 'human_idle_肉');
         scene.physics.add.existing(sprite);
         const body = sprite.body as Physics.Arcade.Body;
         body.setCollideWorldBounds(true);
-        this.addComponent(new SpriteComponent(sprite));
+        this.addComponent(new SpriteComponent(sprite, '肉'));
         // 通过 BodyConfigComponent 配置碰撞体（数据与 body 同时设置，方便调试/未来动态调整）
         this.applyBodyConfig(PLAYER_BODY_WIDTH, PLAYER_BODY_HEIGHT, PLAYER_BODY_OFFSET_X, PLAYER_BODY_OFFSET_Y);
 

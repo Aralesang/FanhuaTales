@@ -32,7 +32,11 @@
     "height": 3,
     "equipment": {
       "slot": "weapon",
-      "attack": 5
+      "attack": 5,
+      "animation": {
+        "key": "sword",
+        "skin": "default"
+      }
     },
     "buyPrice": {
       "gold_coin": 10

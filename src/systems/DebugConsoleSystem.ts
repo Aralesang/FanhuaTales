@@ -244,7 +244,7 @@ export class DebugConsoleSystem extends System {
     }
 
     private cmdGetAllItems(): void {
-        const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
+        const itemsMap = this.scene.cache.json.get('items') as Record<string, ItemDefinition> | undefined;
         if (!itemsMap) {
             console.warn('[DebugConsole] 物品配置未加载');
             return;
@@ -278,7 +278,7 @@ export class DebugConsoleSystem extends System {
             return;
         }
 
-        const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
+        const itemsMap = this.scene.cache.json.get('items') as Record<string, ItemDefinition> | undefined;
         if (!itemsMap) {
             console.warn('[DebugConsole] 物品配置未加载');
             return;
@@ -312,7 +312,7 @@ export class DebugConsoleSystem extends System {
             return;
         }
 
-        const buffsMap = this.scene.cache.json.get('buffsMap') as Record<string, unknown> | undefined;
+        const buffsMap = this.scene.cache.json.get('buffs') as Record<string, unknown> | undefined;
         if (!buffsMap || !buffsMap[buffId]) {
             console.warn(`[DebugConsole] 未找到 buff: ${buffId}`);
             return;

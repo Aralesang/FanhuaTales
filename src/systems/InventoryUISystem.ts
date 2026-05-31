@@ -618,7 +618,7 @@ export class InventoryUISystem extends System {
         const items = this.getItemsArrayBySource(source);
         if (!items) return;
 
-        const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
+        const itemsMap = this.scene.cache.json.get('items') as Record<string, ItemDefinition> | undefined;
 
         if (pointer.button === 0) {
             this.handleLeftClick(items, itemsMap, index, source);
@@ -867,7 +867,7 @@ export class InventoryUISystem extends System {
         const equipComp = this.targetEntity.getComponent<EquipmentSlotComponent>('equipment_slots')!;
         const playerInventory = this.targetEntity.getComponent<InventoryComponent>('inventory')!;
         const attrComp = this.targetEntity.getComponent<AttributeComponent>('attribute');
-        const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
+        const itemsMap = this.scene.cache.json.get('items') as Record<string, ItemDefinition> | undefined;
 
         const slotNames: ('weapon' | 'armor' | 'helmet')[] = ['weapon', 'armor', 'helmet'];
         const slotName = slotNames[slotIndex];
@@ -890,12 +890,27 @@ export class InventoryUISystem extends System {
                 }
                 playerInventory.items[emptySlot] = oldEquip;
                 this.logUnequip(oldEquip.itemId, itemsMap);
+                if (slotName === 'weapon') {
+                    equipComp.weaponAnimKey = '';
+                    equipComp.weaponSkin = '';
+                }
             }
 
             // 装备新物品
             equipComp[slotName] = { ...this.heldItem };
             this.logEquip(this.heldItem.itemId, itemsMap);
             this.clearHeld();
+
+            // 更新武器叠加动画信息
+            if (slotName === 'weapon') {
+                if (def?.equipment?.animation) {
+                    equipComp.weaponAnimKey = def.equipment.animation.key;
+                    equipComp.weaponSkin = def.equipment.animation.skin ?? '';
+                } else {
+                    equipComp.weaponAnimKey = '';
+                    equipComp.weaponSkin = '';
+                }
+            }
 
             // 重新计算属性
             this.recalculateAttributes(equipComp, attrComp, itemsMap);
@@ -910,6 +925,12 @@ export class InventoryUISystem extends System {
             this.heldFromSlot = -1;
             this.heldSource = 'player';
             equipComp[slotName] = null;
+
+            // 清除武器叠加动画信息
+            if (slotName === 'weapon') {
+                equipComp.weaponAnimKey = '';
+                equipComp.weaponSkin = '';
+            }
 
             this.logUnequip(currentEquip.itemId, itemsMap);
             this.recalculateAttributes(equipComp, attrComp, itemsMap);
@@ -1000,7 +1021,7 @@ export class InventoryUISystem extends System {
 
         if (!item) return;
 
-        const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition> | undefined;
+        const itemsMap = this.scene.cache.json.get('items') as Record<string, ItemDefinition> | undefined;
         const def = itemsMap?.[item.itemId];
         if (!def) return;
 

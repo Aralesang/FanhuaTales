@@ -172,7 +172,7 @@ export class GameScene extends Scene {
      *                未传入时使用地图的 Player 类型对象作为初始出生点（首次进入游戏）。
      */
     private loadMap(mapKey: string, spawnId?: string): void {
-        const itemsMap = this.cache.json.get('itemsMap') as Record<string, ItemDefinition>;
+        const itemsMap = this.cache.json.get('items') as Record<string, ItemDefinition>;
 
         // === 1. 清理旧地图相关资源 ===
         for (const collider of this.mapColliders) {

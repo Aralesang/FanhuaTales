@@ -24,7 +24,7 @@ export class DropSystem extends System {
 
     constructor(scene: Scene) {
         super(scene);
-        this.dropsMap = scene.cache.json.get('dropsMap') as Record<string, DropTable>;
+        this.dropsMap = scene.cache.json.get('drops') as Record<string, DropTable>;
     }
 
     update(entities: Entity[], _delta: number): void {

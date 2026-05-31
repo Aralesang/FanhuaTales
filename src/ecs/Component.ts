@@ -9,9 +9,12 @@ export interface Component {
 export class SpriteComponent implements Component {
     readonly type = 'sprite';
     sprite: GameObjects.Sprite;
+    /** 皮肤后缀（如 '肉'），未指定则为 default */
+    skin?: string;
 
-    constructor(sprite: GameObjects.Sprite) {
+    constructor(sprite: GameObjects.Sprite, skin?: string) {
         this.sprite = sprite;
+        this.skin = skin;
     }
 }
 
@@ -155,7 +158,13 @@ export interface ItemDefinition {
         duration?: number;
         needsType?: 'hunger' | 'thirst';
     };
-    equipment?: { slot: string; attack?: number; defense?: number };
+    equipment?: {
+        slot: string;
+        attack?: number;
+        defense?: number;
+        /** 装备叠加动画配置（武器攻击时显示的叠加精灵） */
+        animation?: { key: string; skin?: string };
+    };
     value?: number;
     /** 购买价格：物品ID → 数量（为空则不能购买） */
     buyPrice?: Record<string, number>;
@@ -273,6 +282,10 @@ export class EquipmentSlotComponent implements Component {
     weapon: InventoryItem | null = null;
     armor: InventoryItem | null = null;
     helmet: InventoryItem | null = null;
+    /** 当前装备的武器叠加动画 key（如 'sword'），空字符串表示无 */
+    weaponAnimKey: string = '';
+    /** 当前装备的武器叠加动画皮肤 */
+    weaponSkin: string = '';
 }
 
 /** 角色属性组件：存储攻击/防御等战斗属性 */

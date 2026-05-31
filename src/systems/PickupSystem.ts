@@ -20,7 +20,7 @@ export class PickupSystem extends System {
         if (!playerSprite) return;
 
         const playerInventory = player.getComponent<InventoryComponent>('inventory')!;
-        const itemsMap = this.scene.cache.json.get('itemsMap') as Record<string, ItemDefinition>;
+        const itemsMap = this.scene.cache.json.get('items') as Record<string, ItemDefinition>;
 
         for (const entity of entities) {
             if (!entity.hasComponent('grounditem')) continue;

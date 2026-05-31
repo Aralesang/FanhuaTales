@@ -1,7 +1,7 @@
 import { Physics } from 'phaser';
 import { System } from '../ecs/System';
 import { Entity } from '../ecs/Entity';
-import { MovementComponent, AnimationComponent, AttackComponent, HitStunComponent } from '../ecs/Component';
+import { MovementComponent, AnimationComponent, AttackComponent, HitStunComponent, SpriteComponent } from '../ecs/Component';
 
 export class AnimationSystem extends System {
     update(entities: Entity[], _delta: number): void {
@@ -14,12 +14,14 @@ export class AnimationSystem extends System {
             if (!sprite) continue;
 
             const anim = entity.getComponent<AnimationComponent>('animation')!;
+            const spriteComp = entity.getComponent<SpriteComponent>('sprite');
+            const skinSuffix = spriteComp?.skin ? `_${spriteComp.skin}` : '';
 
             // 受击动画优先级最高
             if (entity.hasComponent('hitstun')) {
                 const hitStun = entity.getComponent<HitStunComponent>('hitstun')!;
                 if (hitStun.hitAnimTimer > 0) {
-                    const hitAnimKey = `human_idle_${anim.facing}`;
+                    const hitAnimKey = this.resolveAnimKey('human_idle', skinSuffix, anim.facing);
                     if (sprite.anims.currentAnim?.key !== hitAnimKey) {
                         sprite.play(hitAnimKey);
                     }
@@ -54,12 +56,21 @@ export class AnimationSystem extends System {
                 }
             }
 
-            const newAnimKey = `human_${newState}_${anim.facing}`;
+            const newAnimKey = this.resolveAnimKey(`human_${newState}`, skinSuffix, anim.facing);
 
             if (anim.currentState !== newState || sprite.anims.currentAnim?.key !== newAnimKey) {
                 anim.currentState = newState;
                 sprite.play(newAnimKey);
             }
         }
+    }
+
+    /** 如果带 skin 的动画不存在，回退到 default */
+    private resolveAnimKey(base: string, skinSuffix: string, facing: string): string {
+        const skinned = `${base}${skinSuffix}_${facing}`;
+        if (this.scene.anims.exists(skinned)) {
+            return skinned;
+        }
+        return `${base}_${facing}`;
     }
 }
