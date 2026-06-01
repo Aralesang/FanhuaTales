@@ -33,9 +33,21 @@
     "equipment": {
       "slot": "weapon",
       "attack": 5,
-      "animation": {
-        "key": "sword",
-        "skin": "default"
+      "attackProfile": {
+        "radius": 10,
+        "offsetRight": { "x": 14, "y": 0 },
+        "offsetDown": { "x": 0, "y": 14 },
+        "offsetUp": { "x": 0, "y": -14 },
+        "baseDamage": 25,
+        "animKey": "human_sword",
+        "soundKey": "human_atk_sword_1",
+        "hitCheckDelay": 200,
+        "hitCheckDuration": 250,
+        "attackDuration": 600,
+        "weaponOverlay": {
+          "key": "sword",
+          "skin": "default"
+        }
       }
     },
     "buyPrice": {

@@ -903,9 +903,9 @@ export class InventoryUISystem extends System {
 
             // 更新武器叠加动画信息
             if (slotName === 'weapon') {
-                if (def?.equipment?.animation) {
-                    equipComp.weaponAnimKey = def.equipment.animation.key;
-                    equipComp.weaponSkin = def.equipment.animation.skin ?? '';
+                if (def?.equipment?.attackProfile?.weaponOverlay) {
+                    equipComp.weaponAnimKey = def.equipment.attackProfile.weaponOverlay.key;
+                    equipComp.weaponSkin = def.equipment.attackProfile.weaponOverlay.skin ?? '';
                 } else {
                     equipComp.weaponAnimKey = '';
                     equipComp.weaponSkin = '';

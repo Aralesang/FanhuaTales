@@ -1,7 +1,10 @@
 {
     "human_idle": {
         "path": "./images/human/idle/",
-        "skins":["default.png", "肉.png"],
+        "skins": [
+            "default.png",
+            "肉.png"
+        ],
         "grid": {
             "rows": 3,
             "columns": 4,
@@ -12,7 +15,10 @@
     },
     "human_walk": {
         "path": "./images/human/walk/",
-        "skins":["default.png", "肉.png"],
+        "skins": [
+            "default.png",
+            "肉.png"
+        ],
         "grid": {
             "rows": 3,
             "columns": 8,
@@ -23,7 +29,10 @@
     },
     "human_run": {
         "path": "./images/human/run/",
-        "skins":["default.png", "肉.png"],
+        "skins": [
+            "default.png",
+            "肉.png"
+        ],
         "grid": {
             "rows": 3,
             "columns": 8,
@@ -34,7 +43,24 @@
     },
     "human_sword": {
         "path": "./images/human/sword/",
-        "skins":["default.png", "肉.png"],
+        "skins": [
+            "default.png",
+            "肉.png"
+        ],
+        "grid": {
+            "rows": 3,
+            "columns": 6,
+            "spriteWidth": 80,
+            "spriteHeight": 80
+        },
+        "animationStrategy": "freeze"
+    },
+    "human_fist": {
+        "path": "./images/human/sword/",
+        "skins": [
+            "default.png",
+            "肉.png"
+        ],
         "grid": {
             "rows": 3,
             "columns": 6,
@@ -45,7 +71,9 @@
     },
     "sword": {
         "path": "./images/equipment/sword/",
-        "skins": ["default.png"],
+        "skins": [
+            "default.png"
+        ],
         "grid": {
             "rows": 3,
             "columns": 6,
@@ -56,7 +84,9 @@
     },
     "宝箱1": {
         "path": "./images/building/宝箱/",
-        "skins":["default.png"],
+        "skins": [
+            "default.png"
+        ],
         "grid": {
             "rows": 1,
             "columns": 5,

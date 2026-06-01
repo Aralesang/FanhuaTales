@@ -1,13 +1,31 @@
 import { Physics, GameObjects } from 'phaser';
 import { System } from '../ecs/System';
 import { Entity } from '../ecs/Entity';
-import { AttackComponent, AnimationComponent, HitStunComponent, AttributeComponent, SpriteComponent, EquipmentSlotComponent } from '../ecs/Component';
+import {
+    AttackComponent, AnimationComponent, HitStunComponent,
+    AttributeComponent, SpriteComponent, EquipmentSlotComponent,
+    AttackProfile, ItemDefinition
+} from '../ecs/Component';
 
 export class AttackSystem extends System {
     private previousAttackState: WeakMap<Entity, boolean> = new WeakMap();
     private hitTargets: WeakMap<Entity, Set<Entity>> = new WeakMap();
     /** 武器叠加 sprite：entity → 武器精灵 */
     private weaponSprites: Map<Entity, GameObjects.Sprite> = new Map();
+
+    /** 空手（拳头）默认攻击配置 */
+    private readonly FIST_PROFILE: AttackProfile = {
+        radius: 6,
+        offsetRight: { x: 10, y: 0 },
+        offsetDown: { x: 0, y: 10 },
+        offsetUp: { x: 0, y: -10 },
+        baseDamage: 10,
+        animKey: 'human_fist',
+        soundKey: 'human_atk_sword_1',
+        hitCheckDelay: 100,
+        hitCheckDuration: 200,
+        attackDuration: 400,
+    };
 
     update(entities: Entity[], delta: number): void {
         for (const entity of entities) {
@@ -37,7 +55,6 @@ export class AttackSystem extends System {
                     this.hideWeaponSprite(entity);
                 }
             } else if (!attack.isAttacking && prev) {
-                // 攻击结束上升沿：确保武器隐藏
                 this.hideWeaponSprite(entity);
             }
 
@@ -66,39 +83,60 @@ export class AttackSystem extends System {
             body.setVelocity(0, 0);
         }
 
+        const profile = this.getAttackProfile(entity);
+
         const spriteComp = entity.getComponent<SpriteComponent>('sprite');
         const skinSuffix = spriteComp?.skin ? `_${spriteComp.skin}` : '';
-        const attackAnimKey = this.resolveAnimKey('human_sword', skinSuffix, anim.facing);
+        const attackAnimKey = this.resolveAnimKey(profile.animKey, skinSuffix, anim.facing);
         sprite.play(attackAnimKey);
 
-        // 武器叠加动画：如果装备了有动画的武器，同时播放武器精灵
-        this.startWeaponAnimation(entity, sprite, anim.facing);
+        // 武器叠加动画
+        if (profile.weaponOverlay) {
+            this.startWeaponAnimation(entity, sprite, anim.facing, profile.weaponOverlay);
+        }
 
         try {
-            this.scene.sound.play('human_atk_sword_1');
+            this.scene.sound.play(profile.soundKey);
         } catch {
             // 音效播放失败不影响攻击逻辑
         }
 
-        // 初始化判定参数：第 3 帧开始（frameRate=10，每帧约 100ms，延迟 200ms），持续 250ms
-        attack.hitCheckDelay = 200;
-        attack.hitCheckDuration = 250;
-        attack.attackDuration = 600;   // 与动画时长匹配（6帧 @ 10fps = 600ms）
+        attack.hitCheckDelay = profile.hitCheckDelay;
+        attack.hitCheckDuration = profile.hitCheckDuration;
+        attack.attackDuration = profile.attackDuration;
         this.hitTargets.set(entity, new Set());
     }
 
-    private startWeaponAnimation(entity: Entity, ownerSprite: GameObjects.Sprite, facing: string): void {
-        if (!entity.hasComponent('equipment_slots')) return;
+    /** 获取 entity 当前适用的攻击配置：装备武器时用武器配置，否则用拳头默认配置 */
+    private getAttackProfile(entity: Entity): AttackProfile {
+        const itemsMap = this.scene.cache.json.get('items') as Record<string, ItemDefinition> | undefined;
+        if (!entity.hasComponent('equipment_slots')) {
+            return this.FIST_PROFILE;
+        }
         const equipComp = entity.getComponent<EquipmentSlotComponent>('equipment_slots')!;
-        if (!equipComp.weaponAnimKey) return;
+        if (!equipComp.weapon) {
+            return this.FIST_PROFILE;
+        }
+        const def = itemsMap?.[equipComp.weapon.itemId];
+        if (def?.equipment?.attackProfile) {
+            return def.equipment.attackProfile;
+        }
+        return this.FIST_PROFILE;
+    }
 
-        const skinSuffix = equipComp.weaponSkin ? `_${equipComp.weaponSkin}` : '';
-        const weaponAnimKey = this.resolveAnimKey(equipComp.weaponAnimKey, skinSuffix, facing);
+    private startWeaponAnimation(
+        entity: Entity,
+        ownerSprite: GameObjects.Sprite,
+        facing: string,
+        overlay: { key: string; skin?: string }
+    ): void {
+        const skinSuffix = overlay.skin ? `_${overlay.skin}` : '';
+        const weaponAnimKey = this.resolveAnimKey(overlay.key, skinSuffix, facing);
         if (!this.scene.anims.exists(weaponAnimKey)) return;
 
         let weaponSprite = this.weaponSprites.get(entity);
         if (!weaponSprite) {
-            weaponSprite = this.scene.add.sprite(ownerSprite.x, ownerSprite.y, equipComp.weaponAnimKey);
+            weaponSprite = this.scene.add.sprite(ownerSprite.x, ownerSprite.y, overlay.key);
             weaponSprite.setDepth(ownerSprite.depth + 1);
             this.weaponSprites.set(entity, weaponSprite);
         }
@@ -131,7 +169,6 @@ export class AttackSystem extends System {
     private processHitCheck(attacker: Entity, entities: Entity[], dt: number): void {
         const attack = attacker.getComponent<AttackComponent>('attack')!;
 
-        // 延迟倒计时
         if (attack.hitCheckDelay > 0) {
             attack.hitCheckDelay -= dt;
             if (attack.hitCheckDelay < 0) {
@@ -140,15 +177,11 @@ export class AttackSystem extends System {
             return;
         }
 
-        // 判定窗口已过
         if (attack.hitCheckDuration <= 0) {
             return;
         }
 
-        // 在判定窗口中，递减持续时间
         attack.hitCheckDuration -= dt;
-
-        // 执行攻击判定
         this.checkAttackHit(attacker, entities);
     }
 
@@ -158,40 +191,26 @@ export class AttackSystem extends System {
         const attackerBody = attackerSprite.body as Physics.Arcade.Body | undefined;
         if (!attackerBody) return;
 
-        // 玩家中心坐标（判定区以此为中心，再根据方向偏移）
-        const cx = attackerBody.x + attackerBody.width / 2;
-        const cy = attackerBody.y + attackerBody.height / 2;
-
+        const profile = this.getAttackProfile(attacker);
         const anim = attacker.getComponent<AnimationComponent>('animation')!;
 
-        // ==================== 攻击判定区可调参数 ====================
-        // 判定区半径（决定判定范围大小）
-        const hitRadius = 10;
-
-        // 各方向上的偏移量：判定区中心相对玩家中心的偏移
-        // 正值表示向前（攻击方向），可自由调整
-        const offsetRightX = 14;  // 向右/左攻击时的 X 偏移
-        const offsetRightY = 0;   // 向右/左攻击时的 Y 偏移
-        const offsetDownX = 0;    // 向下攻击时的 X 偏移
-        const offsetDownY = 14;   // 向下攻击时的 Y 偏移
-        const offsetUpX = 0;      // 向上攻击时的 X 偏移
-        const offsetUpY = -14;    // 向上攻击时的 Y 偏移
-        // ==========================================================
+        const cx = attackerBody.x + attackerBody.width / 2;
+        const cy = attackerBody.y + attackerBody.height / 2;
 
         let hx: number, hy: number;
 
         switch (anim.facing) {
             case 'right':
-                hx = attackerSprite.flipX ? cx - offsetRightX : cx + offsetRightX;
-                hy = cy + offsetRightY;
+                hx = attackerSprite.flipX ? cx - profile.offsetRight.x : cx + profile.offsetRight.x;
+                hy = cy + profile.offsetRight.y;
                 break;
             case 'down':
-                hx = cx + offsetDownX;
-                hy = cy + offsetDownY;
+                hx = cx + profile.offsetDown.x;
+                hy = cy + profile.offsetDown.y;
                 break;
             case 'up':
-                hx = cx + offsetUpX;
-                hy = cy + offsetUpY;
+                hx = cx + profile.offsetUp.x;
+                hy = cy + profile.offsetUp.y;
                 break;
             default:
                 hx = cx;
@@ -202,9 +221,9 @@ export class AttackSystem extends System {
         const overlay = (this.scene as { debugOverlay?: GameObjects.Graphics }).debugOverlay;
         if (overlay && overlay.visible) {
             overlay.lineStyle(2, 0xff0000, 0.8);
-            overlay.strokeCircle(hx, hy, hitRadius);
+            overlay.strokeCircle(hx, hy, profile.radius);
             overlay.fillStyle(0xff0000, 0.15);
-            overlay.fillCircle(hx, hy, hitRadius);
+            overlay.fillCircle(hx, hy, profile.radius);
         }
 
         const alreadyHit = this.hitTargets.get(attacker) ?? new Set();
@@ -222,14 +241,12 @@ export class AttackSystem extends System {
             const ty = targetBody.y + targetBody.height / 2;
 
             const dist = Math.sqrt((hx - tx) * (hx - tx) + (hy - ty) * (hy - ty));
-            if (dist < hitRadius + Math.max(targetBody.width, targetBody.height) / 2) {
-                // 命中，计算伤害（应用攻击者攻击力和被攻击者防御力）
+            if (dist < profile.radius + Math.max(targetBody.width, targetBody.height) / 2) {
                 const attackerAttr = attacker.getComponent<AttributeComponent>('attribute');
                 const targetAttr = target.getComponent<AttributeComponent>('attribute');
-                const baseDamage = 25;
                 const attackPower = attackerAttr?.attack ?? 0;
                 const defensePower = targetAttr?.defense ?? 0;
-                const rawDamage = baseDamage + attackPower - defensePower;
+                const rawDamage = profile.baseDamage + attackPower - defensePower;
                 const damage = Math.max(1, rawDamage);
 
                 if (!target.hasComponent('hitstun')) {
@@ -239,7 +256,6 @@ export class AttackSystem extends System {
                 hitStun.isHit = true;
                 hitStun.damage = damage;
 
-                // 击退方向：从攻击者中心指向目标
                 const dx = tx - cx;
                 const dy = ty - cy;
                 const len = Math.sqrt(dx * dx + dy * dy) || 1;
@@ -251,7 +267,6 @@ export class AttackSystem extends System {
 
                 alreadyHit.add(target);
 
-                // Debug：绘制被命中目标的判定高亮
                 if (overlay && overlay.visible) {
                     overlay.lineStyle(2, 0x00ff00, 0.9);
                     overlay.strokeRect(targetBody.x, targetBody.y, targetBody.width, targetBody.height);
@@ -260,12 +275,16 @@ export class AttackSystem extends System {
         }
     }
 
-    /** 如果带 skin 的动画不存在，回退到 default */
+    /** 如果带 skin 的动画不存在，先回退到 default；如果连 default 都不存在，回退到 human_sword */
     private resolveAnimKey(base: string, skinSuffix: string, facing: string): string {
         const skinned = `${base}${skinSuffix}_${facing}`;
         if (this.scene.anims.exists(skinned)) {
             return skinned;
         }
-        return `${base}_${facing}`;
+        const defaulted = `${base}_${facing}`;
+        if (this.scene.anims.exists(defaulted)) {
+            return defaulted;
+        }
+        return `human_sword_${facing}`;
     }
 }

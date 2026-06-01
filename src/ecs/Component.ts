@@ -133,6 +133,32 @@ export class HitStunComponent implements Component {
 // 道具与库存系统
 // ============================================================
 
+/** 攻击配置：定义一次攻击的判定范围、动画、音效等 */
+export interface AttackProfile {
+    /** 判定区半径（像素） */
+    radius: number;
+    /** 向右/左攻击时判定区相对玩家中心的偏移 */
+    offsetRight: { x: number; y: number };
+    /** 向下攻击时判定区相对玩家中心的偏移 */
+    offsetDown: { x: number; y: number };
+    /** 向上攻击时判定区相对玩家中心的偏移 */
+    offsetUp: { x: number; y: number };
+    /** 基础伤害 */
+    baseDamage: number;
+    /** 角色攻击动画 key 前缀（如 'human_sword'） */
+    animKey: string;
+    /** 音效 key */
+    soundKey: string;
+    /** 判定启动延迟（ms） */
+    hitCheckDelay: number;
+    /** 判定持续时间（ms） */
+    hitCheckDuration: number;
+    /** 攻击动画总持续时间（ms） */
+    attackDuration: number;
+    /** 武器叠加动画 key（可选） */
+    weaponOverlay?: { key: string; skin?: string };
+}
+
 /** 道具定义（来自 items-map.json） */
 export interface ItemDefinition {
     id: string;
@@ -162,8 +188,8 @@ export interface ItemDefinition {
         slot: string;
         attack?: number;
         defense?: number;
-        /** 装备叠加动画配置（武器攻击时显示的叠加精灵） */
-        animation?: { key: string; skin?: string };
+        /** 攻击配置（武器的攻击范围、动画、音效等） */
+        attackProfile?: AttackProfile;
     };
     value?: number;
     /** 购买价格：物品ID → 数量（为空则不能购买） */
