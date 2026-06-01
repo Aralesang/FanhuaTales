@@ -11,10 +11,16 @@ export class SpriteComponent implements Component {
     sprite: GameObjects.Sprite;
     /** 皮肤后缀（如 '肉'），未指定则为 default */
     skin?: string;
+    /** 发型动画 key 前缀（如 'hair'），未指定则不显示发型 */
+    hair?: string;
+    /** 发型皮肤后缀（如 'default'） */
+    hairSkin?: string;
 
-    constructor(sprite: GameObjects.Sprite, skin?: string) {
+    constructor(sprite: GameObjects.Sprite, skin?: string, hair?: string, hairSkin?: string) {
         this.sprite = sprite;
         this.skin = skin;
+        this.hair = hair;
+        this.hairSkin = hairSkin;
     }
 }
 

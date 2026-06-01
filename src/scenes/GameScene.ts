@@ -29,6 +29,7 @@ import { BuffUISystem } from '../systems/BuffUISystem';
 import { NeedsSystem } from '../systems/NeedsSystem';
 import { NeedsUISystem } from '../systems/NeedsUISystem';
 import { TooltipSystem } from '../systems/TooltipSystem';
+import { HairSystem } from '../systems/HairSystem';
 import { DebugConsoleSystem } from '../systems/DebugConsoleSystem';
 
 interface DoorData {
@@ -86,6 +87,7 @@ export class GameScene extends Scene {
     private needsSystem!: NeedsSystem;
     private needsUISystem!: NeedsUISystem;
     private tooltipSystem!: TooltipSystem;
+    private hairSystem!: HairSystem;
     private debugConsoleSystem!: DebugConsoleSystem;
 
     constructor() {
@@ -149,6 +151,7 @@ export class GameScene extends Scene {
         this.needsSystem = new NeedsSystem(this);
         this.needsUISystem = new NeedsUISystem(this);
         this.tooltipSystem = new TooltipSystem(this);
+        this.hairSystem = new HairSystem(this);
         this.debugConsoleSystem = new DebugConsoleSystem(this);
 
         // Debug 开关：按 F9 切换碰撞器可视化
@@ -586,6 +589,7 @@ export class GameScene extends Scene {
         this.attackSystem.update(this.entities, delta);
         this.movementSystem.update(this.entities, delta);
         this.animationSystem.update(this.entities, delta);
+        this.hairSystem.update(this.entities, delta);
         this.inventoryUISystem.update(this.entities, delta);
         this.hotbarUISystem.update(this.entities, delta);
         this.buffUISystem.update(this.entities, delta);

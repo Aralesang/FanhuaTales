@@ -82,6 +82,36 @@
         },
         "animationStrategy": "freeze"
     },
+    "hair_idle": {
+        "path": "./images/hair/idle/",
+        "skins": ["default.png"],
+        "grid": { "rows": 3, "columns": 4, "spriteWidth": 80, "spriteHeight": 80 },
+        "animationStrategy": "loop"
+    },
+    "hair_walk": {
+        "path": "./images/hair/walk/",
+        "skins": ["default.png"],
+        "grid": { "rows": 3, "columns": 8, "spriteWidth": 80, "spriteHeight": 80 },
+        "animationStrategy": "loop"
+    },
+    "hair_run": {
+        "path": "./images/hair/run/",
+        "skins": ["default.png"],
+        "grid": { "rows": 3, "columns": 8, "spriteWidth": 80, "spriteHeight": 80 },
+        "animationStrategy": "loop"
+    },
+    "hair_sword": {
+        "path": "./images/hair/sword/",
+        "skins": ["default.png"],
+        "grid": { "rows": 3, "columns": 6, "spriteWidth": 80, "spriteHeight": 80 },
+        "animationStrategy": "freeze"
+    },
+    "hair_fist": {
+        "path": "./images/hair/sword/",
+        "skins": ["default.png"],
+        "grid": { "rows": 3, "columns": 6, "spriteWidth": 80, "spriteHeight": 80 },
+        "animationStrategy": "freeze"
+    },
     "宝箱1": {
         "path": "./images/building/宝箱/",
         "skins": [
