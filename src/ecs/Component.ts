@@ -139,6 +139,18 @@ export class HitStunComponent implements Component {
 // 道具与库存系统
 // ============================================================
 
+/** 投射物配置：远程攻击时发射的飞行道具 */
+export interface ProjectileConfig {
+    /** 飞行速度（像素/秒） */
+    speed: number;
+    /** 最大飞行距离（像素） */
+    maxDistance: number;
+    /** 碰撞判定半径（像素） */
+    radius: number;
+    /** 显示颜色（如 0x00aaff） */
+    color: number;
+}
+
 /** 攻击配置：定义一次攻击的判定范围、动画、音效等 */
 export interface AttackProfile {
     /** 判定区半径（像素） */
@@ -161,6 +173,8 @@ export interface AttackProfile {
     hitCheckFrameEnd: number;
     /** 武器叠加动画 key（可选） */
     weaponOverlay?: { key: string; skin?: string };
+    /** 远程投射物配置（存在时改为发射投射物，不走近战判定） */
+    projectile?: ProjectileConfig;
 }
 
 /** 道具定义（来自 items-map.json） */
@@ -416,6 +430,45 @@ export class BuffComponent implements Component {
 // ============================================================
 // 需求系统（饥饿 / 口渴）
 // ============================================================
+
+/** 投射物组件：标记一个飞行中的远程攻击实体 */
+export class ProjectileComponent implements Component {
+    readonly type = 'projectile';
+    /** 飞行速度（像素/秒） */
+    speed: number;
+    /** 最大飞行距离（像素） */
+    maxDistance: number;
+    /** 已飞行距离（像素） */
+    traveledDistance: number = 0;
+    /** 伤害值 */
+    damage: number;
+    /** 碰撞判定半径 */
+    radius: number;
+    /** 发射者实体 */
+    owner: Entity;
+    /** 飞行方向 X */
+    directionX: number;
+    /** 飞行方向 Y */
+    directionY: number;
+
+    constructor(
+        speed: number,
+        maxDistance: number,
+        damage: number,
+        radius: number,
+        owner: Entity,
+        directionX: number,
+        directionY: number
+    ) {
+        this.speed = speed;
+        this.maxDistance = maxDistance;
+        this.damage = damage;
+        this.radius = radius;
+        this.owner = owner;
+        this.directionX = directionX;
+        this.directionY = directionY;
+    }
+}
 
 /**
  * 需求变化请求（纯数据），外部 push 到 NeedsComponent.pendingDeltas 即可申请变化。

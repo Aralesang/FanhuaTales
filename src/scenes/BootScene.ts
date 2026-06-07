@@ -177,6 +177,13 @@ export class BootScene extends Scene {
       }
     }
 
+    // 预生成投射物基础纹理（白色圆形，运行时通过 setTint 变色）
+    const projGfx = this.make.graphics({ x: 0, y: 0 }, false);
+    projGfx.fillStyle(0xffffff, 1);
+    projGfx.fillCircle(8, 8, 8);
+    projGfx.generateTexture("projectile_base", 16, 16);
+    projGfx.destroy();
+
     // 将默认地图 key 传递给 GameScene
     const defaultMapKey = Object.keys(this.mapsMap)[0];
     this.scene.start("GameScene", { mapKey: defaultMapKey });

@@ -21,6 +21,7 @@ import { BankUISystem } from '../systems/BankUISystem';
 import { HotbarUISystem } from '../systems/HotbarUISystem';
 import { EnemyAISystem } from '../systems/EnemyAISystem';
 import { AttackSystem } from '../systems/AttackSystem';
+import { ProjectileSystem } from '../systems/ProjectileSystem';
 import { HitSystem } from '../systems/HitSystem';
 import { MovementSystem } from '../systems/MovementSystem';
 import { AnimationSystem } from '../systems/AnimationSystem';
@@ -79,6 +80,7 @@ export class GameScene extends Scene {
     private hotbarUISystem!: HotbarUISystem;
     private enemyAISystem!: EnemyAISystem;
     private attackSystem!: AttackSystem;
+    private projectileSystem!: ProjectileSystem;
     private hitSystem!: HitSystem;
     private movementSystem!: MovementSystem;
     private animationSystem!: AnimationSystem;
@@ -143,6 +145,7 @@ export class GameScene extends Scene {
         this.hotbarUISystem = new HotbarUISystem(this);
         this.enemyAISystem = new EnemyAISystem(this);
         this.attackSystem = new AttackSystem(this);
+        this.projectileSystem = new ProjectileSystem(this);
         this.hitSystem = new HitSystem(this);
         this.movementSystem = new MovementSystem(this);
         this.animationSystem = new AnimationSystem(this);
@@ -600,6 +603,7 @@ export class GameScene extends Scene {
         this.entities = this.entities.filter(e => e.active);
 
         this.attackSystem.update(this.entities, delta);
+        this.projectileSystem.update(this.entities, delta);
         this.movementSystem.update(this.entities, delta);
         this.animationSystem.update(this.entities, delta);
         this.hairSystem.update(this.entities, delta);

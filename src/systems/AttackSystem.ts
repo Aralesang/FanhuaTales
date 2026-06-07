@@ -4,7 +4,7 @@ import { Entity } from '../ecs/Entity';
 import {
     AttackComponent, AnimationComponent, HitStunComponent,
     AttributeComponent, SpriteComponent, EquipmentSlotComponent,
-    AttackProfile, ItemDefinition
+    AttackProfile, ItemDefinition, ProjectileComponent
 } from '../ecs/Component';
 
 export class AttackSystem extends System {
@@ -192,11 +192,16 @@ export class AttackSystem extends System {
 
     private processHitCheck(attacker: Entity, entities: Entity[], dt: number): void {
         const attack = attacker.getComponent<AttackComponent>('attack')!;
+        const profile = this.getAttackProfile(attacker);
 
         if (attack.hitCheckDelay > 0) {
             attack.hitCheckDelay -= dt;
             if (attack.hitCheckDelay < 0) {
                 attack.hitCheckDelay = 0;
+            }
+            // 远程攻击：前摇结束时发射投射物
+            if (attack.hitCheckDelay === 0 && profile.projectile) {
+                this.spawnProjectile(attacker, entities, profile);
             }
             return;
         }
@@ -206,7 +211,60 @@ export class AttackSystem extends System {
         }
 
         attack.hitCheckDuration -= dt;
-        this.checkAttackHit(attacker, entities);
+        // 近战攻击才执行碰撞判定；远程攻击由 ProjectileSystem 处理
+        if (!profile.projectile) {
+            this.checkAttackHit(attacker, entities);
+        }
+    }
+
+    private spawnProjectile(attacker: Entity, entities: Entity[], profile: AttackProfile): void {
+        const projConfig = profile.projectile!;
+        const attackerSprite = attacker.sprite;
+        if (!attackerSprite) return;
+
+        const body = attackerSprite.body as Physics.Arcade.Body | undefined;
+        const cx = body ? body.x + body.width / 2 : attackerSprite.x;
+        const cy = body ? body.y + body.height / 2 : attackerSprite.y;
+
+        const anim = attacker.getComponent<AnimationComponent>('animation')!;
+        let dirX = 0;
+        let dirY = 0;
+        switch (anim.facing) {
+            case 'right':
+                dirX = attackerSprite.flipX ? -1 : 1;
+                break;
+            case 'down':
+                dirY = 1;
+                break;
+            case 'up':
+                dirY = -1;
+                break;
+        }
+
+        const attackerAttr = attacker.getComponent<AttributeComponent>('attribute');
+        const attackPower = attackerAttr?.attack ?? 0;
+        const damage = profile.baseDamage + attackPower;
+
+        const sprite = this.scene.add.sprite(cx, cy, 'projectile_base');
+        sprite.setDisplaySize(projConfig.radius * 2, projConfig.radius * 2);
+        sprite.setTint(projConfig.color);
+        sprite.setDepth(15);
+
+        const projectile = new Entity(this.scene);
+        projectile.addComponent(new SpriteComponent(sprite));
+        projectile.addComponent(
+            new ProjectileComponent(
+                projConfig.speed,
+                projConfig.maxDistance,
+                damage,
+                projConfig.radius,
+                attacker,
+                dirX,
+                dirY
+            )
+        );
+
+        entities.push(projectile);
     }
 
     private checkAttackHit(attacker: Entity, entities: Entity[]): void {
