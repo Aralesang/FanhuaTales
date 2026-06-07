@@ -486,7 +486,7 @@ export class GameScene extends Scene {
         const barWidth = 24;
         const barHeight = 3;
         const x = sprite.x - barWidth / 2;
-        const y = sprite.y - visualH / 2 - 6;
+        const y = sprite.y - visualH / 2 - 10;
 
         bar.fillStyle(0x333333, 1);
         bar.fillRect(x, y, barWidth, barHeight);
