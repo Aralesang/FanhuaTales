@@ -1,7 +1,7 @@
 import { Scene, Input, Physics, Tilemaps, GameObjects } from 'phaser';
 import { Entity } from '../ecs/Entity';
 import { FontConfig } from '../config/FontConfig';
-import { RenderComponent, HealthComponent, SpriteComponent, VisualComponent, ItemDefinition, SettingsComponent, UIStateComponent } from '../ecs/Component';
+import { RenderComponent, HealthComponent, SpriteComponent, VisualComponent, ItemDefinition, SettingsComponent, UIStateComponent, InventoryComponent } from '../ecs/Component';
 import { Player } from '../entity/Player';
 import { Enemy } from '../entity/Enemy';
 import { Container } from '../entity/Container';
@@ -383,9 +383,11 @@ export class GameScene extends Scene {
 
         // === 8. 处理玩家：首次进入则创建，否则移到出生点 ===
         let player = this.entities.find(e => e.hasComponent('player'));
+        let isNewPlayer = false;
         if (!player) {
             player = new Player(this, playerSpawnX, playerSpawnY);
             this.entities.push(player);
+            isNewPlayer = true;
         } else {
             const playerSprite = player.getComponent<SpriteComponent>('sprite')?.sprite;
             if (playerSprite) {
@@ -395,6 +397,17 @@ export class GameScene extends Scene {
                     body.reset(playerSpawnX, playerSpawnY);
                 }
             }
+        }
+
+        // 首次进入游戏：玩家实体创建完成后，自动添加所有物品到背包（方便测试）
+        if (isNewPlayer) {
+            const playerInventory = player.getComponent<InventoryComponent>('inventory')!;
+            for (const itemId of Object.keys(itemsMap)) {
+                const def = itemsMap[itemId];
+                const quantity = def.stackable ? def.maxStack : 1;
+                InventorySystem.addItem(playerInventory, itemsMap, itemId, quantity);
+            }
+            console.log('[GameScene] 已自动添加所有物品到背包');
         }
 
         // === 9. 应用外观（tint）与渲染层级 ===

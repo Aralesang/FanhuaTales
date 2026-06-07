@@ -22,9 +22,8 @@ export class AttackSystem extends System {
         baseDamage: 10,
         animKey: 'human_fist',
         soundKey: 'human_atk_sword_1',
-        hitCheckDelay: 100,
-        hitCheckDuration: 200,
-        attackDuration: 400,
+        hitCheckFrameStart: 1,
+        hitCheckFrameEnd: 3,
     };
 
     update(entities: Entity[], delta: number): void {
@@ -88,7 +87,11 @@ export class AttackSystem extends System {
         const spriteComp = entity.getComponent<SpriteComponent>('sprite');
         const skinSuffix = spriteComp?.skin ? `_${spriteComp.skin}` : '';
         const attackAnimKey = this.resolveAnimKey(profile.animKey, skinSuffix, anim.facing);
-        sprite.play(attackAnimKey);
+        try {
+            sprite.play(attackAnimKey);
+        } catch {
+            console.warn(`[AttackSystem] 无法播放攻击动画: ${attackAnimKey}`);
+        }
 
         // 武器叠加动画
         if (profile.weaponOverlay) {
@@ -101,9 +104,19 @@ export class AttackSystem extends System {
             // 音效播放失败不影响攻击逻辑
         }
 
-        attack.hitCheckDelay = profile.hitCheckDelay;
-        attack.hitCheckDuration = profile.hitCheckDuration;
-        attack.attackDuration = profile.attackDuration;
+        // 根据动画实际帧数和帧率自动计算攻击时长与判定窗口
+        const phaserAnim = this.scene.anims.get(attackAnimKey);
+        if (phaserAnim && phaserAnim.frames.length > 0) {
+            const msPerFrame = 1000 / phaserAnim.frameRate;
+            attack.attackDuration = phaserAnim.frames.length * msPerFrame;
+            attack.hitCheckDelay = profile.hitCheckFrameStart * msPerFrame;
+            attack.hitCheckDuration = (profile.hitCheckFrameEnd - profile.hitCheckFrameStart) * msPerFrame;
+        } else {
+            // fallback：动画缺失时使用默认值
+            attack.attackDuration = 500;
+            attack.hitCheckDelay = 0;
+            attack.hitCheckDuration = 200;
+        }
         this.hitTargets.set(entity, new Set());
     }
 
@@ -132,7 +145,7 @@ export class AttackSystem extends System {
     ): void {
         const skinSuffix = overlay.skin ? `_${overlay.skin}` : '';
         const weaponAnimKey = this.resolveAnimKey(overlay.key, skinSuffix, facing);
-        if (!this.scene.anims.exists(weaponAnimKey)) return;
+        if (!this.hasValidFrames(weaponAnimKey)) return;
 
         let weaponSprite = this.weaponSprites.get(entity);
         if (!weaponSprite) {
@@ -144,7 +157,18 @@ export class AttackSystem extends System {
         weaponSprite.setPosition(ownerSprite.x, ownerSprite.y);
         weaponSprite.setFlipX(ownerSprite.flipX);
         weaponSprite.setVisible(true);
-        weaponSprite.play(weaponAnimKey);
+        try {
+            weaponSprite.play(weaponAnimKey);
+        } catch {
+            console.warn(`[AttackSystem] 无法播放武器叠加动画: ${weaponAnimKey}`);
+        }
+    }
+
+    /** 检查动画是否存在且包含有效帧 */
+    private hasValidFrames(key: string): boolean {
+        if (!this.scene.anims.exists(key)) return false;
+        const anim = this.scene.anims.get(key);
+        return anim != null && anim.frames.length > 0;
     }
 
     private syncWeaponSprite(entity: Entity): void {
@@ -275,16 +299,20 @@ export class AttackSystem extends System {
         }
     }
 
-    /** 如果带 skin 的动画不存在，先回退到 default；如果连 default 都不存在，回退到 human_sword */
+    /** 如果带 skin 的动画不存在或帧为空，先回退到 default；如果连 default 都不存在，回退到 human_sword */
     private resolveAnimKey(base: string, skinSuffix: string, facing: string): string {
         const skinned = `${base}${skinSuffix}_${facing}`;
-        if (this.scene.anims.exists(skinned)) {
+        if (this.hasValidFrames(skinned)) {
             return skinned;
         }
         const defaulted = `${base}_${facing}`;
-        if (this.scene.anims.exists(defaulted)) {
+        if (this.hasValidFrames(defaulted)) {
             return defaulted;
         }
-        return `human_sword_${facing}`;
+        const swordFallback = `human_sword_${facing}`;
+        if (this.hasValidFrames(swordFallback)) {
+            return swordFallback;
+        }
+        return skinned;
     }
 }

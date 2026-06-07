@@ -155,12 +155,10 @@ export interface AttackProfile {
     animKey: string;
     /** 音效 key */
     soundKey: string;
-    /** 判定启动延迟（ms） */
-    hitCheckDelay: number;
-    /** 判定持续时间（ms） */
-    hitCheckDuration: number;
-    /** 攻击动画总持续时间（ms） */
-    attackDuration: number;
+    /** 判定启动帧索引（从 0 开始） */
+    hitCheckFrameStart: number;
+    /** 判定结束帧索引（不包含） */
+    hitCheckFrameEnd: number;
     /** 武器叠加动画 key（可选） */
     weaponOverlay?: { key: string; skin?: string };
 }

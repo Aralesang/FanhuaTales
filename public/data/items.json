@@ -41,9 +41,8 @@
         "baseDamage": 25,
         "animKey": "human_sword",
         "soundKey": "human_atk_sword_1",
-        "hitCheckDelay": 200,
-        "hitCheckDuration": 250,
-        "attackDuration": 600,
+        "hitCheckFrameStart": 2,
+        "hitCheckFrameEnd": 5,
         "weaponOverlay": {
           "key": "sword",
           "skin": "default"
@@ -55,6 +54,41 @@
     },
     "sellPrice": {
       "gold_coin": 5
+    }
+  },
+  "magic_wand": {
+    "id": "magic_wand",
+    "name": "橡木魔杖",
+    "description": "一根由古老橡木制成的魔杖，尖端镶嵌着微光闪烁的魔法水晶",
+    "type": "equipment",
+    "stackable": false,
+    "maxStack": 1,
+    "width": 1,
+    "height": 3,
+    "equipment": {
+      "slot": "weapon",
+      "attack": 3,
+      "attackProfile": {
+        "radius": 15,
+        "offsetRight": { "x": 20, "y": 0 },
+        "offsetDown": { "x": 0, "y": 20 },
+        "offsetUp": { "x": 0, "y": -20 },
+        "baseDamage": 20,
+        "animKey": "human_wand",
+        "soundKey": "human_atk_sword_1",
+        "hitCheckFrameStart": 4,
+        "hitCheckFrameEnd": 9,
+        "weaponOverlay": {
+          "key": "wand",
+          "skin": "default"
+        }
+      }
+    },
+    "buyPrice": {
+      "gold_coin": 12
+    },
+    "sellPrice": {
+      "gold_coin": 6
     }
   },
   "leather_armor": {

@@ -1,128 +1,121 @@
 {
-    "human_idle": {
-        "path": "./images/human/idle/",
-        "skins": [
-            "default.png",
-            "肉.png"
-        ],
-        "grid": {
-            "rows": 3,
-            "columns": 4,
-            "spriteWidth": 80,
-            "spriteHeight": 80
-        },
-        "animationStrategy": "loop"
+  "human_idle": {
+    "path": "./images/human/idle/",
+    "skins": ["default.png", "肉.png"],
+    "grid": {
+      "rows": 3,
+      "columns": 4,
+      "spriteWidth": 80,
+      "spriteHeight": 80
     },
-    "human_walk": {
-        "path": "./images/human/walk/",
-        "skins": [
-            "default.png",
-            "肉.png"
-        ],
-        "grid": {
-            "rows": 3,
-            "columns": 8,
-            "spriteWidth": 80,
-            "spriteHeight": 80
-        },
-        "animationStrategy": "loop"
+    "animationStrategy": "loop"
+  },
+  "human_walk": {
+    "path": "./images/human/walk/",
+    "skins": ["default.png", "肉.png"],
+    "grid": {
+      "rows": 3,
+      "columns": 8,
+      "spriteWidth": 80,
+      "spriteHeight": 80
     },
-    "human_run": {
-        "path": "./images/human/run/",
-        "skins": [
-            "default.png",
-            "肉.png"
-        ],
-        "grid": {
-            "rows": 3,
-            "columns": 8,
-            "spriteWidth": 80,
-            "spriteHeight": 80
-        },
-        "animationStrategy": "loop"
+    "animationStrategy": "loop"
+  },
+  "human_run": {
+    "path": "./images/human/run/",
+    "skins": ["default.png", "肉.png"],
+    "grid": {
+      "rows": 3,
+      "columns": 8,
+      "spriteWidth": 80,
+      "spriteHeight": 80
     },
-    "human_sword": {
-        "path": "./images/human/sword/",
-        "skins": [
-            "default.png",
-            "肉.png"
-        ],
-        "grid": {
-            "rows": 3,
-            "columns": 6,
-            "spriteWidth": 80,
-            "spriteHeight": 80
-        },
-        "animationStrategy": "freeze"
+    "animationStrategy": "loop"
+  },
+  "human_sword": {
+    "path": "./images/human/sword/",
+    "skins": ["default.png", "肉.png"],
+    "grid": {
+      "rows": 3,
+      "columns": 6,
+      "spriteWidth": 80,
+      "spriteHeight": 80
     },
-    "human_fist": {
-        "path": "./images/human/sword/",
-        "skins": [
-            "default.png",
-            "肉.png"
-        ],
-        "grid": {
-            "rows": 3,
-            "columns": 6,
-            "spriteWidth": 80,
-            "spriteHeight": 80
-        },
-        "animationStrategy": "freeze"
+    "animationStrategy": "freeze"
+  },
+  "human_fist": {
+    "path": "./images/human/sword/",
+    "skins": ["default.png", "肉.png"],
+    "grid": {
+      "rows": 3,
+      "columns": 6,
+      "spriteWidth": 80,
+      "spriteHeight": 80
     },
-    "sword": {
-        "path": "./images/equipment/sword/",
-        "skins": [
-            "default.png"
-        ],
-        "grid": {
-            "rows": 3,
-            "columns": 6,
-            "spriteWidth": 80,
-            "spriteHeight": 80
-        },
-        "animationStrategy": "freeze"
+    "animationStrategy": "freeze"
+  },
+  "sword": {
+    "path": "./images/equipment/sword/",
+    "skins": ["default.png"],
+    "grid": {
+      "rows": 3,
+      "columns": 6,
+      "spriteWidth": 80,
+      "spriteHeight": 80
     },
-    "hair_idle": {
-        "path": "./images/hair/idle/",
-        "skins": ["default.png"],
-        "grid": { "rows": 3, "columns": 4, "spriteWidth": 80, "spriteHeight": 80 },
-        "animationStrategy": "loop"
+    "animationStrategy": "freeze"
+  },
+  "hair_idle": {
+    "path": "./images/hair/idle/",
+    "skins": ["default.png"],
+    "grid": { "rows": 3, "columns": 4, "spriteWidth": 80, "spriteHeight": 80 },
+    "animationStrategy": "loop"
+  },
+  "hair_walk": {
+    "path": "./images/hair/walk/",
+    "skins": ["default.png"],
+    "grid": { "rows": 3, "columns": 8, "spriteWidth": 80, "spriteHeight": 80 },
+    "animationStrategy": "loop"
+  },
+  "hair_run": {
+    "path": "./images/hair/run/",
+    "skins": ["default.png"],
+    "grid": { "rows": 3, "columns": 8, "spriteWidth": 80, "spriteHeight": 80 },
+    "animationStrategy": "loop"
+  },
+  "hair_sword": {
+    "path": "./images/hair/sword/",
+    "skins": ["default.png"],
+    "grid": { "rows": 3, "columns": 6, "spriteWidth": 80, "spriteHeight": 80 },
+    "animationStrategy": "freeze"
+  },
+  "hair_fist": {
+    "path": "./images/hair/sword/",
+    "skins": ["default.png"],
+    "grid": { "rows": 3, "columns": 6, "spriteWidth": 80, "spriteHeight": 80 },
+    "animationStrategy": "freeze"
+  },
+  "human_wand": {
+    "path": "./images/human/wand/",
+    "skins": ["default.png"],
+    "grid": { "rows": 3, "columns": 10, "spriteWidth": 80, "spriteHeight": 80 },
+    "animationStrategy": "freeze"
+  },
+  "wand": {
+    "path": "./images/equipment/wand/",
+    "skins": ["default.png"],
+    "grid": { "rows": 3, "columns": 10, "spriteWidth": 80, "spriteHeight": 80 },
+    "animationStrategy": "freeze"
+  },
+  "宝箱1": {
+    "path": "./images/building/宝箱/",
+    "skins": ["default.png"],
+    "grid": {
+      "rows": 1,
+      "columns": 5,
+      "spriteWidth": 16,
+      "spriteHeight": 32
     },
-    "hair_walk": {
-        "path": "./images/hair/walk/",
-        "skins": ["default.png"],
-        "grid": { "rows": 3, "columns": 8, "spriteWidth": 80, "spriteHeight": 80 },
-        "animationStrategy": "loop"
-    },
-    "hair_run": {
-        "path": "./images/hair/run/",
-        "skins": ["default.png"],
-        "grid": { "rows": 3, "columns": 8, "spriteWidth": 80, "spriteHeight": 80 },
-        "animationStrategy": "loop"
-    },
-    "hair_sword": {
-        "path": "./images/hair/sword/",
-        "skins": ["default.png"],
-        "grid": { "rows": 3, "columns": 6, "spriteWidth": 80, "spriteHeight": 80 },
-        "animationStrategy": "freeze"
-    },
-    "hair_fist": {
-        "path": "./images/hair/sword/",
-        "skins": ["default.png"],
-        "grid": { "rows": 3, "columns": 6, "spriteWidth": 80, "spriteHeight": 80 },
-        "animationStrategy": "freeze"
-    },
-    "宝箱1": {
-        "path": "./images/building/宝箱/",
-        "skins": [
-            "default.png"
-        ],
-        "grid": {
-            "rows": 1,
-            "columns": 5,
-            "spriteWidth": 16,
-            "spriteHeight": 32
-        },
-        "animationStrategy": "freeze"
-    }
+    "animationStrategy": "freeze"
+  }
 }

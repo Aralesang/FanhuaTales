@@ -23,7 +23,11 @@ export class AnimationSystem extends System {
                 if (hitStun.hitAnimTimer > 0) {
                     const hitAnimKey = this.resolveAnimKey('human_idle', skinSuffix, anim.facing);
                     if (sprite.anims.currentAnim?.key !== hitAnimKey) {
-                        sprite.play(hitAnimKey);
+                        try {
+                            sprite.play(hitAnimKey);
+                        } catch {
+                            console.warn(`[AnimationSystem] 无法播放受击动画: ${hitAnimKey}`);
+                        }
                     }
                     continue;
                 }
@@ -60,17 +64,36 @@ export class AnimationSystem extends System {
 
             if (anim.currentState !== newState || sprite.anims.currentAnim?.key !== newAnimKey) {
                 anim.currentState = newState;
-                sprite.play(newAnimKey);
+                try {
+                    sprite.play(newAnimKey);
+                } catch {
+                    console.warn(`[AnimationSystem] 无法播放移动动画: ${newAnimKey}`);
+                }
             }
         }
     }
 
-    /** 如果带 skin 的动画不存在，回退到 default */
+    /** 如果带 skin 的动画不存在或帧为空，回退到 default */
     private resolveAnimKey(base: string, skinSuffix: string, facing: string): string {
         const skinned = `${base}${skinSuffix}_${facing}`;
-        if (this.scene.anims.exists(skinned)) {
+        if (this.hasValidFrames(skinned)) {
             return skinned;
         }
-        return `${base}_${facing}`;
+        const defaulted = `${base}_${facing}`;
+        if (this.hasValidFrames(defaulted)) {
+            return defaulted;
+        }
+        // 最终回退：尝试 human_idle
+        const idleFallback = `human_idle_${facing}`;
+        if (this.hasValidFrames(idleFallback)) {
+            return idleFallback;
+        }
+        return skinned;
+    }
+
+    private hasValidFrames(key: string): boolean {
+        if (!this.scene.anims.exists(key)) return false;
+        const anim = this.scene.anims.get(key);
+        return anim != null && anim.frames.length > 0;
     }
 }
