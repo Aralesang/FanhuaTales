@@ -13,9 +13,6 @@ export class InputSystem extends System {
             return;
         }
 
-        const pointer = this.scene.input.activePointer;
-        const cam = this.scene.cameras.main;
-
         for (const entity of entities) {
             if (!entity.hasComponent('input') || !entity.hasComponent('movement')) {
                 continue;
@@ -24,12 +21,7 @@ export class InputSystem extends System {
             const input = entity.getComponent<InputComponent>('input')!;
             const movement = entity.getComponent<MovementComponent>('movement')!;
 
-            // 更新鼠标世界坐标
-            const worldPoint = cam.getWorldPoint(pointer.x, pointer.y);
-            input.mouseX = worldPoint.x;
-            input.mouseY = worldPoint.y;
-
-            // 移动（WASD）
+            // 移动（光标键）
             let dx = 0;
             let dy = 0;
 
@@ -57,15 +49,14 @@ export class InputSystem extends System {
             movement.dy = dy;
             movement.isRunning = input.shiftKey.isDown;
 
-            // 攻击输入：检测鼠标左键上升沿（无 UI 打开且鼠标不在快捷栏上），写入 AttackComponent
+            // 攻击输入：检测 X 键上升沿（无 UI 打开），写入 AttackComponent
             if (entity.hasComponent('attack')) {
                 const isAnyUIOpen = uistate?.inventoryOpen || uistate?.containerOpen || uistate?.storeOpen || uistate?.bankOpen;
-                const inHotbar = uistate?.pointerInHotbar ?? false;
                 const attack = entity.getComponent<AttackComponent>('attack')!;
                 const prevDown = this.previousAttackDown.get(entity) ?? false;
-                const isDown = pointer.leftButtonDown();
+                const isDown = input.attackKey.isDown;
 
-                if (!isAnyUIOpen && !inHotbar && isDown && !prevDown) {
+                if (!isAnyUIOpen && isDown && !prevDown) {
                     attack.isAttacking = true;
                 }
 

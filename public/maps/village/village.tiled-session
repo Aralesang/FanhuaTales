@@ -11,6 +11,62 @@
         "": {
             "scaleInDock": 1
         },
+        "D:/MyProjects/Phaser/FanhuaTales/public/images/map/forest/forest.tsx": {
+            "scaleInDock": 2,
+            "scaleInEditor": 3
+        },
+        "D:/MyProjects/Phaser/FanhuaTales/public/images/map/forest/surface.tsx": {
+            "scaleInDock": 3
+        },
+        "D:/MyProjects/Phaser/FanhuaTales/public/images/map/village/building.tsx": {
+            "scaleInDock": 1.5
+        },
+        "D:/MyProjects/Phaser/FanhuaTales/public/maps/forest/forest.json": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 5.5,
+            "selectedLayer": 5,
+            "viewCenter": {
+                "x": 251.81818181818184,
+                "y": 233.90909090909093
+            }
+        },
+        "D:/MyProjects/Phaser/FanhuaTales/public/maps/forest/forest.json#building": {
+            "scaleInDock": 1,
+            "scaleInEditor": 2
+        },
+        "D:/MyProjects/Phaser/FanhuaTales/public/maps/forest/forest.json#forest": {
+            "scaleInDock": 3,
+            "scaleInEditor": 4
+        },
+        "D:/MyProjects/Phaser/FanhuaTales/public/maps/forest/forest.json#solid": {
+            "scaleInDock": 1
+        },
+        "D:/MyProjects/Phaser/FanhuaTales/public/maps/forest/forest.json#surface": {
+            "scaleInDock": 1
+        },
+        "D:/MyProjects/Phaser/FanhuaTales/public/maps/forest/forest.json#water": {
+            "scaleInDock": 1
+        },
+        "D:/MyProjects/Phaser/FanhuaTales/public/maps/forest/forest.tmj": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 5.5,
+            "selectedLayer": 5,
+            "viewCenter": {
+                "x": 40.72727272727275,
+                "y": 199.90909090909093
+            }
+        },
+        "D:/MyProjects/Phaser/FanhuaTales/public/maps/forest/forest.tmj#forest": {
+            "scaleInDock": 1.5
+        },
+        "D:/MyProjects/Phaser/FanhuaTales/public/maps/forest/forest.tmj#water": {
+            "scaleInDock": 2,
+            "scaleInEditor": 3
+        },
         "building.tsx": {
             "scaleInDock": 3,
             "scaleInEditor": 4
@@ -23,7 +79,7 @@
             "selectedLayer": 6,
             "viewCenter": {
                 "x": 263.875,
-                "y": 364.4375
+                "y": 360.6875
             }
         },
         "interior.tsx": {
@@ -38,11 +94,11 @@
             "expandedObjectLayers": [
                 3
             ],
-            "scale": 8,
-            "selectedLayer": 6,
+            "scale": 5.5,
+            "selectedLayer": 7,
             "viewCenter": {
-                "x": 327.5,
-                "y": 79.1875
+                "x": 223.0909090909091,
+                "y": 122.63636363636364
             }
         },
         "village.json#building": {
@@ -52,7 +108,8 @@
             "scaleInDock": 1
         },
         "village.json#surface": {
-            "scaleInDock": 1
+            "scaleInDock": 1,
+            "scaleInEditor": 1
         },
         "village.tmx": {
             "expandedObjectLayers": [
@@ -80,25 +137,28 @@
             "scaleInEditor": 1
         }
     },
-    "last.exportedFilePath": "D:/MyProjects/Phaser/FanhuaTales/public/maps/interior",
-    "last.externalTilesetPath": "D:/MyProjects/Excalibur/FanhuaTales/public/map/village",
-    "last.imagePath": "D:/MyProjects/Excalibur/FanhuaTales/public/images/map/village",
-    "map.fixedSize": false,
+    "frame.defaultDuration": 200,
+    "last.exportedFilePath": "D:/MyProjects/Phaser/FanhuaTales/public/maps/village",
+    "last.externalTilesetPath": "D:/MyProjects/Phaser/FanhuaTales/public/images/map/village",
+    "last.imagePath": "D:/MyProjects/Phaser/FanhuaTales/public/images/map/forest",
+    "map.fixedSize": true,
     "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
     "map.lastUsedFormat": "json",
     "map.tileHeight": 16,
     "map.tileWidth": 16,
     "openFiles": [
-        "village.json",
-        "interior.tmx"
+        "interior.tmx",
+        "D:/MyProjects/Phaser/FanhuaTales/public/maps/forest/forest.json"
     ],
     "project": "village.tiled-project",
     "property.type": "int",
     "recentFiles": [
-        "village.json",
+        "D:/MyProjects/Phaser/FanhuaTales/public/maps/forest/forest.json",
         "interior.tmx",
-        "solid.tsx",
+        "village.json",
+        "D:/MyProjects/Phaser/FanhuaTales/public/images/map/forest/forest.tsx",
         "interior.tsx",
+        "solid.tsx",
         "village.tmx",
         "building.tsx"
     ],

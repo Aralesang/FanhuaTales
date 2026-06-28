@@ -77,7 +77,7 @@
         "animKey": "human_wand",
         "soundKey": "human_atk_sword_1",
         "hitCheckFrameStart": 4,
-        "hitCheckFrameEnd": 9,
+        "hitCheckFrameEnd": 10,
         "weaponOverlay": {
           "key": "wand",
           "skin": "default"
@@ -86,7 +86,7 @@
           "speed": 200,
           "maxDistance": 150,
           "radius": 6,
-          "color": 4362079
+          "color": "#0cf4ff"
         }
       }
     },

@@ -71,7 +71,7 @@ D:\MyProjects\Phaser\FanhuaTales\
 │   │   ├── item/                   # 物品图标
 │   │   ├── map/                    # tileset 图片(surface/building/solid + 多套备选)
 │   │   └── 宝箱1.png                # 容器精灵表(5 列,freeze)
-│   ├── maps/                       # Tiled 导出的 JSON(tileset 必须内嵌)
+│   ├── maps/                       # Tiled 导出的 JSON(tileset 建议内嵌;也支持外部 .tsx,由 BootScene 运行时加载)
 │   ├── music/                      # 背景音乐
 │   └── sounds/                     # 音效
 │
@@ -337,10 +337,14 @@ private cursors: Types.Input.Keyboard.CursorKeys;
 - Tiled JSON 放在 `public/maps/<sceneName>/<sceneName>.json`
 - `maps-map.json` 记录 key → 路径(**不带 `public/` 前缀**):`{"village": "maps/village/village.json"}`
 
-### 致命规则:tileset 必须内嵌
-Phaser 无法解析外部 `.tsx` 文件。Tiled 导出 JSON 时**必须选择内嵌 tileset 数据**。
+### tileset:建议内嵌,也支持外部 .tsx
+Phaser 本身无法直接解析外部 `.tsx` 文件。项目已实现运行时支持:`BootScene` 会在加载地图 JSON 后自动发现外部 `.tsx` 引用,异步加载并解析 XML,将 tileset 数据内嵌到地图 JSON cache 中,同时按 tileset name 预加载对应的图片。
 
-报错 `Cannot read properties of undefined (reading '2')` 99% 是 JSON 中仍含 `"source": "xxx.tsx"`。
+**推荐做法**:Tiled 导出 JSON 时仍建议选择内嵌 tileset,可减少运行时加载步骤。
+
+**外部 .tsx 限制**:
+- 仅支持 `.tsx` 中常用的 tileset/image/tile/properties/animation/objectgroup 结构;复杂自定义数据可能解析失败。
+- 如果报错 `Cannot read properties of undefined (reading '2')`,先检查对应 `.tsx` 是否 404,或 `.tsx` 格式是否超出解析器支持范围。
 
 ### Tileset Name ↔ Cache Key
 
@@ -430,8 +434,8 @@ this.cameras.main.startFollow(targetSprite, true, 0.1, 0.1);  // 线性插值 0.
 ### Phaser/资源相关
 
 1. **"Cannot read properties of undefined (reading '2')" 在 tilemap 创建时**
-   - 原因:Tiled JSON 中 tileset 是外部引用(`source: ".tsx"`)
-   - 解决:重新导出 JSON,内嵌 tileset
+   - 原因:Tiled JSON 中 tileset 是外部引用(`source: ".tsx"`)且运行时加载/解析失败
+   - 解决:检查浏览器网络面板确认 `.tsx` 文件 200;若仍失败,重新导出 JSON 并内嵌 tileset
 
 2. **某图层不显示**
    - 原因:BootScene 没有预加载该地图使用的 tileset 图片

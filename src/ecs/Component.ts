@@ -74,16 +74,13 @@ export class AnimationComponent implements Component {
 export class InputComponent implements Component {
     readonly type = 'input';
     cursors!: Types.Input.Keyboard.CursorKeys;
-    upKey!: Input.Keyboard.Key;      // W
-    downKey!: Input.Keyboard.Key;    // S
-    leftKey!: Input.Keyboard.Key;    // A
-    rightKey!: Input.Keyboard.Key;   // D
+    upKey!: Input.Keyboard.Key;      // 光标上
+    downKey!: Input.Keyboard.Key;    // 光标下
+    leftKey!: Input.Keyboard.Key;    // 光标左
+    rightKey!: Input.Keyboard.Key;   // 光标右
     shiftKey!: Input.Keyboard.Key;
     inventoryKey!: Input.Keyboard.Key;
-    /** 鼠标世界坐标 X */
-    mouseX: number = 0;
-    /** 鼠标世界坐标 Y */
-    mouseY: number = 0;
+    attackKey!: Input.Keyboard.Key;  // X
 }
 
 /** 攻击状态数据组件 */
@@ -147,8 +144,8 @@ export interface ProjectileConfig {
     maxDistance: number;
     /** 碰撞判定半径（像素） */
     radius: number;
-    /** 显示颜色（如 0x00aaff） */
-    color: number;
+    /** 显示颜色（如 "#0cf4ff"） */
+    color: string;
 }
 
 /** 攻击配置：定义一次攻击的判定范围、动画、音效等 */

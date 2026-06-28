@@ -86,6 +86,11 @@
             "id": 2,
             "members": [
                 {
+                    "name": "id",
+                    "type": "int",
+                    "value": 0
+                },
+                {
                     "name": "target_scene",
                     "type": "string",
                     "value": ""

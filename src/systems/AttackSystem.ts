@@ -247,7 +247,7 @@ export class AttackSystem extends System {
 
         const sprite = this.scene.add.sprite(cx, cy, 'projectile_base');
         sprite.setDisplaySize(projConfig.radius * 2, projConfig.radius * 2);
-        sprite.setTint(projConfig.color);
+        sprite.setTint(this.hexToNumber(projConfig.color));
         sprite.setDepth(15);
 
         const projectile = new Entity(this.scene);
@@ -358,6 +358,10 @@ export class AttackSystem extends System {
     }
 
     /** 如果带 skin 的动画不存在或帧为空，先回退到 default；如果连 default 都不存在，回退到 human_sword */
+    private hexToNumber(hex: string): number {
+        return parseInt(hex.replace('#', ''), 16);
+    }
+
     private resolveAnimKey(base: string, skinSuffix: string, facing: string): string {
         const skinned = `${base}${skinSuffix}_${facing}`;
         if (this.hasValidFrames(skinned)) {

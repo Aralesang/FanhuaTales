@@ -1,4 +1,5 @@
 {
-    "village": "maps/village/village.json",
-    "interior": "maps/interior/interior.json"
+  "village": "maps/village/village.json",
+  "interior": "maps/interior/interior.json",
+  "forest": "maps/forest/forest.json"
 }
